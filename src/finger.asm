@@ -24,11 +24,11 @@
 ; BUGS: 
 ;      probably many
 ;
-; $Id: finger.asm,v 1.5 2002/03/26 05:21:41 konst Exp $
+; $Id: finger.asm,v 1.6 2002/06/11 08:41:06 konst Exp $
 
 %include "system.inc"
 
-%assign UTMP_RECSIZE 384
+%assign UTMP_RECSIZE utmp_size
 
 %ifdef __LINUX__
 %assign ERESTART 85
@@ -319,8 +319,9 @@ lookup_user:
 	pop esi
 	skip1 3, ':'
 	call strfcpy
-	mov byte [edi+1], __n
-	sys_write STDOUT, buf, 80
+	mov byte [edi], __n
+	lea ecx, [edi-buf+1]
+	sys_write STDOUT, buf, ecx
 .Lsrch_utmp:
 	sys_read [utmpfd], utmpbuf, UTMP_RECSIZE
 	or eax, eax

@@ -1,10 +1,11 @@
-;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: asmutils.asm,v 1.5 2001/01/21 15:18:46 konst Exp $
+;$Id: asmutils.asm,v 1.6 2002/06/11 08:41:06 konst Exp $
 ;
 ;asmutils multicall binary
 ;
 ;0.03: 17-Jan-2001	initial public release
+;0.04: 06-Jun-2002	fixed startup stack, call for script-writers
 
 %include "system.inc"
 
@@ -57,9 +58,8 @@ START:
 .run_it:
 	
 	mov	eax,[ebx + names + 4]
-	mov	[esp + 4*9],eax
+	mov	[esp + 4*8],eax
 	popa
-	add	esp,byte 4
 	ret
 
 .exit:
@@ -73,11 +73,19 @@ START:
 
 poem	db	__n
 	db	"this is not a nasty bug",__n
-	db	"this is just a cool loopback",__n,__n
+	db	"this is just a cool loopback",__n
+	db	__n
 	db	__t,"- an ancient assembly poem -",__n
-	db	__t,"(by an ancient assembly poet)",__n,__n
-	db	"well, it will work as needed. really. "
-	db	"a bit later.. be patient.",__n,__n
+	db	__t,"(by an ancient assembly poet)",__n
+	db	__n
+	db	"This eventually will be the asmutils multicall binary.",__n
+	db	"The whole idea behind it is that it should be auto-generated",__n
+	db	"from other .asm files (and of course startup code) with some",__n
+	db	"script with no manual adjustments,  when other programs will",__n
+	db	"be in a more-or-less usable and reliable state.  The day has",__n
+	db	"not come yet, but it is closer with each release. Meanwhile,",__n
+	db	"do not waste your time on improving this source code, better",__n
+	db	"be the one who implements the above described script.",__n,__n
 length	equ	$-poem
 
 _uname:
@@ -91,6 +99,20 @@ _sleep:
 _sync:
 _tee:
 _yes:
+
+;write applet name to stdout
+	pop	eax
+
+	pop	esi
+	mov	ecx,esi
+.n1:
+	lodsb
+	or 	al,al
+	jnz	.n1
+.n2:
+	mov	byte [esi - 1],__n
+	sub	esi,ecx
+	sys_write STDOUT,EMPTY,esi
 
 	sys_exit 1
 

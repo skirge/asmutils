@@ -1,58 +1,34 @@
 ; Copyright (C) 2002 Thomas M. Ogrisegg
 ;
-; $Id: free.asm,v 1.1 2002/03/26 05:25:29 konst Exp $
+; free - display system memory usage
 ;
-; hacker's free
+; syntax:
+;        free
 ;
-; usage: free
-
-; 03/25/02	-	initial version
+; License           :       GNU General Public License
+; Author            :       Thomas Ogrisegg
+; E-Mail            :       tom@rhadamanthys.org
+; Version           :       0.5
+; Release-Date      :       03/20/02
+; GNU-compatible    :       no
+; Operatingsystem   :       Linux/x86
+;
+; $Id: free.asm,v 1.2 2002/06/11 08:45:10 konst Exp $
 
 %include "system.inc"
-
-%if __KERNEL__ = 22
-struc sysinfo
-.uptime     LONG	1
-.loads		ULONG	3
-.totalram	ULONG	1
-.freeram	ULONG	1
-.sharedram	ULONG	1
-.bufferram	ULONG	1
-.totalswap	ULONG	1
-.freeswap	ULONG	1
-.procs		USHORT	1
-.pad		CHAR	22
-endstruc
-%elif __KERNEL__ = 24
-struc sysinfo
-.uptime     LONG    1
-.loads      ULONG   3
-.totalram   ULONG   1
-.freeram    ULONG   1
-.sharedram  ULONG   1
-.bufferram  ULONG   1
-.totalswap  ULONG   1
-.freeswap   ULONG   1
-.procs      USHORT  1
-.totalhigh	ULONG	1
-.freehigh	ULONG	1
-.mem_unit	ULONG	1
-.pad        CHAR    8
-endstruc
-%endif
 
 CODESEG
 
 ;; <- %eax (number to convert)
 ;; -> %edi (output written to (edi))
 ltostr:
-		mov ebx, 0x0a
-		mov ecx, 0x7
+		_mov ebx, 0x0a
+		_mov ecx, 0x7
 		or eax, eax
 		jnz .Ldiv
 		mov byte [edi+ecx], '0'
 		dec ecx
-		jmp .Lout
+		jmps .Lout
 .Ldiv:
 		or eax, eax
 		jz .Lout
@@ -69,8 +45,8 @@ ltostr:
 		mov al, ' '
 		repnz stosb
 		cld
-		add edi, 0x9
-		mov ecx, 0x3
+		_add edi, 0x9
+		_mov ecx, 0x3
 		repnz stosb
 		ret
 
@@ -111,8 +87,8 @@ START:
 		shr eax, 0xa
 		call ltostr
 		mov byte [edi], __n
-		mov edi, esp
-		sys_write STDOUT, edi, 34
+		mov ecx, esp
+		sys_write STDOUT, EMPTY, 34
 		sys_exit 0x0
 
 tab	db	__t

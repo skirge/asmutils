@@ -1,12 +1,12 @@
 ;Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-;$Id: libc.asm,v 1.14 2002/03/03 07:58:43 konst Exp $
+;$Id: libc.asm,v 1.15 2002/06/11 08:38:39 konst Exp $
 ;
 ;hackers' libc
 ;
-;Yes, this is the most advanced libc ever seen. It uses many
-;wizard technologies which are possible only with assembly.
+;Yes, this is the most advanced libc ever seen.
+;It uses advanced technologies which are possible only with assembly.
 ;Two main features that make this libc outstanding:
 ;1) calling convention can be configured AT RUNTIME (cdecl is default)
 ;2) THE smallest size

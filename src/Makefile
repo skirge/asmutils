@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.50 2002/04/25 12:26:45 konst Exp $
+# $Id: Makefile,v 1.51 2002/06/11 08:41:06 konst Exp $
 
 #DEBUG = y
 
@@ -17,7 +17,7 @@ FILES = basename cal cat chmod chroot chown cmp cpuinfo cut date dc dd dirname\
 	tail tar tee telnet tr true uname wc whoami yes\
 	md5sum rmdsum rc6crypt\
 
-FILES += readkey less\
+FILES += readkey less getty truss\
 	 ftpd host httpd m_inetd nc netstat ping pop3 proxy scan wget\
 	 cp ls mount mv pwd rm sh test touch uptime watch which write\
 
@@ -27,10 +27,10 @@ LINKS = arch cpuspeed domainname false mkfifo more rmdir size sln todos\
 BONUS =	execve report asmutils
 
 ifdef LINUX
-FILES += chvt dmesg df eject fdisk finger free ifconfig killall lsmod mesg ps\
-	 softdog swapon sysctl tty update
-LINKS += ccd deallocvt fingerd killall5 pidof rmmod route swapoff 
-BONUS += window leaves fire256 snake game
+FILES += chvt dmesg df eject fdisk finger free ifconfig killall lsmod\
+	 mesg ps softdog swapon sysctl tty update
+LINKS += ccd deallocvt fingerd killall5 pidof rmmod route swapoff mkswap
+BONUS += window leaves fire256 mandelbrot snake game
 endif
 
 ifdef FREEBSD

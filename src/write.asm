@@ -8,7 +8,9 @@
 ;   Improve diagnostic messages
 ;   using mmap would be smarter...
 ;
-; $Id: write.asm,v 1.3 2002/03/26 05:24:57 konst Exp $
+; 06/07/02: added printing of username on the target terminal (TO)
+;
+; $Id: write.asm,v 1.4 2002/06/11 08:41:06 konst Exp $
 
 %include "system.inc"
 
@@ -26,6 +28,19 @@ START:
 	jg usage
 	cmp ecx, byte 1
 	jz usage
+
+	lea esi, [esp+ecx*4+4]
+search_user:
+	lodsd
+	or eax, eax
+	jz .Lout
+	cmp long [eax], 'USER'
+	jnz search_user
+	add eax, 5
+	cmp byte [eax-1], '='
+	jnz search_user
+	mov [user], eax
+.Lout:
 
 	pop eax
 	pop esi
@@ -49,7 +64,7 @@ START:
 	sys_chdir devdir
 
 _loop:
-	sys_read [fd], utmpbuf, 384
+	sys_read [fd], utmpbuf, utmp_size
 	or eax, eax
 	jz near error ; exit
 	lea edi, [utmpbuf+utmp.ut_user]
@@ -82,9 +97,25 @@ next_write:
 Next:
 	mov [ttyfd], eax
 
-; ;; *FIXME* ;;
-;	sys_write eax, message, messagelen
-	sys_write eax, beep, beeplen
+	mov edi, buffer
+	mov esi, message
+	mov ecx, messagelen
+	repnz movsb
+	mov esi, [user]
+	or esi, esi
+	jz .Lnext
+.Llabel:
+	lodsb
+	stosb
+	or al, al
+	jnz .Llabel
+	mov byte [edi], __n
+;	lea ecx, [edi-buffer]
+	mov ecx, edi
+	sub ecx, buffer
+	sys_write [ttyfd], buffer, ecx
+.Lnext:
+	sys_write [ttyfd], beep, beeplen
 
 io_loop:
 	sys_read STDIN, buffer, BUFLEN
@@ -129,14 +160,14 @@ devdir	db	"/dev", EOL
 EOF		db	"EOF", __n
 eoflen equ $ - EOF
 
-;;; *FIXME* ;;
-;message	db	0xa, "Message from $ME on $TTY",0xa
-;messagelen equ $ - message
+message	db	"Message from "
+messagelen  equ $ - message
 beep	db	0x1B, 0x5B, 0x6D, 0x1B, 0x5B, 0x34, 0x6C, 0x07, __n
 beeplen equ $ - beep
 
 UDATASEG
 ttyname	ULONG	1
+user	ULONG	1
 fd	ULONG	1
 ttyfd	ULONG	1
 utmpbuf B_STRUC utmp

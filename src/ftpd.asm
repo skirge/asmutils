@@ -1,6 +1,6 @@
 ;Copyright (C) 2002 Attila Monoses <ata@email.ro>
 ;
-;$Id: ftpd.asm,v 1.1 2002/04/25 12:26:45 konst Exp $
+;$Id: ftpd.asm,v 1.2 2002/06/11 08:45:10 konst Exp $
 ;
 ;hackers' ftpd
 ;
@@ -29,12 +29,9 @@
 ;must execute as root or made setuid (uses chroot)
 ;otherwise everything is shared
 
-
 %include "system.inc"
 
-
 CODESEG
-
 
 %define req_len 1024
 %define buff_size 8192
@@ -57,11 +54,11 @@ CODESEG
 %define rep_LF 13
 %define rep_CRLF 14
 
-setsockoptvals dd 1
+setsockoptvals	dd 1
 
-ls db '/bin/ls',0
-lsarg db '-la',0
-parent_dir db '..',0
+ls		db '/bin/ls',0
+lsarg		db '-la',0
+parent_dir	db '..',0
 
 ;___________________________________________________________________________________________
 ;               responses messages
@@ -70,20 +67,20 @@ parent_dir db '..',0
 rep_l db 15,23,16,19,34,24,20,20,20,5,31,30,35,1,2
 ;first byte is length of table
 
-rep_1 db '150 Transfer starting',EOL
-rep_2 db '200 Command ok',EOL
-rep_3 db '215 UNIX Type: L8',EOL
-rep_4 db '220 Asmutils FTP server ready...',EOL
-rep_5 db '221 Closing connection',EOL
-rep_6 db '226 File action ok',EOL
-rep_7 db '230 User logged in',EOL
-rep_8 db '250 File action ok',EOL
-rep_9 db '257 "'
-rep_10 db '421 Error, closing connection',EOL
-rep_11 db '502 Command not implemented.',EOL
-rep_12 db '550 Request file action not taken',EOL
-rep_13 db 10
-rep_14 db 13,10
+rep_1	db '150 Transfer starting',EOL
+rep_2	db '200 Command ok',EOL
+rep_3	db '215 UNIX Type: L8',EOL
+rep_4	db '220 Asmutils FTP server ready...',EOL
+rep_5	db '221 Closing connection',EOL
+rep_6	db '226 File action ok',EOL
+rep_7	db '230 User logged in',EOL
+rep_8	db '250 File action ok',EOL
+rep_9	db '257 "'
+rep_10	db '421 Error, closing connection',EOL
+rep_11	db '502 Command not implemented.',EOL
+rep_12	db '550 Request file action not taken',EOL
+rep_13	db 10
+rep_14	db 13,10
 
 ;___________________________________________________________________________________________
 
@@ -770,4 +767,4 @@ UDATASEG
 
     buff resb buff_size
     req resb 1024
-END  
+END

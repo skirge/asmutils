@@ -1,44 +1,34 @@
-; Copyright (C) 2002 Thomas M. Ogrisegg
+; Copyright (c) 2002 Thomas M. Ogrisegg
 ;
-; $Id: uptime.asm,v 1.1 2002/03/26 05:25:29 konst Exp $
+; uptime - show system uptime
 ;
-; hacker's uptime
+; syntax:
+;     uptime
 ;
-; usage: uptime
-
-; 03/25/02	-	initial version
+; License           :       GNU General Public License
+; Author            :       Thomas Ogrisegg
+; E-Mail            :       tom@rhadamanthys.org
+; Version           :       1.0
+; SuSV2-Compliant   :       not in SUSV2 (why?)
+; GNU-compatible    :       yes
+;
+; $Id: uptime.asm,v 1.2 2002/06/11 08:45:10 konst Exp $
 
 %include "system.inc"
 
-struc sysinfo
-.uptime     LONG    1
-.loads      ULONG   3
-.totalram   ULONG   1
-.freeram    ULONG   1
-.sharedram  ULONG   1
-.bufferram  ULONG   1
-.totalswap  ULONG   1
-.freeswap   ULONG   1
-.procs      USHORT  1
-.totalhigh  ULONG   1
-.freehigh   ULONG   1
-.mem_unit   ULONG   1
-.pad        CHAR    8
-endstruc
-
 CODESEG
 
-%assign UTMP_RECSIZE 384
+%assign UTMP_RECSIZE utmp_size
 
 %macro mdiv 1
 	xor edx, edx
-	mov ebx, %1
+	_mov ebx, %1
 	idiv ebx
 %endmacro
 
 ltostr1:
 		xor edx, edx
-		mov ebx, 0xa
+		_mov ebx, 0xa
 		idiv ebx
 		or eax, eax
 		jz .Lnext
@@ -51,7 +41,7 @@ ltostr1:
 
 ltostr2:
 		xor edx, edx
-		mov ebx, 0xa
+		_mov ebx, 0xa
 		idiv ebx
 		add al, '0'
 		stosb
@@ -61,7 +51,7 @@ ltostr2:
 
 average:
 		shr eax, 0x5
-		add eax, 0xa
+		_add eax, 0xa
 		push eax
 		sar eax, 0xb
 		call ltostr1
@@ -75,8 +65,9 @@ average:
 		ret
 
 START:
-		sys_gettimeofday esp, NULL
-		mov eax, [esp]
+		mov ebx, esp
+		sys_gettimeofday EMPTY, NULL
+		mov eax, [ebx]
 		mov edi, buf+1
 		mov byte [edi-1], ' '
 		xor ebp, ebp
@@ -107,8 +98,9 @@ START:
 		stosd
 		mov ax, '  '
 		stosw
-		sys_sysinfo esp
-		mov eax, [esp]				; uptime
+		mov ebx, esp
+		sys_sysinfo
+		mov eax, [ebx]				; uptime
 		mdiv 31536000
 		mov eax, edx
 		mdiv 86400
@@ -139,7 +131,8 @@ START:
 		mov [ufd], eax
 		sub esp, UTMP_RECSIZE
 .Lread_next:
-		sys_read [ufd], esp, UTMP_RECSIZE
+		mov ecx, esp
+		sys_read [ufd], EMPTY, UTMP_RECSIZE
 		cmp long [esp+utmp.ut_type], USER_PROCESS
 		jnz .Lnext
 		inc ebp
@@ -175,6 +168,8 @@ START:
 utmpfile	db	_PATH_UTMP, EOL
 
 UDATASEG
+
 buf	UCHAR	80
 ufd	ULONG	1
+
 END

@@ -2,7 +2,7 @@
 ;			 Konstantin Boldyshev <konst@linuxassembly.org>
 ;			 Rudolf Marek <marekr2@fel.cvut.cz>
 ;
-;$Id: httpd.asm,v 1.18 2002/03/14 07:59:32 konst Exp $
+;$Id: httpd.asm,v 1.19 2002/06/11 08:45:10 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -48,7 +48,7 @@
 ;			fixed infinite loop if err404file is missing,
 ;			size improvements (KB)
 ;0.11  14-Mar-2002      added initial cgi support (SL),
-;			'%' support in filenames (IM),
+;			'%' support in filenames (RM),
 ;			send default mimetype for unknown extensions (KB)
 
 %include "system.inc"
