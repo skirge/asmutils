@@ -1,9 +1,7 @@
-- add new utils
-- improve existing
+- write new utils and improve existing
+- develop libc
+- port code to *BSD and BeOS
 - write a shell
 - make a multicall binary
-- develop libc
-- develop portable network syscall interface
-- port code at to *BSD and BeOS
 
 do not tell me I am crazy hacker, I know :-)

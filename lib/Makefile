@@ -2,28 +2,39 @@
 #
 # Makefile for libc
 #
-# $Id: Makefile,v 1.3 2000/02/10 15:07:04 konst Exp $
+# $Id: Makefile,v 1.4 2000/03/02 08:52:01 konst Exp $
+
+# Operating system (LINUX/FREEBSD/BEOS)
+
+OS = LINUX
+
+# Optimization method (SIZE/SPEED)
+
+OPTIMIZE = SIZE
+
+#
+
+AS = nasm
+LD = ld
+CC = gcc
+ASFLAGS = -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__  -i ../src/ -f elf
+CFLAGS = -Wall -O2 -fomit-frame-pointer -nostartfiles -nostdlib -Wl,-e,main 
 
 FILES = libc #clib
-AS = nasm
-ASFLAGS = -f elf -i ../src/
-LD = ld
-LDFLAGS = -shared
-
+TESTS = test1 test2
 SO = ./libc.so #./clib.so
 
-%.o:	%.asm
+all:	libc tests
+
+%:	%.asm
 	$(AS) $(ASFLAGS) $<
-
-%:	%.o
-	$(LD) $(LDFLAGS) -o $*.so $<
-
-all:	$(FILES) example
+	$(LD) -shared -o $*.so $*.o
 
 clean:
-	rm -f *.o *.so example
+	rm -f *.o *.so *.fc $(TESTS)
 
-CFLAGS = -O1 -fomit-frame-pointer -nostartfiles #-nostdlib  #-mregparm=3
+tests: $(TESTS)
 
-example: example.c
-	 gcc $(CFLAGS) -Wl,-e,main -o example example.c $(SO)
+%:	%.c
+	$(CC) $(CFLAGS) -o $@ $< $(SO)
+	$(CC) $(CFLAGS) -mregparm=3 -D__FASTCALL__ -o $@.fc $< $(SO)

@@ -1,59 +1,44 @@
-Current release notes (0.07)
-  
- There're no new utils in this release. Main thing that happened: asmutils
- have been ported to FreeBSD (yes, libc works too :). Half of them do not
- work (Linux dependent ones, like chvt, ps, reboot, ..), but half of them
- does (like basename, cat, echo, etc..). All was done almost WITHOUT utils
- source code changes, (except few badly written utils), all changes were on
- macro level. This is still the work in progress though.
-     
- I have launched them only on FreeBSD 3.2. I do not know whether they run on
- older/newer versions. Also utils behavior was not thoroughly tested, so some
- weird bugs may exist.. Enjoy :)
-     
- Ah.. Yes, asmutils still work on Linux :-)
-     
- Good news are that now I can claim that it is possible to port asmutils
- (well, at least some of them) to any ELF/i386 based system just by providing
- OS dependent include file with OS dependent definitions (syscall numbers, etc),
- and a couple of lines in makefile and system.inc.
-     
- If you are interested in asmutils running on your Unix, I am willing to help.
- However I need that distribution, so you will have to donate me CD's (do not
- ask me to download it from the net!). Drop me a mail if you are interested.
 
-0.06 release notes
+Current release notes (0.08)
   
- A lot of new utils were added, and existing were improved.
- Main contributors for this release are Dmitry Bakhvalov
- and Cecchinel Stephan (thanks, guys!).
+ There are plenty of different changes. Here are few worth to mention.
      
- Assembly libc is up, and it's already possible to link a simple
- program against it. Plenty of functions are missing, but just the
- fact gives the hope ;) One of the outstanding features of this libc
- (of course except the size and the speed) is that it will be
- possible to use both cdecl and fastcall compiled programs WITHOUT
- libc recompilation, i.e. calling convention will be configured at
- RUNTIME (!). How can it be done?? Well, remember that everything is
- possible with assembly language ;)
+ I tried to port asmutils to BeOS, but because of confusing and weird
+ BeOS kernel bugs asmutils/BeOS do not work yet.
+ Read my comments in os_beos.inc for details.
      
- Full list of utils in 0.06 release (total of 50):
-
-	arch basename cat chmod chroot chvt deallocvt df dmesg domainname
-	echo eject factor false grep halt hosname httpd id kill ln ls
-	lsmod lzss md5sum mkdir more mount nc poweroff ps pwd rc6crypt
-	reboot rmdir rmdsum rmmod sleep softdog strings swapoff swapon
-	sync tee true umount uname update wc yes
+ Another cool port was done -- libc port :); i.e. it is possible to fallback on
+ libc functions instead of using direct kernel syscalls (by defining OS=LIBC in
+ Makefile). This can be useful when running project on OS with unknown/broken
+ kernel call conventions (f.e. by means of this asmutils can run on BeOS).
+     
+ There were several portability improvements: kill and tee now run on FreeBSD.
+ httpd was rewritten and now is only 596 bytes on Linux (and almost works on
+ FreeBSD, but falls into endless fork loop on the first request, why? :).
+ Network syscalls macros added (sys_socket, sys_accept.. etc, instead of Linux
+ specific sys_socketcall), so it's possible to write portable network utils now.
+     
+ Assembly libc now features run-time fastcall support.
+     
+ There were other various internal improvements, new features, and bugfixes.
+     
+ Full list of utils in 0.08 release (total of 52):
+     
+    arch basename cat chmod chroot chvt deallocvt df dmesg domainname echo
+    eject env factor false grep halt hosname httpd id kill ln ls lsmod
+    lzss md5sum mkdir more mount nc poweroff ps pwd rc6crypt reboot
+    rmdir rmdsum rmmod sleep sln softdog strings swapoff swapon sync
+    tee true umount uname update wc yes
        
  GNU compliant utils:
 
-	arch basename echo factor false pwd sleep sync tee true uname yes
-
+    arch basename echo factor false pwd sleep sync tee true uname yes
+       
  Almost GNU compliant utils:
 
-	chroot mkdir wc
-
- Please note that this compliance mainly affects command line
- options support; behavior is not well tested, however it SEEMS to
- be the same. You are especially encouraged to use and test them :)
+    chroot mkdir sln wc
+       
+ Please note that this compliance mainly affects command line options support;
+ behavior is not well tested, however it SEEMS to be the same.
+ You are especially encouraged to use and test them :)
  Long options like --version and --help are not supported.

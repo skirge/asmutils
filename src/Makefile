@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils
 #
-# $Id: Makefile,v 1.3 2000/02/10 15:07:04 konst Exp $
+# $Id: Makefile,v 1.4 2000/03/02 08:52:01 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -10,25 +10,30 @@
 
 #---------------------------------------------------------------------------#
 
-# Operating system (LINUX/FREEBSD)
+# Operating system (LINUX/FREEBSD/BEOS/LIBC)
 
 OS = LINUX
 
-# Optimization method (SIZE / SPEED)
+# Optimization method (SIZE/SPEED)
 
 OPTIMIZE = SIZE
-
-# Kernel version (LINUX only: 20/22)
-
-KERNEL = 22
-
-# ELF hack for smaller binaries (LINUX only)
-
-ELF_MACROS = y
 
 # Include version stamp into binaries
 
 #STAMP = y
+
+# LINUX only
+#
+# Kernel version (20/22)
+KERNEL = 22
+# ELF hack for smaller binaries
+ELF_MACROS = y
+
+# LIBC only
+#
+# Use custom startup code (currently works only with C style main() stack)
+# Use only with LIBC and only if utils fail without it (f.e. on BeOS)
+#STARTUP = y
 
 #---------------------------------------------------------------------------#
 
@@ -37,14 +42,14 @@ ELF_MACROS = y
 #---------------------------------------------------------------------------#
 
 AS = nasm
+LD = ld
 LN = ln -s
 LDFLAGS = -s
 ASFLAGS = -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__
 
-FILES = basename cat echo mkdir pwd\
-	sleep sync true uname yes\
-	factor ln more md5sum lzss rmdsum strings id wc\
-	chmod chroot grep rc6crypt\
+FILES = basename cat echo mkdir kill pwd sleep sync tee true uname yes\
+	factor ln more md5sum lzss rmdsum strings id wc httpd\
+	chmod chroot grep rc6crypt sln env\
 #	dumpcore regs execve
 
 LINKS = false rmdir
@@ -55,8 +60,8 @@ ifdef LINUX
 
 FILES += dmesg df ls lsmod eject hostname mount\
 	 rmmod chvt reboot softdog swapon ps update\
-	 window leaves \
-	 kill nc httpd tee
+	 nc\
+	 window leaves
 
 LINKS += arch deallocvt domainname halt poweroff swapoff umount
 
@@ -67,13 +72,25 @@ KERNEL = 22
 
 endif
 
+ifdef LIBC
+ELF_MACROS =
+LD = gcc
+ASFLAGS += -D__LIBC__
+ifndef STARTUP
+LDFLAGS = -nostartfiles
+endif
+endif
+
+ifdef STARTUP
+ASFLAGS += -D__STARTUP__
+endif
+
 ifdef KERNEL
 ASFLAGS += -D__KERNEL__=$(KERNEL) 
 endif
 ifdef STAMP
-ASFLAGS += -DSTAMP_VERSION="'asmutils 0.07'" -DSTAMP_DATE="'$(shell date "+%d-%b-%Y %H:%M")'"
+ASFLAGS += -DSTAMP_VERSION="'asmutils 0.08'" -DSTAMP_DATE="'$(shell date "+%d-%b-%Y %H:%M")'"
 endif
-
 
 ifdef ELF_MACROS
 
@@ -115,6 +132,10 @@ links:
 	mkln true false;\
 	mkln uname arch;\
 	)
+
+install:
+	mkdir -p ../bin/$(OS)-$(KERNEL)
+	cp -rd $(FILES) $(LINKS) ../bin/$(OS)-$(KERNEL)
 
 clean:
 	rm -f *.o $(FILES) $(LINKS)

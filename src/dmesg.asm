@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: dmesg.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: dmesg.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;hackers' dmesg
 ;
@@ -21,22 +21,17 @@
 CODESEG
 
 START:
-%if __KERNEL__ = 20
-	_mov	ebx,3	;just print the buffer [3]
-%elif __KERNEL__ = 22
-	mov	bl,0x3
-%endif
+	_mov	ebx,3		;just print the buffer [3]
 	pop	edi		;edi holds argument count
 	dec	edi
 	jz	.forward
 	pop	eax		;our own name
 	pop	eax
-	cmp	word [eax], "-c"
+	cmp	word [eax],"-c"
 	jz	.forward
-.clearbuf:
 	inc	ebx		;clear the kernel buffer [4] (-c argument)
 .forward:
-	sys_syslog EMPTY,Buf,BufSize
+	sys_syslog EMPTY, Buf, BufSize
 ;	mov	edx,eax
 ;	sys_write STDOUT,Buf
 	xchg	edi,ecx
@@ -46,12 +41,8 @@ START:
 	jnz	.do_write
 	cmp	byte [edi+2],'>'
 	jnz	.do_write
-	inc	edi
-	inc	edi
-	inc	edi
-	dec	esi
-	dec	esi
-	dec	esi
+	_add	edi,3
+	_sub	esi,3
 .do_write:
 	sys_write STDOUT,edi,1
 	inc	edi

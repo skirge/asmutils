@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Bart Hanssens <antares@mail.dma.be>
 ;
-;$Id: eject.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: eject.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;hackers' eject (eject CD-ROM)
 ;
@@ -10,10 +10,7 @@
 ;
 ;if no device is given, use /dev/cdrom
 
-
 %include "system.inc"
-
-%assign	CDROMEJECT	0x5309
 
 CODESEG
 

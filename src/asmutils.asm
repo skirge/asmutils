@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: asmutils.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: asmutils.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;asmutils multicall binary
 
@@ -16,6 +16,7 @@ dd	"base",	_basename
 dd	"echo",	_echo
 dd	"fact",	_factor
 dd	"fals",	_true
+dd	"kill",	_kill
 dd	"pwd",	_pwd
 dd	"slee",	_sleep
 dd	"sync",	_sync
@@ -26,5 +27,5 @@ dd	"yes",	_yes
 
 START:
 
-exit:
+.exit:
 	sys_exit

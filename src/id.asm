@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: id.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: id.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;hackers' id
 ;
@@ -20,7 +20,7 @@ START:
 		mov	ebx,"uid="
 		call	print_stuff
 		
-		sys_gegid
+		sys_getgid
 		mov	bl,'g'			; ebx="gid="
 		call	print_stuff
 		

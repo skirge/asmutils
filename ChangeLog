@@ -1,3 +1,18 @@
+02-Mar-2000:	asmutils 0.08
+
+	- sln (KB)
+	- env (EP)
+	- network syscalls rewritten (KB)
+	- assembly libc: fastcall support (KB)
+	- portability fixes: kill, tee, httpd (KB)
+	- project ported to libc :) (KB)
+	- initial BeOS support (KB)
+	- size improvements (KB)
+	- window.asm and leaves.asm improved (KB)
+	- system macros bugfixes (KB)
+	- bugfixes in df (AG)
+	- bugfix in id (KB)
+
 
 10-Feb-2000:	asmutils 0.07
 

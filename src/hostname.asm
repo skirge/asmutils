@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: hostname.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: hostname.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;hackers' hostname/domainname
 ;
@@ -20,9 +20,7 @@
 CODESEG
 
 START:
-%if __KERNEL__ = 20
-	_mov	edi,0
-%endif
+	xor	edi,edi
 	pop	ebx
 	pop	esi
 .n1:

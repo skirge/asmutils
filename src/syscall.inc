@@ -1,17 +1,19 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.3 2000/02/10 15:07:04 konst Exp $
+; $Id: syscall.inc,v 1.4 2000/03/02 08:52:01 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 10-Feb-2000
-; version	: 0.07
+; modified	: 28-Feb-2000
+; version	: 0.08
 ; assembler	: nasm 0.98
 ; description	: system call macros
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
 ; comment	: included internally from system.inc
 
-%ifdef __SYSTEM_INC
+%ifndef	__SYSTEM_INC
+%error "this file must be included internally from system.inc !"
+%endif
 
 %ifndef __SYSCALL_INC
 %define __SYSCALL_INC
@@ -27,7 +29,7 @@
 ; %1	syscall name
 ; %2	number of syscall parameters
 ; %3	number of registers to prepare
-; %4...	register values
+; %4...	parameters
 
 %macro	__syscall 2-8
 
@@ -48,10 +50,10 @@
 	_mov	ebx,%4
 %endif
 %endif
-	_mov	eax,SYS_%{1}
 
 %ifdef __LINUX__
 
+	_mov	eax,SYS_%{1}
 	int	0x80
 
 %else
@@ -82,13 +84,28 @@
 
 %endif
 
+%ifdef __LIBC__
+
+extern %{1}
+	call	%{1}
+	_add	esp, (%{2}) * 4
+
+%elifdef __FREEBSD__
+
+	_mov	eax,SYS_%{1}
 	push	eax
-
-	db	0x9A
-	dd	0
-	dw	7
-
+	call	7:0
 	_add	esp, (%{2} + 1) * 4
+
+%elifdef __BEOS__
+
+	push	dword %%ret
+	_mov	eax,SYS_%{1}
+	int	0x25
+%%ret:
+	_add	esp, (%{2} + 1) * 4
+
+%endif
 
 %endif
 
@@ -314,6 +331,22 @@
 %endmacro
 
 ;
+;fs/fcntl.c
+;
+
+%macro sys_fcntl 0-3
+    __syscall fcntl, 3, %0, %1, %2, %3
+%endmacro
+
+%macro sys_dup 0-1
+	__syscall dup, 1, %0, %1, %2
+%endmacro
+
+%macro sys_dup2 0-2
+	__syscall dup2, 2, %0, %1, %2
+%endmacro
+
+;
 ;fs/namei.c
 ;
 
@@ -522,25 +555,46 @@
 	__syscall swapoff, 1, %0, %1
 %endmacro
 
-
 ;--------------------------------------------------------------------------
-;net/
+;network syscalls
 ;--------------------------------------------------------------------------
 
-;
-;net/socket.c
-;
+%ifndef __LINUX__	;linux has its own implementation in os_linux.inc
 
-%macro sys_socketcall 0-3
-        __syscall socketcall, 3, %0, %1, %2, %3
+%macro	sys_socket 3
+	__syscall socket, 3, %0, %1, %2, %3
 %endmacro
 
+%macro	sys_accept 3
+	__syscall accept, 3, %0, %1, %2, %3
+%endmacro
+
+%macro	sys_connect 3
+	__syscall connect, 3, %0, %1, %2, %3
+%endmacro
+
+%macro	sys_bind 3
+	__syscall bind, 3, %0, %1, %2, %3
+%endmacro
+
+%macro	sys_setsockopt 5
+	__syscall setsockopt, 5, %0, %1, %2, %3, %4, %5
+%endmacro
+
+%macro	sys_getsockopt 5
+	__syscall getsockopt, 5, %0, %1, %2, %3, %4, %5
+%endmacro
+
+%macro	sys_shutdown 2
+	__syscall shutdown, 2, %0, %1, %2
+%endmacro
+
+%macro	sys_listen 2
+	__syscall listen, 2, %0, %1, %2
+%endmacro
+
+%endif	;__LINUX__
+
 ;--------------------------------------------------------------------------
 
-%endif	;__SYSCALL_INC
-
-%else
-
-%error "this file must be included internally from system.inc !"
-
-%endif	;__SYSTEM_INC
+%endif

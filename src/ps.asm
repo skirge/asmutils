@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: ps.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: ps.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;hackers' ps
 ;
@@ -26,6 +26,10 @@
 
 		%include "system.inc"
 		
+%assign	statbuf_size	1024
+%assign	dirbuf_size	4096
+
+
 		CODESEG
 		
 START:
@@ -273,11 +277,8 @@ fields:		db	1,7,3,24,2,0
 
 file_buf:	resb	256
 
-statbuf:	resb	1024
-statbuf_size	equ	$-statbuf
-
-dirbuf:		resb	4096
-dirbuf_size	equ	$-dirbuf
+statbuf	resb	statbuf_size
+dirbuf	resb	dirbuf_size
 
 		END		
 								

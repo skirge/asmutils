@@ -1,6 +1,6 @@
 ;Copyright (C) Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: true.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: true.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;hackers' true/false
 ;
@@ -16,15 +16,13 @@
 CODESEG
 
 START:
-%if __KERNEL__ = 20
-	_mov	ebx,0
-%endif
 	pop	esi
 	pop	esi
 .n1:				; how we are called?
 	lodsb
 	or 	al,al
 	jnz	.n1
+	xor	ebx,ebx
 	cmp	word [esi-5],'tr'
 	jz	.exit
 	inc	ebx

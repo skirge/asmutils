@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: grep.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: grep.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;hackers' grep
 ;
@@ -20,20 +20,16 @@ CODESEG
 BufSize	equ	0x4000
 _q	equ	00000001b
 
-exit:
+_exit:
 	sys_exit [retcode]
 
 START:
-
-%if __KERNEL__ = 20
 	_mov	ebp,STDIN	;file handle (STDIN if no args)
-%endif
-
 	mov	[retcode],byte 1
 
 	pop	ebx
 	dec	ebx
-	jz	exit
+	jz	_exit
 	pop	esi
 	pop	edi		;get pattern
 
@@ -51,7 +47,7 @@ START:
 .next_file:
 	pop	ebx		;pop filename pointer
 	or	ebx,ebx
-	jz	exit		;exit if no more agrs
+	jz	_exit		;exit if no more agrs
 
 ; open O_RDONLY
 

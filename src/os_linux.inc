@@ -1,63 +1,22 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.1 2000/02/10 15:07:04 konst Exp $
+; $Id: os_linux.inc,v 1.2 2000/03/02 08:52:01 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 09-Feb-2000
-; version       : 0.07
+; modified      : 29-Feb-2000
+; version       : 0.08
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
 ; comment       : included internally from system.inc
 
-%ifdef	__SYSTEM_INC
+%ifndef __SYSTEM_INC
+%error "this file must be included internally from system.inc !"
+%endif
 
 %ifndef __LINUX_INC
 %define __LINUX_INC
-
-;
-;asm/signal.h
-;
-
-%assign SIG_DFL		0
-%assign SIG_IGN		1
-%assign SIG_ERR		-1
-
-%assign SIGHUP		1
-%assign SIGINT		2
-%assign SIGQUIT		3
-%assign SIGILL		4
-%assign SIGTRAP		5
-%assign SIGABRT		6
-%assign SIGIOT		6
-%assign SIGBUS		7
-%assign SIGFPE		8
-%assign SIGKILL		9
-%assign SIGUSR1		10
-%assign SIGSEGV		11
-%assign SIGUSR2		12
-%assign SIGPIPE		13
-%assign SIGALRM		14
-%assign SIGTERM		15
-%assign SIGSTKFLT	16
-%assign SIGCHLD		17
-%assign SIGCLD		SIGCHLD
-%assign SIGCONT		18
-%assign SIGSTOP		19
-%assign SIGTSTP		20
-%assign SIGTTIN		21
-%assign SIGTTOU		22
-%assign SIGURG		23
-%assign SIGXCPU		24
-%assign SIGXFSZ		25
-%assign SIGVTALRM	26
-%assign SIGPROF		27
-%assign SIGWINCH	28
-%assign SIGIO		29
-%assign SIGPOLL		SIGIO
-%assign SIGPWR		30
-%assign SIGUNUSED	31
 
 ;
 ;linux/reboot.h
@@ -97,13 +56,6 @@
 %assign MAP_NORESERVE	0x4000
 
 ;
-;linux/wait.h
-;
-
-%assign WNOHANG		1
-%assign WUNTRACED	2
-
-;
 ;linux/kd.h
 ;
 
@@ -113,12 +65,151 @@
 %assign KB_OTHER 0x03
 
 ;
+;linux/cdrom.h
+;
+
+%assign CDROMPAUSE		0x5301	;Pause Audio Operation
+%assign CDROMRESUME		0x5302	;Resume paused Audio Operation
+%assign CDROMPLAYMSF		0x5303	;Play Audio MSF (struct cdrom_msf)
+%assign CDROMPLAYTRKIND		0x5304	;Play Audio Track/index (struct cdrom_ti)
+%assign CDROMREADTOCHDR		0x5305	;Read TOC header (struct cdrom_tochdr)
+%assign CDROMREADTOCENTRY	0x5306	;Read TOC entry (struct cdrom_tocentry)
+%assign CDROMSTOP		0x5307	;Stop the cdrom drive
+%assign CDROMSTART		0x5308	;Start the cdrom drive
+%assign CDROMEJECT		0x5309	;Ejects the cdrom media
+%assign CDROMVOLCTRL		0x530a	;Control output volume (struct cdrom_volctrl)
+%assign CDROMSUBCHNL		0x530b	;Read subchannel data (struct cdrom_subchnl)
+%assign CDROMREADMODE2		0x530c	;Read CDROM mode 2 data (2336 Bytes) (struct cdrom_read)
+%assign CDROMREADMODE1		0x530d	;Read CDROM mode 1 data (2048 Bytes) (struct cdrom_read)
+%assign CDROMREADAUDIO		0x530e	;(struct cdrom_read_audio)
+%assign CDROMEJECT_SW		0x530f	;enable(1)/disable(0) auto-ejecting
+%assign CDROMMULTISESSION	0x5310	;Obtain the start-of-last-session address of multi session disks (struct cdrom_multisession)
+%assign CDROM_GET_MCN		0x5311	;Obtain the "Universal Product Code" if available (struct cdrom_mcn)
+%assign CDROM_GET_UPC		CDROM_GET_MCN	;This one is depricated, but here anyway for compatability
+%assign CDROMRESET		0x5312	;hard-reset the drive
+%assign CDROMVOLREAD		0x5313	;Get the drive's volume setting (struct cdrom_volctrl)
+%assign CDROMREADRAW		0x5314	;read data in raw mode (2352 Bytes)
+
+;
 ;linux/vt.h
 ;
 
 %assign VT_ACTIVATE 0x5606	;make vt active
 %assign VT_WAITACTIVE 0x5607	;wait for vt active
 %assign VT_DISALLOCATE 0x5608	;free memory associated to vt
+
+;
+;sys/socket.h
+;
+
+%assign	SOL_SOCKET	1
+
+%assign SO_DEBUG	1
+%assign SO_REUSEADDR	2
+%assign SO_TYPE		3
+%assign SO_ERROR	4
+%assign SO_DONTROUTE	5
+%assign SO_BROADCAST	6
+%assign SO_SNDBUF	7
+%assign SO_RCVBUF	8
+%assign SO_KEEPALIVE	9
+%assign SO_OOBINLINE	10
+%assign SO_NO_CHECK	11
+%assign SO_PRIORITY	12
+%assign SO_LINGER	13
+%assign SO_BSDCOMPAT	14
+%assign SO_REUSEPORT	15
+%assign SO_PASSCRED	16
+%assign SO_PEERCRED	17
+%assign SO_RCVLOWAT	18
+%assign SO_SNDLOWAT	19
+%assign SO_RCVTIMEO	20
+%assign SO_SNDTIMEO	21
+
+;
+;sys/vfs.h
+;
+
+struc statfs
+.f_type		LONG	1	;fs type
+.f_bsize	LONG	1	;optimal transfer block size
+.f_blocks	LONG	1	;total data blocks
+.f_bfree	LONG	1	;free blocks
+.f_bavail	LONG	1	;free blocks avail to non-superuser
+.f_files	LONG	1	;total file nodes
+.f_free		LONG	1	;free file nodes
+.f_fsid		LONG	1	;fs id
+.f_namelen	LONG	1	;maximum filename length
+.f_reserv	LONG  	6	;reserved
+endstruc
+
+;
+;arch/i386/kernel/sys_i386.c
+;
+
+struc	mmap_arg_struct
+.addr	ULONG	1
+.len	ULONG	1
+.prot	ULONG	1
+.flags	ULONG	1
+.fd	ULONG	1
+.offset	ULONG	1
+endstruc
+
+;
+;asm/ptrace.h
+;
+
+struc pt_regs
+.ebx	ULONG	1
+.ecx	ULONG	1
+.edx	ULONG	1
+.esi	ULONG	1
+.edi	ULONG	1
+.ebp	ULONG	1
+.eax	ULONG	1
+%if __KERNEL__ = 20
+.ds	USHORT	1
+.__dsu	USHORT	1
+.es	USHORT	1
+.__esu	USHORT	1
+.fs	USHORT	1
+.__fsu	USHORT	1
+.gs	USHORT	1
+.__gsu	USHORT	1
+%elif __KERNEL__ = 22
+.xds	INT	1
+.xes	INT	1
+%endif
+.orig_eax	ULONG	1
+.eip		ULONG	1
+%if __KERNEL__ = 20
+.cs	USHORT	1
+.__csu	USHORT	1
+%elif __KERNEL__ = 22
+.xcs	INT	1
+%endif
+.eflags	ULONG	1
+.esp	ULONG	1
+%if __KERNEL__ = 20
+.ss	USHORT	1
+.__ssu	USHORT	1
+%elif __KERNEL__ = 22
+.xss	INT	1
+%endif
+endstruc
+
+;
+;linux/dirent.h
+;
+
+ld_name		equ	256
+struc dirent
+.d_ino		ULONG	1
+.d_off		ULONG	1
+.d_reclen	USHORT	1
+.d_name		CHAR	ld_name
+endstruc
 
 ;
 ;asm/unistd.h
@@ -296,7 +387,7 @@
 %assign SYS_nfsservctl		169
 %assign SYS_setresgid		170
 %assign SYS_getresgid		171
-%assign SYS_prctl              172
+%assign SYS_prctl		172
 %assign SYS_rt_sigreturn	173
 %assign SYS_rt_sigaction	174
 %assign SYS_rt_sigprocmask	175
@@ -320,7 +411,7 @@
 %endif
 
 ;
-;linux/net.h (socket calls_
+;linux/net.h (socket calls)
 ;
 
 %assign SYS_SOCKET	1	; sys_socket
@@ -341,10 +432,76 @@
 %assign SYS_SENDMSG	16	; sys_sendmsg
 %assign SYS_RECVMSG	17	; sys_recvmsg
 
+;
+;system calls
+;
+
+;--------------------------------------------------------------------------
+;net/
+;--------------------------------------------------------------------------
+
+;
+;net/socket.c
+;
+
+%macro sys_socketcall 0-3
+        __syscall socketcall, 3, %0, %1, %2, %3
+%endmacro
+
+%macro	sys_socket 3
+	_push	%3
+	_push	%2
+	_push	%1
+	sys_socketcall SYS_SOCKET,esp
+	_add	esp,(%0 * 4)
+%endmacro
+
+%macro	sys_accept 3
+	_push	%3
+	_push	%2
+	_push	%1
+	sys_socketcall SYS_ACCEPT,esp
+	_add	esp,(%0 * 4)
+%endmacro
+
+%macro	sys_connect 3
+	_push	%3
+	_push	%2
+	_push	%1
+	sys_socketcall SYS_CONNECT,esp
+	_add	esp,(%0 * 4)
+%endmacro
+
+%macro	sys_bind 3
+	_push	%3
+	_push	%2
+	_push	%1
+	sys_socketcall SYS_BIND,esp
+	_add	esp,(%0 * 4)
+%endmacro
+
+%macro	sys_setsockopt 5
+	_push	%5
+	_push	%4
+	_push	%3
+	_push	%2
+	_push	%1
+	sys_socketcall SYS_SETSOCKOPT,esp
+	_add	esp,(%0 * 4)
+%endmacro
+
+%macro	sys_shutdown 2
+	_push	%2
+	_push	%1
+	sys_socketcall SYS_SHUTDOWN,esp
+	_add	esp,(%0 * 4)
+%endmacro
+
+%macro	sys_listen 2
+	_push	%2
+	_push	%1
+	sys_socketcall SYS_LISTEN,esp
+	_add	esp,(%0 * 4)
+%endmacro
+
 %endif	;__LINUX_INC
-
-%else
-
-%error "this file must be included internally from system.inc !"
-
-%endif	;__SYSTEM_INC

@@ -1,17 +1,19 @@
 ; Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_freebsd.inc,v 1.2 2000/02/10 15:14:18 konst Exp $
+; $Id: os_freebsd.inc,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ; file          : os_freebsd.inc
 ; created       : 08-Feb-2000
-; modified      : 10-Feb-2000
-; version       : 0.07
+; modified      : 28-Feb-2000
+; version       : 0.08
 ; assembler     : nasm 0.98
 ; description   : freebsd kernel defined constants and structures
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
 ; comment       : included internally from system.inc
 
-%ifdef	__SYSTEM_INC
+%ifndef __SYSTEM_INC
+%error "this file must be included internally from system.inc !"
+%endif
 
 %ifndef __FREEBSD_INC
 %define __FREEBSD_INC
@@ -42,6 +44,7 @@
 %define	SYS_getfsstat	18
 ;				/* 19 is old lseek */
 %define	SYS_getpid	20
+%define SYS_signal	SYS_getpid	;bad fix
 %define	SYS_mount	21
 %define	SYS_umount	22
 %define	SYS_setuid	23
@@ -90,7 +93,7 @@
 %define	SYS_vfork	66
 ;				/* 67 is obsolete vread */
 ;				/* 68 is obsolete vwrite */
-%define	SYS_brk	69
+%define	SYS_sbrk	69
 %define	SYS_sstk	70
 ;				/* 71 is old mmap */
 %define	SYS_vadvise	72
@@ -275,10 +278,23 @@
 %define	SYS_kldsym	337
 %define	SYS_MAXSYSCALL	338
 
+
+;
+;sys/socket.h
+;
+
+%assign	SO_DEBUG	0x0001		;turn on debugging info recording
+%assign	SO_ACCEPTCONN	0x0002		;socket has had listen()
+%assign	SO_REUSEADDR	0x0004		;allow local address reuse
+%assign	SO_KEEPALIVE	0x0008		;keep connections alive
+%assign	SO_DONTROUTE	0x0010		;just use interface addresses
+%assign	SO_BROADCAST	0x0020		;permit sending of broadcast msgs
+%assign	SO_USELOOPBACK	0x0040		;bypass hardware when possible
+%assign	SO_LINGER	0x0080		;linger on close if data present
+%assign	SO_OOBINLINE	0x0100		;leave received OOB data in line
+%assign	SO_REUSEPORT	0x0200		;allow local address & port reuse
+%assign	SO_TIMESTAMP	0x0400		;timestamp received dgram traffic
+
+%assign	SOL_SOCKET	0xffff		;options for socket level
+
 %endif	;__FREEBSD_INC
-
-%else
-
-%error "this file must be included internally from system.inc !"
-
-%endif	;__SYSTEM_INC

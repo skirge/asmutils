@@ -35,15 +35,18 @@ N: Indrek Mandre (IM)
 E: indrek.mandre@tallinn.ee
 D: basename.asm chvt.asm dmesg.asm false.asm lsmod.asm
 D: httpd.asm rmmod.asm true.asm yes.asm
-D: suggested defines.inc
 D: hackbin.pl testbasename.pl (in < 0.06)
+
+N: Edward Popkov (EP)
+E: evpopkov@carry.neonet.lv
+D: env.asm
 
 N: Brian Raiter (BR)
 E: breadbox@muppetlabs.com
 D: factor.asm, elf.inc
 
 N: Cecchinel Stephan (CS)
-E: interzone@pacwan.fr
+E: inter.zone@free.fr
 D: md5sum.asm, rmdsum.asm, lzss.asm, nc.asm, rc6crypt.asm, clib.asm
 D: rc6, md5, rmd160 algos
 

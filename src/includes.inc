@@ -1,17 +1,19 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.1 2000/02/10 15:14:18 konst Exp $
+; $Id: includes.inc,v 1.2 2000/03/02 08:52:01 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 09-Feb-2000
-; version       : 0.07
+; modified      : 29-Feb-2000
+; version       : 0.08
 ; assembler     : nasm 0.98
 ; description   : general constants and structures from header files (libc)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
 ; comment       : included internally from system.inc
 
-%ifdef	__SYSTEM_INC
+%ifndef	__SYSTEM_INC
+%error "this file must be included internally from system.inc !"
+%endif
 
 %ifndef __INCLUDES_INC
 %define __INCLUDES_INC
@@ -49,19 +51,6 @@
 %assign SEEK_CUR	1
 %assign SEEK_END	2
 
-;
-;unistd.h
-;
-
-%assign	R_OK	4	; read
-%assign W_OK	2	; write
-%assign X_OK	1	; execute
-%assign F_OK	0	; existence
-
-;
-;asm/fcntl.h
-;
-
 %assign O_RDONLY	0
 %assign O_WRONLY	1
 %assign O_RDWR		2
@@ -81,10 +70,69 @@
 %assign O_NOFOLLOW	400000q
 
 ;
-;
+;unistd.h
 ;
 
-;* Supported address families. *
+%assign	R_OK	4	; read
+%assign W_OK	2	; write
+%assign X_OK	1	; execute
+%assign F_OK	0	; existence
+
+;
+;signal.h
+;
+
+%assign SIG_DFL		0
+%assign SIG_IGN		1
+%assign SIG_ERR		-1
+
+%assign	SIGHUP		1	; Hangup (POSIX)
+%assign	SIGINT		2	; Interrupt (ANSI)
+%assign	SIGQUIT		3	; Quit (POSIX)
+%assign	SIGILL		4	; Illegal instruction (ANSI)
+%assign	SIGTRAP		5	; Trace trap (POSIX)
+%assign	SIGABRT		6	; Abort (ANSI)
+%assign	SIGIOT		6	; IOT trap (4.2 BSD)
+%assign	SIGBUS		7	; BUS error (4.2 BSD)
+%assign	SIGFPE		8	; Floating-point exception (ANSI)
+%assign	SIGKILL		9	; Kill, unblockable (POSIX)
+%assign	SIGUSR1		10	; User-defined signal 1 (POSIX)
+%assign	SIGSEGV		11	; Segmentation violation (ANSI)
+%assign	SIGUSR2		12	; User-defined signal 2 (POSIX)
+%assign	SIGPIPE		13	; Broken pipe (POSIX)
+%assign	SIGALRM		14	; Alarm clock (POSIX)
+%assign	SIGTERM		15	; Termination (ANSI)
+%assign	SIGSTKFLT	16	; Stack fault
+%assign	SIGCHLD		17	; Child status has changed (POSIX)
+%assign	SIGCLD		SIGCHLD	; Same as SIGCHLD (System V)
+%assign	SIGCONT		18	; Continue (POSIX)
+%assign	SIGSTOP		19	; Stop, unblockable (POSIX)
+%assign	SIGTSTP		20	; Keyboard stop (POSIX)
+%assign	SIGTTIN		21	; Background read from tty (POSIX)
+%assign	SIGTTOU		22	; Background write to tty (POSIX)
+%assign	SIGURG		23	; Urgent condition on socket (4.2 BSD)
+%assign	SIGXCPU		24	; CPU limit exceeded (4.2 BSD)
+%assign	SIGXFSZ		25	; File size limit exceeded (4.2 BSD)
+%assign	SIGVTALRM	26	; Virtual alarm clock (4.2 BSD)
+%assign	SIGPROF		27	; Profiling alarm clock (4.2 BSD)
+%assign	SIGWINCH	28	; Window size change (4.3 BSD, Sun)
+%assign	SIGIO		29	; I/O now possible (4.2 BSD)
+%assign	SIGPOLL		SIGIO	; Pollable event occurred (System V)
+%assign	SIGPWR		30	; Power failure restart (System V)
+%assign SIGUNUSED	31
+%assign	_NSIG		64	; Biggest signal number + 1
+
+;
+;wait.h
+;
+
+%assign WNOHANG		1
+%assign WUNTRACED	2
+
+;
+;sys/socket.h
+;
+
 %assign AF_UNSPEC	0
 %assign AF_UNIX		1	; Unix domain sockets
 %assign AF_LOCAL	1	; POSIX name for AF_UNIX
@@ -112,7 +160,6 @@
 %assign AF_IRDA		23	; IRDA sockets
 %assign AF_MAX		32	; For now..
 
-;* Protocol families, same as address families.
 %assign PF_UNSPEC	AF_UNSPEC
 %assign PF_UNIX		AF_UNIX
 %assign PF_LOCAL	AF_LOCAL
@@ -140,16 +187,12 @@
 %assign PF_IRDA		AF_IRDA
 %assign PF_MAX		AF_MAX
 
-%assign SOCK_STREAM    1		; stream (connection) socket
-%assign SOCK_DGRAM     2		; datagram (conn.less) socket
-%assign SOCK_RAW       3		; raw socket
-%assign SOCK_RDM       4		; reliably-delivered message
-%assign SOCK_SEQPACKET 5		; sequential packet socket
-%assign SOCK_PACKET    10		; linux specific way of
-					; getting packets at the dev
-					; level.  For writing rarp and
-					; other similar things on the
-					; user level.
+%assign SOCK_STREAM    1	;stream (connection) socket
+%assign SOCK_DGRAM     2	;datagram (conn.less) socket
+%assign SOCK_RAW       3	;raw socket
+%assign SOCK_RDM       4	;reliably-delivered message
+%assign SOCK_SEQPACKET 5	;sequential packet socket
+%assign SOCK_PACKET    10	;linux specific way of getting packets at the dev level
 
 %assign IPPROTO_IP		0		; Dummy protocol for TCP
 %assign IPPROTO_HOPOPTS		0		; IPv6 Hop-by-Hop options
@@ -177,14 +220,41 @@
 %assign IPPROTO_PIM		103		; Protocol Independent Multicast
 %assign IPPROTO_RAW		255		; Raw IP packets
 
-;
-;
-;
-
-%assign	UTS_LEN	64
+%ifdef __LIBC__
 
 ;
+;sys/socket.h
 ;
+
+%assign	SOL_SOCKET	1
+
+%assign SO_DEBUG	1
+%assign SO_REUSEADDR	2
+%assign SO_TYPE		3
+%assign SO_ERROR	4
+%assign SO_DONTROUTE	5
+%assign SO_BROADCAST	6
+%assign SO_SNDBUF	7
+%assign SO_RCVBUF	8
+%assign SO_KEEPALIVE	9
+%assign SO_OOBINLINE	10
+%assign SO_NO_CHECK	11
+%assign SO_PRIORITY	12
+%assign SO_LINGER	13
+%assign SO_BSDCOMPAT	14
+%assign SO_REUSEPORT	15
+%assign SO_PASSCRED	16
+%assign SO_PEERCRED	17
+%assign SO_RCVLOWAT	18
+%assign SO_SNDLOWAT	19
+%assign SO_RCVTIMEO	20
+%assign SO_SNDTIMEO	21
+
+%endif
+
+
+;
+;datatypes and structures
 ;
 
 %define		INT		resd
@@ -218,10 +288,20 @@
 %define		_U32		dd
 
 ;
-;linux/utsname.h
+;time.h
 ;
 
-luts		equ	65
+struc timespec
+.tv_sec		ULONG	1
+.tv_nsec	ULONG	1
+endstruc
+
+;
+;sys/utsname.h
+;
+
+%assign	UTS_LEN	64
+%assign	luts	65
 
 struc new_utsname
 .sysname	CHAR	luts
@@ -233,16 +313,7 @@ struc new_utsname
 endstruc
 
 ;
-;linux/time.h
-;
-
-struc timespec
-.tv_sec		ULONG	1
-.tv_nsec	ULONG	1
-endstruc
-
-;
-;asm/stat.h
+;sys/stat.h
 ;
 
 struc stat
@@ -269,75 +340,7 @@ struc stat
 endstruc
 
 ;
-;linux/dirent.h
-;
-
-ld_name		equ	256
-struc dirent
-.d_ino		ULONG	1
-.d_off		ULONG	1
-.d_reclen	USHORT	1
-.d_name		CHAR	ld_name
-endstruc
-
-;
-;arch/i386/kernel/sys_i386.c
-;
-
-struc	mmap_arg_struct
-.addr	ULONG	1
-.len	ULONG	1
-.prot	ULONG	1
-.flags	ULONG	1
-.fd	ULONG	1
-.offset	ULONG	1
-endstruc
-
-;
-;asm/ptrace.h
-;
-
-struc pt_regs
-.ebx	ULONG	1
-.ecx	ULONG	1
-.edx	ULONG	1
-.esi	ULONG	1
-.edi	ULONG	1
-.ebp	ULONG	1
-.eax	ULONG	1
-%if __KERNEL__ = 20
-.ds	USHORT	1
-.__dsu	USHORT	1
-.es	USHORT	1
-.__esu	USHORT	1
-.fs	USHORT	1
-.__fsu	USHORT	1
-.gs	USHORT	1
-.__gsu	USHORT	1
-%elif __KERNEL__ = 22
-.xds	INT	1
-.xes	INT	1
-%endif
-.orig_eax	ULONG	1
-.eip		ULONG	1
-%if __KERNEL__ = 20
-.cs	USHORT	1
-.__csu	USHORT	1
-%elif __KERNEL__ = 22
-.xcs	INT	1
-%endif
-.eflags	ULONG	1
-.esp	ULONG	1
-%if __KERNEL__ = 20
-.ss	USHORT	1
-.__ssu	USHORT	1
-%elif __KERNEL__ = 22
-.xss	INT	1
-%endif
-endstruc
-
-;
-;linux/socket.h
+;socket.h
 ;
 
 struc	sockaddr
@@ -346,18 +349,11 @@ struc	sockaddr
 endstruc
 
 ;
-;linux/in.h
+;in.h
 ;
 
 struc in_addr
 .s_addr		U32	1
 endstruc
 
-
 %endif	;__INCLUDES_INC
-
-%else
-
-%error "this file must be included internally from system.inc !"
-
-%endif	;__SYSTEM_INC

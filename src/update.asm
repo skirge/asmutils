@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: update.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: update.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;hackers' update
 ;
@@ -42,14 +42,9 @@ START:
 
 ;convert string to 16 bit integer
 
-%if __KERNEL__ = 20
-;	_mov	eax,0
-	_mov	ebx,10
-	_mov	ecx,0
-%elif __KERNEL__ = 22
+	xor	eax,eax
+	xor	ecx,ecx
 	mov	bl,10
-%endif
-
 .next:
 	mov	cl,[esi]
 	sub	cl,'0'

@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: uname.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: uname.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;hackers' uname/arch	[GNU replacement]
 ;
@@ -63,7 +63,7 @@ args:
 	pop	esi
 	lodsb
 	cmp	al,'-'
-	jnz	near exit
+	jnz	near _exit
 
 .inner_stage:
 	lodsb
@@ -84,13 +84,13 @@ args:
 	jmp short .inner_stage
 .a:
 	cmp	al,'a'
-	jnz	exit
+	jnz	_exit
 	or	dl,SYSNAME|NODENAME|RELEASE|VERSION|MACHINE
 	jmp short .inner_stage
 
 .check:
 	or	dl,dl
-	jz	exit
+	jz	_exit
 
 	dec	ebx
 	jnz	args
@@ -133,7 +133,7 @@ get_uname:
 	pop	ecx
 	loop	.printinfo
 
-exit:
+_exit:
 	sys_write	EMPTY,lf,1
 	sys_exit
 

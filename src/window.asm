@@ -1,8 +1,8 @@
 ;Copyright (C) 1995-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: window.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: window.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
-;test window example (currently works only in 80x25)
+;text window example
 
 
 %include "system.inc"
@@ -17,32 +17,21 @@ cWin	equ	0x01DB
 cShadow	equ	0x03      ; shadow attribute
 
 
-scradd		equ	4
-xcoef		equ	2
-ycoef		equ	0xA0
+CODESEG
 
-cEnd		equ	0x00
-cXY		equ	0x02
-cAttr		equ	0x01
-cDefAttr	equ	0x07
-
-%define xy(x,y) (x) * xcoef + (y) * ycoef
-
-%macro s_end 0
-	db	cEnd
-%endmacro
-
-%macro s_attr 1
-	db	cAttr,%1
-%endmacro
+%define xy(x,y) ((x) << 8) | (y)
 
 %macro s_xy 2
 	db	cXY
-	dw	xy(%1,%2)
+	db	%2
+	db	%1
 %endmacro
-
-
-CODESEG
+%macro s_attr 1
+	db	cAttr,%1
+%endmacro
+%macro s_end 0
+	db	cEnd
+%endmacro
 
 
 sHeader:
@@ -89,9 +78,28 @@ sStatus:
 START:
 	call	open_screen
 
+;
+;calculate scr len
+;
+	xor	eax,eax
+	mov	ax,word [sMaxY]
+	mul	ah
+	shl	eax,1
+	mov	[len_scr],eax
+
+;save old screen
+
+	mov	ebx,old_scr
+	_mov	ecx,xy(0,0)
+	call	vread
+
 ;clear screen
 
-	mov	ecx,2000
+	_mov	ecx,xy(0,0)
+	call	gotoXY
+
+	mov	ecx,eax
+	shr	ecx,1
 	mov	ax,cBack
 .next:
 	call	writech
@@ -102,25 +110,28 @@ START:
 
 	call	window
 
-	call	close_screen
-
 ;read a key
 
-	xor	ebx,ebx
-	mov	edx,ebx
-	inc	edx
-	mov	ecx,tmp
-	sys_read
+	sys_read STDIN,tmp,1
 
-	sys_exit
+;restore old screen
+
+	mov	eax,len_scr
+	mov	ebx,old_scr
+	_mov	ecx,xy(0,0)
+	call	vwrite
+
+	call	close_screen
+
+	sys_exit_true
 
 ;
 ; Window function
 ;
 
 window:
-	mov	ecx,xy(wX,wY)
-	call	gotoxy
+	_mov	ecx,xy(wX,wY)
+	call	gotoXY
 	
 	mov	ecx,wXlen
 	mov	ax,cWin
@@ -132,13 +143,9 @@ window:
 .middle:
 	push	ecx
 	add	ecx,wY
-	mov	eax,ycoef
-	mul	ecx
-	add	eax,wX*2
-	xchg	eax,ecx
-	call	gotoxy
-	mov	ax,cWin
-	mov	al,221
+	add	ecx,(wX << 8)
+	call	gotoXY
+	mov	ax,(cWin & 0xf0) | 221
 	call	writech
 	mov	ecx,wXlen-2
 	mov	al,' '
@@ -154,7 +161,7 @@ window:
 	loop	.middle
 
 	mov	ecx,xy(wX,wY+wYlen-1)
-	call	gotoxy
+	call	gotoXY
 
 	mov	ecx,wXlen
 	mov	ax,cWin
@@ -167,7 +174,7 @@ window:
 	call	write_attr
 
 	mov	ecx,xy(wX+2,wY+wYlen)
-	call	gotoxy
+	call	gotoXY
 	mov	ecx,wXlen
 .down:
 	call	write_attr	
@@ -185,18 +192,24 @@ window:
 ; Screen library itself
 ;
 
+MAX_X		equ	200
+MAX_Y		equ	100
 
-sScreenDevice	db	"/dev/vcsa0",0
+cXY		equ	0x02
+cAttr		equ	0x01
+cEnd		equ	0x00
+cDefAttr	equ	0x07
+
+cScreenDevice	db	"/dev/vcsa0",EOL
 
 open_screen:
 	pushad
-	sys_open sScreenDevice,O_RDWR
+	sys_open cScreenDevice, O_RDWR
 	mov	[sHandle],eax
+	sys_read eax,sMaxY,4
 
-	sys_read eax,sMaxY,2
-
-	mov	ecx,xy(0,0)
-	call	gotoxy
+	_mov	ecx,xy(0,0)
+	call	gotoXY
 
 	popad
 	ret
@@ -208,63 +221,56 @@ close_screen:
 	ret
 
 ;
-; set cursor position
+;write character at current position
 ;
-
-;setxy:
-;	pushad
-;	popad
-;	ret
-
+;<al	character
 ;
-; get cursor position
-;
-
-;getxy:
-;	pushad
-;	popad
-;	ret
-
 write_char:
 	pushad
 	mov	ecx,sChar
 	mov	[ecx],al
-	xor	edx,edx
-	inc	edx
-	sys_write [sHandle]
+	sys_write [sHandle], EMPTY, 1
 	popad
 	ret
 
+;
+;write attribute at current position
+;
+;<al	character
+;
 write_attr:
 	pushad
 	mov	ecx,sAttr
 	mov	[ecx],al
 	push	ecx
-	xor	edx,edx
-	inc	edx
-	mov	ecx,edx
-	mov	ebx,[sHandle]
-	sys_lseek	
+	sys_lseek [sHandle], 1, SEEK_CUR
 	pop	ecx
 	sys_write
 	popad
 	ret
 
-;write out char (al - char, ah - attr)
+;
+;write character and attribute at current position
+;
+;<al	character
+;<ah	attribute
+;
 writech:
 	pushad
 	mov	ecx,sChar
 	mov	[ecx],ax
-	xor	edx,edx
-	inc	edx
-	inc	edx
-	sys_write [sHandle]
+	sys_write [sHandle], EMPTY, 2
 	popad
 	ret
 
-;write string to the screen (esi - offset)
+;
+;write string to the screen
+;
+;<esi	string offset
+;
 write:
 	pushad
+	_mov	eax,0
 	mov	ah,cDefAttr
 .loop:
 	lodsb
@@ -274,46 +280,106 @@ write:
 	jz	.attr
 	cmp	al,cXY
 	jnz	.put
-	push	ax
+	push	eax
 	lodsw
-	xor	ecx,ecx
-	mov	cx,ax
-	call	gotoxy
-	pop	ax
-
-	stc
-	jc	.loop
+	mov	ecx,eax
+	call	gotoXY
+	pop	eax
+	jmp	.loop
 .attr:
 	lodsb
 	mov	ah,al
-	stc
-	jc	.loop
+	jmp	.loop
 .put:
 	call	writech
-	stc
-	jc	.loop		
+	jmp	.loop
 .end
 	popad
 	ret
 
-;goto xy (ecx - coordinates)
-gotoxy:
+;
+;set cursor position
+;
+;<ch	X
+;<cl	Y
+;
+gotoXY:
 	pushad
-	_add	ecx,scradd
-	xor	edx,edx
-	sys_lseek [sHandle]
+
+calcXY:
+
+_xadd		equ	0x04
+_xcoef		equ	0x02
+_ycoef		equ	0xa0
+
+	mov	eax,ecx
+	mov	bl,[sMaxX]
+	mul	bl
+	mov	ebx,eax
+	xor	eax,eax
+	mov	al,ch
+	add	ebx,eax
+	shl	ebx,1
+	add	ebx,_xadd
+	mov	ecx,ebx
+
+	sys_lseek [sHandle], EMPTY, SEEK_SET
 	popad
 	ret
 
+;
+;get cursor position
+;
+;>ch	X
+;>cl	Y
+;
+getXY:
+	pushad
+	sys_lseek [sHandle], 2, SEEK_SET
+	sys_read EMPTY, sCurY, 2
+	popad
+	mov	cx,word [sCurY]
+	ret
+
+;
+;<ch	X
+;<cl	Y
+;<eax	number of bytes
+;>ebx	destination
+;
+vread:
+	pushad
+	call gotoXY
+	mov	ecx,ebx
+	mov	edx,eax
+	sys_read [sHandle]
+	popad
+	ret
+
+vwrite:
+	pushad
+	call gotoXY
+	mov	ecx,ebx
+	mov	edx,eax
+	sys_write [sHandle]
+	popad
+	ret
+
+
 UDATASEG
 
+sMaxY		resb	1
+sMaxX		resb	1
+sCurY		resb	1
+sCurX		resb	1
 sHandle		resd	1
 sChar		resb	1
 sAttr		resb	1
 
-sMaxY		resb	1
-sMaxX		resb	1
-
 tmp		resd	1
+
+len_scr		resd	1
+old_scr		resb	MAX_X * MAX_Y * 2
+
 
 END

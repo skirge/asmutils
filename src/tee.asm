@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: tee.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: tee.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;hackers' tee		[GNU replacement]
 ;
@@ -21,10 +21,9 @@ CODESEG
 ;ebp	-	return code
 
 START:
-%if __KERNEL__ = 20
-	_mov	ebp,0
-%endif
-	_mov	edi,handles
+	mov	edi,handles
+	xor	ebp,ebp
+
 	pop	ebx
 	dec	ebx
 	pop	ebx
@@ -46,7 +45,7 @@ START:
 	jmp short .scan
 .i:
 	cmp	al,'i'
-	jnz	near exit
+	jnz	near _exit
 	sys_signal	SIGPIPE,SIG_IGN
 	sys_signal	SIGINT	;,SIG_IGN
 	jmp short .scan
@@ -90,11 +89,11 @@ close:
 ;.close_loop:
 ;	lodsd
 ;	or	eax,eax
-;	jz	exit
+;	jz	_exit
 ;	sys_close eax
 ;	jmp	short .close_loop
 
-exit:
+_exit:
 	sys_exit ebp
 
 UDATASEG

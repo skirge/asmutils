@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: httpd.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -29,21 +29,19 @@
 ;     fixed one return status bug
 ;     netscape old fool wants an ending newline to data, he gets it now
 ;
-;0.01: 17-Jun-1999	initial release
-;0.02: 04-Jul-1999	fixed bug with 2.0 kernel, minor changes
+;0.01: 17-Jun-1999	initial release (IM)
+;0.02: 04-Jul-1999	fixed bug with 2.0 kernel, minor changes (KB)
 ;0.03: 29-Jul-1999	size improvements (KB)
 ;0.04: 09-Feb-2000	portability fixes (KB)
+;0.05: 25-Feb-2000	heavy rewrite of network code, size improvements,
+;			portability fixes (KB)
 
 %include "system.inc"
 
 CODESEG
-;these structs are for size optimisation :)
-    socketargs		db	2,0,0,0,1,0,0,0,6,0,0,0x0
-    setsockoptargs	db	0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,4,0,0,0x0
-    setsockoptvals	db	1,0,0,0x0
-    bindsockstruct	db	2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0x0
-    nl			db	0xA
 
+nl	db	0xa
+setsockoptvals	dd	1
 
 START:
 	pop	esi
@@ -59,13 +57,9 @@ START:
 ;<ESI -string
 ;>EAX - result
 
-%if __KERNEL__ = 20
-	_mov	eax,0
+	xor	eax,eax
+	xor	ecx,ecx
 	_mov	ebx,10
-	_mov	ecx,0
-%elif __KERNEL__ = 22
-	mov	bl,10
-%endif
 .next:
         mov	cl,[esi]
 	sub	cl,'0'
@@ -80,48 +74,29 @@ START:
 	jmp short .next
 .done:
 	push	eax
-
-;socket ( PF_INET, SOCK_STREAM, IPPROTO_TCP )
-
-	sys_socketcall SYS_SOCKET,socketargs
-
+	sys_socket PF_INET,SOCK_STREAM,IPPROTO_TCP
+	mov	ebp,eax		;socket descriptor
 	test	eax,eax
 	js	.exit
-	mov	edx,eax		;socket descriptor
-
-	mov	dword [setsockoptargs],edx			;fd
-	mov	dword [setsockoptargs+12],setsockoptvals	;optval
-
-; setsockopt ( s, SOL_SOCKET, SO_REUSEADDR, &optval, 4);
-
-	sys_socketcall SYS_SETSOCKOPT,setsockoptargs
-
+	sys_setsockopt ebp,SOL_SOCKET,SO_REUSEADDR,setsockoptvals,4
 	or	eax,eax
 	jz	.continue1
 .exit:
 	sys_exit_false
 
 .continue1:
-	mov	dword [Buf], edx	;fd
 	pop	eax
+	mov	ebx,esp
+	mov	dword [bindsockstruct],AF_INET
 	mov	byte [bindsockstruct + 2],ah
 	mov	byte [bindsockstruct + 3],al
-	mov	dword [Buf+4], bindsockstruct	;struct sockaddr_in
-	mov	dword [Buf+8], 16		;sizeof (struct sockaddr_in)
-
-;bind ( s, struct sockaddr *bindsockstruct, 16 );
-
-	sys_socketcall SYS_BIND,Buf
-
+	sys_bind ebp,bindsockstruct,16	;bind ( s, struct sockaddr *bindsockstruct, 16 );
 	or	eax,eax
 	jnz	.exit
 
-	mov	dword [Buf+4],0xff	;backlog
-
 ;listen ( s, 0xff )
 
-	sys_socketcall	SYS_LISTEN
-
+	sys_listen ebp,0xff
 	or	eax,eax
 	jnz	.exit
 
@@ -131,16 +106,13 @@ START:
 .true_exit:
 	sys_exit_true
 
-.continue5
-	mov	dword [Buf+4],arg1	;struct sockaddr_in *
-	mov	dword [Buf+8],arg2	;int *addrlen
-.acceptloop
-	mov	dword [arg2],16		;sizeof (struct sockaddr_in)
+.continue5:
+.acceptloop:
 
 ;accept ( s, struct sockaddr *arg1, int *arg2 )
 
-	sys_socketcall SYS_ACCEPT,Buf
-
+	mov	dword [arg2],16		;sizeof (struct sockaddr_in)
+	sys_accept ebp,arg1,arg2
 	mov	edi,eax ; our descriptor
 
 ;wait4 ( pid, status, options, rusage )
@@ -154,7 +126,7 @@ START:
 	or	eax,eax
 	jz	.forward
 	sys_close edi
-	jmp	short .acceptloop
+	jmp	.acceptloop
 .forward:
 	sys_read edi,filebuf,0xfff
 	cmp	eax,byte 7		;in request there must be at least 7 symbols
@@ -198,9 +170,9 @@ START:
 	jz	.loopout
 	cmp	dl,'?'
 	jz	.loopout
-	cmp	dl,0x0D
+	cmp	dl,0xd
 	jz	.loopout
-	cmp	dl,0x0A
+	cmp	dl,0xa
 	jnz	.loopme
 .loopout:
 	cmp	byte [ebx-1],'/'		;append index.html :)
@@ -219,13 +191,10 @@ START:
 	mov	esi,eax
 	mov	ecx,filebuf
 .writeloop:
-	mov	edx,0xfff
-	sys_read
+	sys_read EMPTY,EMPTY,0xfff
 	test	eax,eax
 	js	.endread
-	mov	ebx,edi
-	mov	edx,eax
-	sys_write
+	sys_write edi,EMPTY,eax
 	mov	ebx,esi
 	test	eax,eax
 	jz	.endread
@@ -233,32 +202,25 @@ START:
 .endread:
 	sys_close
 
-	mov	ebx,edi	;due the stupidity of netscape we need to send another packet
-	mov	edx,0x1	;newline \n, so it can handle one line data
-	mov	ecx,nl	;but I'm afraid it might break something, so watch this
-	sys_write	;code carefully in the future
+;due the stupidity of netscape we need to send another packet newline \n,
+;so it can handle one line data but I'm afraid it might break something,
+;so watch this code carefully in the future
+	sys_write edi,nl,1
 
 .endrequest:
-	mov	dword [arg1],edi		;sock
-	mov	dword [arg1+4],0x00000001	;how = 1
+	sys_shutdown ebp,1	;shutdown ( sock, how )
 
-;shutdown ( sock, how )
-
-	sys_socketcall SYS_SHUTDOWN,arg1
-
-	mov	ebx,edi
-	mov	edx,0xff
-	sys_read
-	sys_close
+	sys_read ebp,EMPTY,0xff
+	sys_close ebp
 	jmp	.true_exit
 
 UDATASEG
 
-Buf	resb	0xff
 arg1	resb	0xff
 arg2	resb	0xff
 document	resb	0x04
 finalpath	resb	0x1010	;10 is for safety
 filebuf		resb	0x1010
+bindsockstruct	resd	4
 
 END

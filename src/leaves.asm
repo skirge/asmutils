@@ -1,11 +1,11 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1996-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: leaves.asm,v 1.3 2000/02/10 15:07:04 konst Exp $
+;$Id: leaves.asm,v 1.4 2000/03/02 08:52:01 konst Exp $
 ;
-;leaves		-	Linux fbcon intro in 408 bytes
+;leaves		-	Linux fbcon intro in 396 bytes
 ;
 ;Once I've took one of my old DOS intros made in tasm, and rewrote it
-;for nasm and Linux/fbcon.. He-he.. I've got 408 bytes.
+;for nasm and Linux/fbcon.. He-he.. I've got 396 bytes.
 ;(DOS 16-bit version was 381 byte long)
 ;
 ;This intro is the smallest implementation
@@ -178,28 +178,25 @@ leaves:
 
 START:
 
-;prepare structure for mmap on the stack
-
-	mov	edi,VMEM_SIZE
-	mov	esi,esp
-
-	mov	[esi-16],edi				;.len
-	mov	[esi-12],byte PROT_READ|PROT_WRITE	;.prot
-	mov	[esi-8],byte MAP_SHARED			;.flags
-	mov	[esi],edx				;.offset
-
 ;init fb
-
+	mov	edi,VMEM_SIZE
 	mov	ebp,Params
 
-	lea	ebx,[ebp+0x2C]	;fb-Params
+	lea	ebx,[ebp + 0x2c]	;fb-Params
 	sys_open EMPTY,O_RDWR
 
-;	test	eax,eax		;have we opened file?
+;	test	eax,eax			;have we opened file?
 ;	js	exit
 
-	mov	[esi-4],eax	;mm.fd
-	lea	ebx,[esi-20]
+;prepare structure for mmap on the stack
+
+	_push	0			;.offset
+	_push	eax			;.fd
+	_push	MAP_SHARED		;.flags
+	_push	PROT_READ|PROT_WRITE	;.prot
+	_push	edi			;.len
+	_push	0			;.addr
+	mov	ebx,esp
 	sys_mmap
 
 ;	test	eax,eax		;have we mmaped file?
@@ -214,16 +211,15 @@ START:
 	rep	stosb
 
 ;leaves
-	lea	edi,[ebp+0x24]	;ColorBegin-Params
-
-        push	byte 28		;recursion depth
-	push	eax
-	push	eax
+	lea	edi,[ebp + 0x24]	;ColorBegin-Params
+        _push	28			;recursion depth
+	_push	eax
+	_push	eax
         call	leaves
 
 ;close fb
 ;	sys_munmap esi,VMEM_SIZE
-;	sys_close [mm.fd]
+;	sys_close mm.fd
 
 exit:
 	sys_exit

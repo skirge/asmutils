@@ -1,7 +1,7 @@
 ;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Yuri Ivliev <yuru@black.cat.kazan.su>
 ;
-;$Id: pwd.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: pwd.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
 ;
 ;hackers' pwd
 ;
@@ -16,14 +16,16 @@
 
 %include "system.inc"
 
+%assign	lPath 0xff
+
 CODESEG
 
-%if __KERNEL__ = 20
-Root.path	db	'/',EOL
-%endif
-
 START:
+
 %if __KERNEL__ = 20
+
+%assign	lBackPath	0x00000040
+
 ;;getting root's inode and block device
 	sys_lstat	Root.path,st		;get stat for root
 	mov	ax,[ecx+stat.st_dev]
@@ -135,9 +137,14 @@ START:
 	rep
 	movsb
 	jmp	.up
+
 ;; the end of up to root loop
+
+Root.path	db	'/',EOL
+
 %elif __KERNEL__ = 22
-	sys_getcwd	Buf,lBuf
+
+	sys_getcwd Path,lPath
 
 	mov	esi,ebx
 	xor	edx,edx
@@ -155,12 +162,11 @@ START:
 
 UDATASEG
 
+Path	CHAR	lPath		;path buffer
+
 %if __KERNEL__ = 20
 
-lBackPath	equ	0x00000040
 BackPath	CHAR	lBackPath	;back path buffer
-lPath		equ	0x00000100
-Path		CHAR	lPath		;path buffer
 
 de		I_STRUC dirent	;buffer for directory scanning
 			.d_ino		ULONG	1
@@ -195,13 +201,6 @@ Inode		UINT	1
 Dev		USHORT	1
 Root.st_dev	USHORT	1
 Root.st_ino	USHORT	1
-
-
-%elif __KERNEL__ = 22
-
-lBuf	equ	256
-Buf	CHAR	lBuf
-
 %endif
 
 END
