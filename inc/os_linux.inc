@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.10 2001/11/19 06:59:47 konst Exp $
+; $Id: os_linux.inc,v 1.11 2001/11/20 15:28:09 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 18-Nov-2001
+; modified      : 20-Nov-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
@@ -940,7 +940,8 @@ struc exit_status
 endstruc
 
 struc utmp
-.ut_type	LONG	1		;Type of login
+.ut_type	SHORT	1		;Type of login
+.__pad1		SHORT	1		
 .ut_pid		U32	1		;Process ID of login process
 .ut_line  	CHAR	UT_LINESIZE	;Devicename
 .ut_id		CHAR	4		;Inittab ID

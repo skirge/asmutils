@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.26 2001/11/04 18:11:28 konst Exp $
+# $Id: Makefile,v 1.27 2001/11/20 15:31:52 konst Exp $
 
 #DEBUG = y
 
@@ -12,12 +12,13 @@ include ../MCONFIG
 
 FILES = basename cat chmod chroot chown cpuinfo cut date dc dd dirname\
 	echo env extname factor fromdos grep head hexdump hostname\
-	id init kill ln lzss mkdir mknod od paste\
+	id init kill ln lzss mkdir mknod od rot13 paste\
 	readelf readlink renice	sh sleep strings sync tail tar tee tr true\
 	uname wc whoami yes\
 	md5sum rmdsum rc6crypt\
 
-FILES += clear cp httpd m_inetd less ls more mv nc readkey rm ping pwd touch watch which
+FILES += clear cp httpd m_inetd less ls more mv nc readkey rm ping pwd touch\
+	 watch which write
 
 BONUS =	execve report asmutils
 
