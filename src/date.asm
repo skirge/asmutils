@@ -19,7 +19,7 @@
 ;; given as the number of seconds since the start of 1970 UTC, to
 ;; display instead of the current time.
 ;;
-;; $Id: date.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
+;; $Id: date.asm,v 1.4 2002/03/08 18:54:53 konst Exp $
 
 %include "system.inc"
 
@@ -76,7 +76,7 @@ mmapfile:
 		or	eax, eax
 		js	.return
 		xchg	eax, ebx
-		lea	ecx, [byte edi + buf - tm]
+		lea	ecx, [byte edi + buf - tmf]
 
 		pusha
 
@@ -112,7 +112,7 @@ START:
 ;; the program.
 
 		mov	ebp, fmtchars
-		mov	edi, tm
+		mov	edi, tmf
 
 ;; Call gettimeofday(), storing the current time in the .ct field.
 
@@ -163,15 +163,15 @@ START:
 		jnz	.optloop
 		mov	dword [byte edi + tmfmt.tz], 'UTC'
 		jmp	short .optloop
-.argvloopend:	mov	[byte edi + fmt - tm], ecx
+.argvloopend:	mov	[byte edi + fmt - tmf], ecx
 
 ;; The program stores a pointer to the default "C" locale, and then
 ;; copies over the first part of the localization file name.
 
 		lea	edx, [byte ebp + clocale - fmtchars]
-		mov	[byte edi + localedata - tm], edx
+		mov	[byte edi + localedata - tmf], edx
 		mov	edx, edi
-		add	edi, byte buf - tm
+		add	edi, byte buf - tmf
 		lea	esi, [byte ebp + lctimeprefix - fmtchars]
 		push	byte lctimeprefixlen
 		pop	ecx
@@ -204,10 +204,10 @@ START:
 		movsd
 		stosb
 		mov	edi, edx
-		lea	ebx, [byte edi + buf - tm]
+		lea	ebx, [byte edi + buf - tmf]
 		call	mmapfile
 		js	.useclocale
-		mov	[byte edi + localedata - tm], eax
+		mov	[byte edi + localedata - tmf], eax
 .useclocale:	mov	edi, edx
 
 ;; If time zone information is already present, UTC is to be used and
@@ -477,8 +477,8 @@ skipzoning:
 ;; the format string into buf by calling ftime.
 
 		lea	ebx, [byte edi - tmfmt.ce]
-		mov	esi, [byte ebx + fmt - tm]
-		lea	edi, [byte ebx + buf - tm]
+		mov	esi, [byte ebx + fmt - tmf]
+		lea	edi, [byte ebx + buf - tmf]
 		push	edi
 		call	ftime.loop
 
@@ -575,7 +575,7 @@ ftime:
 ;; edi = the position immediately following the output string
 ;; eax, ecx, edx, and esi are altered
 
-ftimelocale:	mov	esi, [byte ebx + localedata - tm]
+ftimelocale:	mov	esi, [byte ebx + localedata - tmf]
 		add	esi, [esi + edx]
 		jmp	short ftime.loop
 
@@ -592,7 +592,7 @@ itoa:
 ;; First, the number is rendered as decimal ASCII in reverse, in a
 ;; private buffer, using successive divisions by 10.
 
-		lea	esi, [byte ebx + itoabuf - tm + 16]
+		lea	esi, [byte ebx + itoabuf - tmf + 16]
 		push	esi
 		push	edx
 		push	byte 10
@@ -631,7 +631,7 @@ return:		ret
 ;; eax = index of the string to copy
 ;; edx = offset of the list of indexes in the LC_TIME file
 
-putlocalestr:	mov	esi, [byte ebx + localedata - tm]
+putlocalestr:	mov	esi, [byte ebx + localedata - tmf]
 		add	edx, esi
 		add	esi, [edx + eax*4]
 .loop:		lodsb
@@ -802,7 +802,7 @@ ALIGNB 16
 
 ;; The tmfmt structure.
 
-tm:		resb	tmfmt_size
+tmf:		resb	tmfmt_size
 
 ;; The pointer to the top-level format string.
 
