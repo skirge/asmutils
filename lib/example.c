@@ -3,7 +3,7 @@
     
 	sample C program for assembly libc
 
-	$Id: example.c,v 1.1 2000/01/26 21:19:06 konst Exp $
+	$Id: example.c,v 1.2 2000/02/01 19:56:20 konst Exp $
 */
 
 #include <stdio.h>

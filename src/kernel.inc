@@ -1,6 +1,6 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@voshod.com>
 ;
-; $Id: kernel.inc,v 1.1 2000/01/26 21:19:31 konst Exp $
+; $Id: kernel.inc,v 1.2 2000/02/01 19:56:20 konst Exp $
 ;
 ; file		: kernel.inc
 ; created	: 12-Apr-1999

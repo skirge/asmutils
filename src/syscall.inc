@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@voshod.com>
 ;
-; $Id: syscall.inc,v 1.1 2000/01/26 21:20:02 konst Exp $
+; $Id: syscall.inc,v 1.2 2000/02/01 19:56:20 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 10-Jan-2000
+; modified	: 27-Jan-2000
 ; version	: 0.06
 ; assembler	: nasm 0.98
 ; description	: system call macros
@@ -254,6 +254,11 @@
 %macro sys_chmod 0-2
 	__syscall_setregs %0,%1,%2
 	__syscall __NR_chmod
+%endmacro
+
+%macro sys_access 0-2
+	__syscall_setregs %0,%1,%2
+	__syscall  __NR_access
 %endmacro
 
 ;

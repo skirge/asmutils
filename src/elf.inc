@@ -1,6 +1,6 @@
 ; Copyright (C) 1999 Brian Raiter <breadbox@muppetlabs.com>
 ;
-; $Id: elf.inc,v 1.1 2000/01/26 21:19:24 konst Exp $
+; $Id: elf.inc,v 1.2 2000/02/01 19:56:20 konst Exp $
 ;
 ; file		: elf.inc
 ; created	: 20-Aug-1999

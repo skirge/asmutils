@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
 ;
-;$Id: echo.asm,v 1.1 2000/01/26 21:19:23 konst Exp $
+;$Id: echo.asm,v 1.2 2000/02/01 19:56:20 konst Exp $
 ;
 ;hackers' echo		[GNU replacement]
 ;

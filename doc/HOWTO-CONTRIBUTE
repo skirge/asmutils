@@ -22,10 +22,11 @@ it before asking me any source related question. Thank you.
 Administrativia
 ~~~~~~~~~~~~~~~
 Last step is checking the latest version of asmutils and look what is
-already done. Even if program you want to contribute is not there,
-look at current ChangeLog <http://linuxassembly.org/ChangeLog>
-or contact me first, may be somebody is already writing it now. Follow
-the same rule if you want to improve existing utils. 
+already done. Even if the program you want to contribute is not there,
+look at CVS <cvs.linuxassembly.org:/pub/asm/asmutils>,
+ChangeLog <http://linuxassembly.org/ChangeLog>
+or contact me first, may be somebody is already writing it now.
+Follow the same rule if you want to improve existing utils. 
 
 Please do not mail me every version of every program of yours, just tell me
 its(their) name(s), and mail me them ALL TOGETHER three or four days before
@@ -41,9 +42,9 @@ If you have some utilities written in gas and do not want to or have
 no time to rewrite them with these conditions you can contribute them
 as they are - I myself will rewrite them.
 
-If you got any additional questions - refer to the asmutils webpage
-or contact me at konst@voshod.com
+If you got any additional questions -- refer to the asmutils webpage
+or contact asmutils maintainer.
 
 THANK YOU FOR YOUR INTEREST
 
-$Id: HOWTO-CONTRIBUTE,v 1.1 2000/01/26 21:18:55 konst Exp $
+$Id: HOWTO-CONTRIBUTE,v 1.2 2000/02/01 19:56:20 konst Exp $

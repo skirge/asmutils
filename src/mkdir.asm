@@ -1,16 +1,21 @@
 ;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@voshod.com>
 ;
-;$Id: mkdir.asm,v 1.1 2000/01/26 21:19:42 konst Exp $
+;$Id: mkdir.asm,v 1.2 2000/02/01 19:56:20 konst Exp $
 ;
 ;hackers' mkdir/rmdir
 ;
 ;0.01: 05-Jun-1999	initial release
 ;0.02: 17-Jun-1999	size improvements
 ;0.03: 04-Jul-1999	fixed bug with 2.0 kernel, size improvements
-;0.04: 10-Jan-2000	-m support
+;0.04: 29-Jan-2000	-m & -p support
 ;
-;syntax: mkdir [-m mode] dir...
-;	 rmdir dir...
+;syntax: mkdir [OPTION] DIRECTORY ...
+;	 rmdir DIRECTORY...
+;
+;-m	set permission mode (only octal number)
+;-p	create parent directories as needed
+;
+;example: mkdir -p -m 700 this/is/a/very/long/and/useless/directory/tree
 ;
 ;only octal mode strings are suppoted (f.e. 750)
 ;by default directories are created with permissions of 755
@@ -24,8 +29,18 @@
 
 CODESEG
 
+;
+;ebp: -p flag
+;
+
 START:
-	pop	esi
+	pop	eax
+	dec	eax
+	jnz	.begin
+.exit:
+	sys_exit eax
+
+.begin:
 	pop	esi
 .n1:				;set edi to argv[0] eol
 	lodsb
@@ -34,9 +49,19 @@ START:
 	mov	edi,esi
 
 	_mov	ecx,755q
+	xor	ebp,ebp
 
+.next_arg:
 	pop	esi
 	push	esi
+
+	cmp	word [esi],"-p"
+	jnz	.check_m
+	inc	ebp
+	pop	esi
+	jmp	short .next_arg
+
+.check_m:
 	cmp	word [esi],"-m"
 	jnz	.next_file
 
@@ -68,7 +93,8 @@ START:
 	jz	.exit
 
 	mov	ecx,eax
-
+	jmp	short .next_arg
+	
 .next_file:
 	pop	ebx
 	or	ebx,ebx
@@ -79,10 +105,56 @@ START:
 	jmp short .next_file
 
 .mkdir:
-	sys_mkdir
-	jmp short .next_file
+	push	edi
 
-.exit:
-	sys_exit eax
+	mov	dl,1
+	or	ebp,ebp
+	jz	.call
+	
+	mov	esi,ebx
+	jmp	short .check
+
+.next_dir:
+	mov	edi,esi
+	mov	[edi], byte 0
+.call:
+	sys_mkdir
+	or	edx,edx
+	jnz	.done_mk
+	mov	[edi], byte '/'
+
+	inc	esi
+.check:
+	xor	edx,edx
+	mov	edi,esi
+	mov	al,'/'
+	call	strchr
+	jc	.next_dir
+	inc	edx
+	cmp	esi,edi
+	jnz	.next_dir
+.done_mk:
+	pop	edi
+	jmp	short .next_file
+
+;
+;carry set if character found
+;
+
+strchr:
+	push	eax
+	mov	ah,al
+	clc
+.next:
+	lodsb
+	or	al,al
+	jz	.return
+	cmp	al,ah
+	jnz	.next
+	stc
+.return:
+	dec	esi
+	pop	eax
+	ret
 
 END

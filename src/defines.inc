@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@voshod.com>
 ; Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-; $Id: defines.inc,v 1.1 2000/01/26 21:19:20 konst Exp $
+; $Id: defines.inc,v 1.2 2000/02/01 19:56:20 konst Exp $
 ;
 ; file          : defines.inc
 ; created       : 04-Jul-1999
-; modified      : 03-Jan-2000
+; modified      : 27-Jan-2000
 ; version       : 0.06
 ; assembler     : nasm 0.98
 ; description   : kernel and libc defined constants (from includes)
@@ -43,6 +43,15 @@
 %assign SEEK_SET	0
 %assign SEEK_CUR	1
 %assign SEEK_END	2
+
+;
+;unistd.h
+;
+
+%assign	R_OK	4	; read
+%assign W_OK	2	; write
+%assign X_OK	1	; execute
+%assign F_OK	0	; existence
 
 ;
 ;asm/fcntl.h

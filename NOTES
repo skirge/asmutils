@@ -32,8 +32,12 @@ Current release notes (0.06)
  GNU compliant utils:
 
 	basename, echo, factor, false, pwd, sleep, tee, true, uname, yes
-       
+
+ Almost GNU compliant utils:
+
+	mkdir, wc
+
  Please note that this compliance mainly affects command line
  options support; behavior is not well tested, however it SEEMS to
  be the same. You are especially encouraged to use and test them :)
- Options --version and --help are not supported.
+ Long options like --version and --help are not supported.

@@ -1,6 +1,6 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@voshod.com>
 ;
-; $Id: system.inc,v 1.1 2000/01/26 21:20:04 konst Exp $
+; $Id: system.inc,v 1.2 2000/02/01 19:56:20 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999

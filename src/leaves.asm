@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
 ;
-;$Id: leaves.asm,v 1.1 2000/01/26 21:19:33 konst Exp $
+;$Id: leaves.asm,v 1.2 2000/02/01 19:56:20 konst Exp $
 ;
 ;leaves		-	fbcon intro in 408 bytes
 ;

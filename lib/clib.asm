@@ -1,7 +1,7 @@
 ;---------- First Strike of an optimized CLIB       (c) CECCHINEL Stephan 1999
 ;contact:  interzone@pacwan.fr
 ;
-;$Id: clib.asm,v 1.1 2000/01/26 21:19:06 konst Exp $
+;$Id: clib.asm,v 1.2 2000/02/01 19:56:20 konst Exp $
 ;
 ;see doc/clib.html for details
 

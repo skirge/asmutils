@@ -1,11 +1,11 @@
 
-28-Jan-2000:	asmutils 0.06
+01-Feb-2000:	asmutils 0.06
 
 	- ls, strings, wc, id, ps (DB)
 	- lzss, rmdsum, rc6crypt, nc (CS)
 	- chmod, chroot, grep (KB)
-	- added "-e" & "-E" switches to echo (full GNU compliance) (KB)
-	- added "-m" (mode) switch to mkdir (KB)
+	- added "-e" & "-E" switches to echo (GNU compliance) (KB)
+	- added "-m" (mode) and "-p" (parent) switches to mkdir (KB)
 	- added lib/rmd.asm (RIPEMD-160 algo) (CS)
 	- fixed bug in ln (DW)
 	- working alpha of libc (KB & CS)

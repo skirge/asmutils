@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils
 #
-# $Id: Makefile,v 1.1 2000/01/26 21:19:14 konst Exp $
+# $Id: Makefile,v 1.2 2000/02/01 19:56:20 konst Exp $
 
 
 #
