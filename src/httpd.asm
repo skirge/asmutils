@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.10 2002/01/05 09:21:14 konst Exp $
+;$Id: httpd.asm,v 1.11 2002/01/05 11:07:07 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -42,7 +42,8 @@
 ;0.10  05-Jan-2002      added logging (IP||HEADER),
 ;			added err404file command line argument,
 ;			more content types (RM),
-;			added extension-content type table (KB)
+;			added extension-content type table.
+;			fixed endless loop if err404file is missing (KB)
 
 %include "system.inc"
 
@@ -70,8 +71,11 @@ setsockoptvals	dd	1
 START:
 	pop	ebp
 	cmp	ebp,byte 3	;at least 2 arguments must be there
+%ifdef ERR404
+	jb	near false_exit
+%else
 	jb	false_exit
-
+%endif
 	pop	esi		;our own name
 
 	pop	dword [root]	;document root
@@ -99,7 +103,23 @@ START:
 %endif
 
 %ifdef ERR404
-	pop	dword [err404]
+	pop	eax
+	or	eax,eax
+	jz	.n4
+	mov	[err404],eax
+	xor	ecx,ecx
+.n2:
+	cmp	byte [eax],0
+	jz	.n3
+	inc	eax
+	inc	ecx
+	jmps	.n2
+.n3:
+	or	ecx,ecx
+	jz	.n4
+	inc	ecx
+	mov	[err404len],ecx
+.n4:
 %endif
 
 .n1:
@@ -291,16 +311,34 @@ endrequest:
 %ifdef	ERR404
 error404:
 	pusha
+	mov	ecx,[err404len]
+	or	ecx,ecx
+	jz	.end
+
 	mov	esi,[err404]
-	_mov	edi,finalpath
-	cld
-.copy:
-	lodsb
-	stosb
-	or	al,al
-	jnz	.copy
+	mov	edi,finalpath
+
+	push	ecx		;save values
+	push	esi
+	push	edi
+	
+	rep	cmpsb		;check if we can't open ourself
+	jz	.end0
+
+	pop	edi
+	pop	esi
+	pop	ecx
+	rep	movsb		;copy to finalpath
+
 	popa
 	jmp	index
+
+.end0:
+	add	esp,byte 4*3
+.end:
+	popa
+	jmp	endrequest
+
 %endif
 
 %ifdef	LOG
@@ -414,7 +452,8 @@ sendheader:
 UDATASEG
 
 %ifdef	ERR404
-err404	resd	1
+err404len	resd	1	;filename length
+err404		resd	1	;pointer
 %endif
 %ifdef	LOG
 logfd	resd	1
