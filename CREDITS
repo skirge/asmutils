@@ -8,7 +8,7 @@ beautification by scripts.  The fields are: name (N), email (E),
 web-address (W), PGP key ID and fingerprint (P), description (D),
 and snail-mail address (S).
 
-$Id: CREDITS,v 1.12 2001/08/19 12:43:32 konst Exp $
+$Id: CREDITS,v 1.13 2001/08/24 09:50:37 konst Exp $
 
 ----------
 
@@ -26,7 +26,7 @@ D: fire256.asm, framebuffer stuff
 
 N: Tiago Gasiba (TG)
 E: ee97034@fe.up.pt
-D: fromdos.asm readkey.asm whoami.asm
+D: clear.asm fromdos.asm less.asm readkey.asm whoami.asm
 
 N: Alexandr Gorlov (AG)
 E: winct@mail.ru
