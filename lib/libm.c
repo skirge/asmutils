@@ -6,11 +6,11 @@
     - DJGPP for DOS <www.delorie.com>
     - EMX for OS2 by Eberhard Mattes
 
-    $Id: libm.c,v 1.5 2002/03/02 20:23:14 konst Exp $
+    $Id: libm.c,v 1.6 2002/03/03 07:57:27 konst Exp $
 
  Why C but not asm?
  1. Although today gcc does not handle floating point as well as commercial
-    compilers do, I belive that in the future versions gcc will be able to
+    compilers do, I believe that in the future versions gcc will be able to
     handle floating point better.
  2. Such function declaraton allows us to be independent from calling
     convention and build universal models.
@@ -31,7 +31,7 @@
 
 /*              
    ffreep is documented instruction for K7/Athlon processors, but all fpus
-   since 387 undocumentedly support it and I have reasons to not use it.
+   since 387 undocumentedly support it and I have no reasons to not use it.
    Note: It should be used when top of fpu stack should be destroyed.
 */
 
@@ -719,7 +719,7 @@ long double (exp10l)(long double x)
       "=t"(ret):\
       "u"(y),\
       "0"(x):\
-      "eax","st")
+      "eax","st(1)")
 
 float (fmodf)(float x,float y)
 {
@@ -1642,7 +1642,7 @@ long double (rintl)(long double x)
       "=t"(ret)   :\
       "0"(x),\
       "u"(n):\
-      "st")
+      "st(1)")
 
 float (scalbnf)(float x,int n)
 {
@@ -1716,7 +1716,7 @@ long double (significandl)(long double x)
 #define __SINCOS(x,cosptr,sinptr)\
 {\
   register long double sv,cv;\
-  asm("fsincos":"=t"(cv),"=u"(sv):"0"(x):"st","st(1)");\
+  asm("fsincos":"=t"(cv),"=u"(sv):"0"(x):"st(2)","st(3)");\
   *cosptr = cv;\
   *sinptr = sv;\
 }
