@@ -2,7 +2,7 @@
 ;			 Konstantin Boldyshev <konst@linuxassembly.org>
 ;			 Rudolf Marek <marekr2@fel.cvut.cz>
 ;
-;$Id: httpd.asm,v 1.17 2002/03/14 07:45:12 konst Exp $
+;$Id: httpd.asm,v 1.18 2002/03/14 07:59:32 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -48,7 +48,8 @@
 ;			fixed infinite loop if err404file is missing,
 ;			size improvements (KB)
 ;0.11  14-Mar-2002      added initial cgi support (SL),
-;			'%' support in filenames (IM)
+;			'%' support in filenames (IM),
+;			send default mimetype for unknown extensions (KB)
 
 %include "system.inc"
 
@@ -444,6 +445,7 @@ c_html	db	"text/html",EOL
 c_jpeg	db	"image/jpeg",EOL
 c_png	db	"image/png",EOL
 c_gif	db	"image/gif",EOL
+c_def	db	"application/octet-stream",EOL
 
 ending	db	__n,__n
 
@@ -460,7 +462,7 @@ extension_tab:
 %ifdef	CGI
 	dd	"cgi",	c_html
 %endif
-	dd	0
+	dd	0,	c_def
 
 sendheader:
 	pusha
@@ -483,7 +485,7 @@ sendheader:
 	add	edx,byte 8
 	mov	ecx,[edx]
 	or	ecx,ecx
-	jz	.return
+	jz	.write_content
 	cmp	eax,ecx
 	jnz	.cc3
 
