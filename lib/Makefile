@@ -2,7 +2,13 @@
 #
 # Makefile for libc (GNU make is required)
 #
-# $Id: Makefile,v 1.9 2001/03/18 07:08:25 konst Exp $
+# $Id: Makefile,v 1.10 2001/08/20 18:38:06 konst Exp $
+
+# Target CPU (386,486,586,686)
+
+CPU = 386
+
+#
 
 DEBUG = y
 
@@ -29,7 +35,7 @@ LIBM_SO = ./libm.so.0
 
 CTESTS = test1 test2
 
-CLEAN_CFLAGS := -Wall -O1 -m386
+CLEAN_CFLAGS := -D__CPU__=$(CPU) -Wall -O1 -m386
 #CLEAN_CFLAGS := -Wall -O1 -Os -march=i386 #will produce the smallest code on gcc 2.95+
 
 ifdef DEBUG

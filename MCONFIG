@@ -1,18 +1,14 @@
 # Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 #
-# MCONFIG -- Configuration stuff for asmutils
+# MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.8 2001/08/20 15:25:43 konst Exp $
+# $Id: MCONFIG,v 1.9 2001/08/20 18:37:41 konst Exp $
 
 #---------------------------------------------------------------------------#
 
 #			CONFIGURATION PARAMETERS
 
 #---------------------------------------------------------------------------#
-
-# Target CPU (386,486,586,686)
-
-CPU = 386
 
 # Target Operating System (LINUX/FREEBSD/NETBSD/OPENBSD/BEOS/ATHEOS/LIBC)
 
@@ -28,7 +24,7 @@ OPTIMIZE = SIZE
 
 # Enable debug build
 
-DEBUG = y
+#DEBUG = y
 
 # Include version stamp into binaries
 
@@ -36,14 +32,14 @@ DEBUG = y
 
 # Use custom startup code.
 # Currently it works only with C style main() stack with OS=LIBC,
-# when you can't build with -nostartupfiles.
-# You will also need this on BeOS.
+# if you can't build with -nostartupfiles.
+# You will also need this with OS=BEOS.
 #STARTUP = y
 
 # LINUX only
 #
 # ELF hack for smaller binaries
-#ELF_MACROS = y
+ELF_MACROS = y
 
 #---------------------------------------------------------------------------#
 
@@ -61,7 +57,7 @@ CC := gcc
 MAKE := gmake
 
 #
-# avoid using asmutils in the build if PATH has '.'
+# avoid using asmutils during the build process if PATH has '.'
 #
 
 MKDIR := $(shell which mkdir) -p
@@ -77,7 +73,7 @@ endif
 
 LDFLAGS :=
 ASFLAGS := -w+orphan-labels -w+macro-params -i../inc/
-DEFINES := -D__CPU__=$(CPU) -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__
+DEFINES := -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__
 
 ifdef DEBUG
 ASFLAGS += -g
