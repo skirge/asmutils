@@ -1,4 +1,4 @@
-;  $Id: idea.asm,v 1.1 2002/11/04 11:39:07 konst Exp $
+;  $Id: idea.asm,v 1.2 2002/12/17 15:42:49 konst Exp $
 ;
 ;  idea.asm
 ;
@@ -15,6 +15,7 @@
 ;         free of charge for non-commercial users
 ;
 ;  2k2.11(01) + read from stdin if no file(s) specified
+;      12(06) eat 2 bytes :)
 
 %include "system.inc"
 
@@ -391,8 +392,7 @@ CODESEG
 	jz	short kcped
 
 	stosb
-	dec	ecx
-	jnz	short key_cp
+	loop	key_cp
  kcped:
 	pop	esi
 	lea	edi,[esi+16]	; = mov	edi,enc_key
@@ -428,30 +428,29 @@ CODESEG
 	or	eax,eax
 	js	short err
  go:
-	mov	esi,eax
+	xchg	esi,eax
 	_mov	edi,STDOUT
 	mov	edx,ebp
 
 	call	idea
-	push	eax
 
-	sys_close esi
-
-	pop	eax
+;	push	eax
+;	sys_close esi
+;	pop	eax
 
 	or	eax,eax
 	js	short err
 
 	jmp	short nextf
  help:
-	sys_write STDERR,usage,27
+	sys_write STDERR,usage,23
  err:
  exit:
 	sys_exit eax
 
  _rodata:
 
- usage db "./idea e|d key16 [file(s)]",0xa
+ usage db "idea e|d key [file(s)]",0xa
 
 UDATASEG
 
