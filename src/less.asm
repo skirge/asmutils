@@ -1,26 +1,24 @@
-; Copyright (C) 2001, Tiago Gasiba (ee97034@fe.up.pt)
+;Copyright (C) 2001, Tiago Gasiba (ee97034@fe.up.pt)
 ;
-; $Id: less.asm,v 1.2 2001/09/10 06:18:41 konst Exp $
+;$Id: less.asm,v 1.3 2001/09/24 16:10:39 konst Exp $
 ;
-; hacker's less
+;hackers' less
 ;
-;
-; syntax:
+;syntax:
 ;	less file
 ; or    less < file
 ;
 ;
-; TODO:
+;TODO:
 ;	- add "/" (search)
 ;	- optimize source code
 ;
-; known bugs:
+;known bugs:
 ;	- lines numbers reported may not correspond to true line numbers
 ; 
 ;
-; 0.01    24/08/01     initial release
-; 0.02    08/09/01     some bug fixes
-;
+;0.01    24/08/01     initial release
+;0.02    08/09/01     some bug fixes
 
 %include "system.inc"
 
@@ -355,6 +353,7 @@ itoa:
 	ret
 
 DATASEG
+
 fd		dd	0
 clear		db	0x1b,"[2J",0x1b,"[1H"
 clearlen	equ	$-clear
@@ -367,6 +366,7 @@ rev_off_len	equ	$-rev_off
 NL		db	0xa
 
 UDATASEG
+
 msg			resb	LineWidth
 oldtermios:
 	B_STRUC termios,.c_iflag,.c_oflag
@@ -378,4 +378,5 @@ nlines			resd	1			; nr. of lines
 pos			resd	1			; current position
 buffin			resb	BUFF_IN_LEN
 filebuffer		resb	1			; file buffer
+
 END

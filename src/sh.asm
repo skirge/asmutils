@@ -2,7 +2,7 @@
 ;				Karsten Scheibler <karsten.scheibler@bigfoot.de>
 ;				Rudolf Marek <marekr2@feld.cvut.cz>
 ;
-;$Id: sh.asm,v 1.4 2001/09/17 20:15:29 konst Exp $
+;$Id: sh.asm,v 1.5 2001/09/24 16:10:39 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -11,10 +11,10 @@
 ;example: sh
 ;
 ;0.01: 07-Oct-2000	initial release (AG + KS)
-;0.02  26-Jul-2001      Added char-oriented commandline, tab-filename filling,
+;0.02: 26-Jul-2001      Added char-oriented commandline, tab-filename filling,
 ;			partial export support, 
 ;			partial CTRL+C handling (RM)
-;0.03   16-Sep-2001     Added history handling (runtime hist), 
+;0.03: 16-Sep-2001      Added history handling (runtime hist), 
 ;			improved signal handling (RM)
 
 %include "system.inc"
@@ -126,7 +126,8 @@ select_prompt:		sys_getuid
 			;output shell prompt and read line
 			;---------------------------------
 
-get_cmdline:		sys_write  STDOUT, [cmdline.prompt], text.prompt_length
+get_cmdline:		
+			sys_write  STDOUT, [cmdline.prompt], text.prompt_length
 			jmp	short .normal_prompt
 .incomplete_prompt:	sys_write  STDOUT, text.prompt_incomplete, text.prompt_length
 .normal_prompt:		call	cmdline_get
@@ -953,6 +954,7 @@ execute_builtin:
 .wait:			mov 	[pid],eax
 			sys_wait4  0xffffffff, NULL, NULL, NULL
 			mov 	dword [pid],0
+			call tty_restore
 			jmp	tty_initialize
 
 
@@ -1057,12 +1059,14 @@ cmd_cd:
 
 break_hndl:
 			sys_signal 02,break_hndl
+%ifdef	DEBUG
 			sys_write STDOUT,text.break,text.break_length
+%endif
 			cmp dword [pid],0
 			jnz .not_us
 			sys_write STDOUT,text.suicide,text.suicide_length
 			ret
-.not_us:
+.not_us:	
 			sys_kill [pid],15
 			ret
 
@@ -1089,7 +1093,7 @@ text:
 .cmd_not_found_length:		equ	$ - .cmd_not_found
 .break:				db	__n,">>SIGINT received<<,sending SIGTERM", 10
 .break_length:			equ	$ - .break
-.suicide:			db	"Suicide is painless...", 10,"...NEVER!",10
+.suicide:			db	__n,"Suicide is painless..."
 .suicide_length:			equ	$ - .suicide
 
 .cd_failed:			db	"couldn't change directory", 10
@@ -1137,7 +1141,6 @@ cur_dir db "./",0
 ;DATASEG
 
 UDATASEG
-
 cmdline:
 .buffer1:			CHAR	CMDLINE_BUFFER1_SIZE
 .buffer2:			CHAR	CMDLINE_BUFFER2_SIZE
@@ -1170,7 +1173,6 @@ history_cur   resd 1
 history_start resd 1
 %endif
 pid resd 1
-
 END
 ;****************************************************************** AG + KS *
 

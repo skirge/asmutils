@@ -8,7 +8,7 @@ beautification by scripts.  The fields are: name (N), email (E),
 web-address (W), PGP key ID and fingerprint (P), description (D),
 and snail-mail address (S).
 
-$Id: CREDITS,v 1.13 2001/08/24 09:50:37 konst Exp $
+$Id: CREDITS,v 1.14 2001/09/24 16:10:39 konst Exp $
 
 ----------
 
@@ -42,7 +42,7 @@ D: OpenBSD port
 
 N: Joshua Hudson (JH)
 E: joshudson@hotmail.com
-D: dc.asm od.asm paste.asm readlink.asm which.asm
+D: dc.asm mknod.asm od.asm paste.asm readlink.asm tr.asm which.asm
 
 N: Yuri Ivliev (YI)
 E: yuru@black.cat.kazan.su
@@ -63,11 +63,11 @@ D: httpd.asm rmmod.asm true.asm yes.asm
 
 N: Rudolf Marek (RM)
 E: marekr2@feld.cvut.cz
-D: dd.asm heap.asm
+D: dd.asm game.asm heap.asm sh.asm watch.asm
 
 N: Jani Monoses (JM)
 E: jani@astechnix.ro
-D: ping.asm tail.asm
+D: ifconfig.asm ping.asm tail.asm
 
 N: Edward Popkov (EP)
 E: evpopkov@carry.neonet.lv
@@ -89,7 +89,7 @@ D: readelf.asm elfheader.inc
 
 N: Stanislav Ryabenkiy (SR)
 E: stani@ryabenkiy.com
-D: mknod.asm
+D: old mknod.asm
 
 N: Karsten Scheibler (KS)
 E: karsten.scheibler@bigfoot.de

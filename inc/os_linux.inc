@@ -1,6 +1,6 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.7 2001/08/28 06:38:50 konst Exp $
+; $Id: os_linux.inc,v 1.8 2001/09/24 16:10:39 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
@@ -711,7 +711,7 @@ endstruc
 %assign SYS_settimeofday	79
 %assign SYS_getgroups		80
 %assign SYS_setgroups		81
-%assign SYS_select		82
+%assign SYS_oldselect		82
 %assign SYS_symlink		83
 %assign SYS_oldlstat		84
 %assign SYS_readlink		85
@@ -771,7 +771,7 @@ endstruc
 %assign SYS_setfsgid		139
 %assign SYS_llseek		140
 %assign SYS_getdents		141
-%assign SYS_newselect		142
+%assign SYS_select		142
 %assign SYS_flock		143
 %assign SYS_msync		144
 %assign SYS_readv		145

@@ -1,15 +1,25 @@
-20-Jul-2001:
+24-Sep-2001:	asmutils 0.15
 
-	- mknod/mkfifo (SR)
+	- dc, mknod/mkfifo, od, paste, readlink, tr, which (JH)
+	- clear, fromdos/todos, less, readkey, whoami (TG)
+	- ifconfig/route, tail (JM)
 	- readelf (RR)
-	- tail (JM)
-	- paste (JH)
+	- watch (RM)
+	- sh: added char-oriented commandline, tab-filename filling,
+	  partial export support, partial CTRL+C handling,
+	  added history handling, improved signal handling (RM)
 	- dd: fixed "k" suffix bug (RM)
+	- true: even more size improvements (RM)
+	- id: added groups=list (JH)
+	- wc: fixed option handling without arguments (JH)
+	- touch: fixed compilation bug (KB)
+	- various FreeBSD and LIBC build fixes (KB)
 	- added bootdisk.bash script to build boot-disk image
 	  with Linux kernel and asmutils binaries (KS)
         - libm: fixed minor bugs, improved optimizations and test suite,
-		support for different IA-CPUs (preferedly pentium pro) (NK)
-
+	  support for different IA-CPUs (preferedly pentium pro) (NK)
+        - heap.asm: heap manager for Linux (RM)
+	- special bonus: battle "game", resembling corewars (RM)
 
 18-Mar-2001:	asmutils 0.14
 

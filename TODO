@@ -8,5 +8,6 @@ long-term:
 
 short-term:
 
-- write stub for BeOS
+- develop QNXRTP port
 - test AtheOS code
+- write stub for BeOS
