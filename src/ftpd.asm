@@ -1,12 +1,12 @@
 ;Copyright (C) 2002 Attila Monoses <ata@email.ro>
-;
-;$Id: ftpd.asm,v 1.3 2002/06/24 16:57:06 konst Exp $
+;                   Rudolf Marek <marekr2@cs.felk.cvut.cz>, <r.marek@sh.cvut.cz>
+;$Id: ftpd.asm,v 1.4 2002/08/14 16:50:30 konst Exp $
 ;
 ;hackers' ftpd
 ;
-;syntax :       ftpd root_directory port
+;syntax :       ftpd config_path port
 ;
-;example:       ftpd /home/ftpd 12345
+;example:       ftpd ftpd.conf 12345
 ;
 ;in root_directory must exist bin/ls
 ;(ftpd uses it for LIST request)
@@ -17,21 +17,40 @@
 ;and the visual clients like mc,wc can't parse it.
 ;the console client only outputs it for human view)
 ;
-;user may be anything, no password requested
-;
-;most important insufficiency is that ABOR is not yet implemented
-;if user client interrupts data transmition, its server process
-;will end thus user must reconnect if has more stuff to do
-;
 ;does not support default data port (tcp20)
-;tested clients don't use it but some might
+;tested clients don't use it but some might - obsolete
 ;
 ;must execute as root or made setuid (uses chroot)
 ;otherwise everything is shared
+;
+; Now supports PASV REST SIZE ABOR (RM)
+;	       + some basic accounting see ftpd.conf for details
+;
+; Very good source of ftp-server-writing http://cr.yp.to/ftp.html
+;
+; This is still work-in-progress version, should work.
+; please send me any bugs-(reports)-fixes/comments (RM)
+;
+; TODO:
+;       get rid of root priv
+;       if the user changes identity during one session, chroot will fail
+;	       
 
 %include "system.inc"
+%assign POLLIN      0x0001   ; /* There is data to read */ 
+%assign POLLPRI     0x0002   ; /* There is urgent data to read */ 
+%assign POLLOUT     0x0004   ; /* Writing now will not block */ 
+%assign POLLERR     0x0008   ; /* Error condition */ 
+%assign POLLHUP     0x0010   ; /* Hung up */ 
+%assign POLLNVAL    0x0020   ; /* Invalid request: fd not open */ 
+
+;%define SLEEP
+
 
 CODESEG
+
+%define ALLOW_STORE  1
+%define ALLOW_MODIFY 2
 
 %define req_len 1024
 %define buff_size 8192
@@ -53,6 +72,12 @@ CODESEG
 %define rep_550 12
 %define rep_LF 13
 %define rep_CRLF 14
+%define rep_350 15
+%define rep_426 16
+%define rep_227 17
+%define rep_213 18 
+%define rep_331 19
+%define rep_530 20
 
 setsockoptvals	dd 1
 
@@ -64,12 +89,12 @@ parent_dir	db '..',0
 ;               responses messages
 ;-------------------------------------------------------------------------------------------
 
-rep_l db 15,23,16,19,34,24,20,20,20,5,31,30,35,1,2
+rep_l db 21,23,16,19,34,24,20,20,20,5,31,30,35,1,2,56,42,5,4,36,20
 ;first byte is length of table
 
 rep_1	db '150 Transfer starting',EOL
 rep_2	db '200 Command ok',EOL
-rep_3	db '215 UNIX Type: L8',EOL
+ rep_3	db '215 UNIX Type: L8',EOL
 rep_4	db '220 Asmutils FTP server ready...',EOL
 rep_5	db '221 Closing connection',EOL
 rep_6	db '226 File action ok',EOL
@@ -81,7 +106,12 @@ rep_11	db '502 Command not implemented.',EOL
 rep_12	db '550 Request file action not taken',EOL
 rep_13	db 10
 rep_14	db 13,10
-
+rep_15  db '350 Requested file action pending further information.',EOL
+rep_16  db '426 Connection closed; transfer aborted.',EOL
+rep_17  db '227 ='
+rep_18  db '213 '
+rep_19  db '331 User name okay, need password.',EOL
+rep_20  db '530 Not logged in.',EOL
 ;___________________________________________________________________________________________
 
 START:
@@ -89,10 +119,11 @@ START:
     pop ebp
     cmp ebp,byte 3                              ;at least 2 args
 
-    jb .false_exit
+    jb near .false_exit
+;    jb .false_exit
 
     pop esi                                     ;skip program name
-    pop dword[root]                             ;document root
+    pop dword[cfg_name]                             ;config name
 
     pop esi                                     ;port number
 
@@ -118,6 +149,10 @@ START:
     mov dword[edi+4],0                          ;INADDR_ANY
 
 .begin:
+    sys_close STDOUT
+    sys_close STDIN ;-> bad we might get descriptor with 0 -> this shouldnt happen (edi)
+    sys_close STDERR
+
     sys_socket PF_INET,SOCK_STREAM,IPPROTO_TCP  ;and let there be a socket...
     test eax,eax
     js .false_exit
@@ -141,7 +176,10 @@ START:
     sys_listen ebp,5                            ;at most five clients
     or eax,eax
     jnz .false_exit
-
+    push ebp
+    call .account_read
+;    sys_setuid 099
+    pop ebp
     sys_fork                                    ;into background
     or eax,eax
     jz .acceptloop
@@ -153,6 +191,7 @@ START:
 .acceptloop:                                    ;start looping for connections
     mov [arg2],byte 16
     sys_accept ebp,arg1,arg2
+;TODO: test if PASV IP = this IP
     test eax,eax
     js .acceptloop
 
@@ -167,19 +206,104 @@ START:
 ;-------------------------------------------------------------------------------------------
 .child:
     mov ebp,edi                                 ;ebp <- ctrl socket
-
+    xor edi,edi
+;    sys_close STDOUT
+;    sys_close STDIN -> bad we might get descriptor with 0 -> this shouldnt happen (edi)
+;    sys_close STDERR
     mov ecx,rep_220                             ;send wellcome message
     call .reply
 
-.get_command:                                   ;start looping for commands
-    sys_read ebp,req,req_len                    ;recv
+
+;--------------------------------------------------------------------------------
+; Main command "loop"
+; If command received is processed
+; If someone is connecting to PASV port is accepted and data socket is stored in edi
+;----------------------------------------------------------------------------------
+.get_command:
+                       ;start looping for commands
+    mov	    edx,060000 		       
+    call    .fd_setup  ;out in EAX first 4 ASCII of command, 0 none command
+    or 	    eax,eax
+    jz 	   .get_command
+    jmp    .check_if_logged ;Process the command
+    
+;-------------------------------
+;sys_poll routine, monitors also PASV incomming connection
+; Output:
+;  EAX = no command
+; or EAX = 4 chars of command
+;------------------------------    
+
+.fd_setup:  ;EDX = time to wait 
+	mov 	eax,[pasv_socket]	; After PASV command do we have a listening socket ?
+        mov     dword [tpoll.fd1],ebp 
+	mov     dword [tpoll.fd2],eax   ; 0 = none
+	xor 	ecx,ecx
+	inc 	ecx
+	or 	eax,eax
+	jz	.have_one_to_listen
+	inc	ecx
+.have_one_to_listen:
+	mov     ax,POLLIN|POLLPRI 
+	mov      word [tpoll.e1],ax 
+	mov      word [tpoll.e2],ax  
+	
+	sys_poll tpoll,EMPTY,EMPTY
+	or 	eax,eax
+	jz     .poll_ret
+	dec 	ecx
+	jz .test_one 	
+	test    word [tpoll.re2],POLLIN|POLLPRI 
+	jnz     .client_is_connecting ;Someone atempts o connect on PASV port
+.test_one:
+	test    word [tpoll.re1],POLLIN|POLLPRI 
+	jnz     .we_have_mail 	;Someone sends smth via ctrl port
+	xor eax,eax
+.poll_ret: 
+	ret
+	
+.client_is_connecting: ;Closes listening socket accept a data conection
+    mov [arg2],byte 16
+    lea esi,[pasv_socket]
+    sys_accept [esi],arg1,arg2
+    mov edi,eax
+    sys_close [esi]
+    xor eax,eax
+    mov dword [esi],eax
+    ;EAX should be zero
+    ret
+
+.we_have_mail:		;Lets read the ctrl connection
+    sys_read ebp,req,req_len                    ;recv    
     dec eax
-    js .get_command                             ;while request
-
+;    js near .get_command                             ;while request
+    js  near .false_exit
     mov eax,[req]                               ;identify command for processing
+    ret
 
-    ;a series of jumps from command to command to verify which was requested...
 
+.check_if_logged:
+;pusha
+;    sys_kill 0,019    
+;    popa
+
+ cmp byte [config_logged],0
+ jnz .retr
+;ALLOW only QUIT, SYST, HELP, and NOOP
+    cmp eax,'USER'
+    jz near .user
+    cmp eax, 'PASS'
+    jz near .pass
+    cmp eax,'QUIT'
+    jz near .quit
+    cmp eax,'SYST'
+    jz near .syst
+    cmp eax,'NOOP'
+    jz near .noop
+    mov ecx,rep_530
+    call .reply_get_command
+    
+ 
 ;___________________________________________________________________________________________
 ;               RETR & STOR command
 ;-------------------------------------------------------------------------------------------
@@ -193,7 +317,9 @@ START:
 .stor:
     inc byte[edi]                               ;operation is STOR
     cmp eax,'STOR'                              ;is command STOR ?
-    jne near .list                              ;if not try LIST
+    jne near .clear_seek                              ;if not, clear seek then jump to LIST
+    test dword [config_flags],ALLOW_STORE
+    jz  near .transfer_error
 .transfer:
 
     call .req2asciiz
@@ -208,8 +334,10 @@ START:
 
 .open_file:
     sys_open esi,eax,S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH            ;open file
-    or eax, byte 0
-    js .transfer_error
+;    or eax, byte 0
+;    js .transfer_error
+    test eax,eax
+    js near .transfer_error
 
     mov esi,eax                                 ;file descriptor
     mov ecx,rep_150                             ;send start of transfer
@@ -217,10 +345,25 @@ START:
 
 
     test byte[operation],2
-    jz .transfer_file
+    jz .transfer_file_seek
     xchg esi,edi                                ;in case of STOR
-
+    jmps .transfer_file
+.transfer_file_seek:
+    mov eax,[seek]
+    or 	eax,eax
+    jz .transfer_file
+    xchg eax,ecx
+    sys_lseek esi,EMPTY,SEEK_SET
 .transfer_file:
+;    pusha
+    _mov 	edx,0
+    call .fd_setup
+    cmp eax,'ABOR' ;TODO not to lost other than ABOR cmds
+    jz .nic_moc
+    cmp eax,0x4f4241f2 ;Dirty hack someone is using \362ABOR sequence too
+.nic_moc:
+;    popa
+    jz .end_transfer_abort
     sys_read esi,buff,buff_size                 ;read a bunch
     or eax,byte 0
     je .end_transfer
@@ -230,18 +373,29 @@ START:
     call .ascii
     jmps .transfer_file                         ;and again
 .binary_transfer:
+%ifdef SLEEP
+    pusha  ;Emulated 8kb/s transfer on localhost
+    mov dword [sleep_n],1
+    sys_nanosleep sleep_n,NULL
+    popa
+%endif
     sys_write edi,buff,eax                      ;...and write that bunch
     jmps .transfer_file                         ;and again
 
 .end_transfer:
     sys_close esi                               ;close file
     sys_close edi                               ;close data connection = EOF
+    xor edi,edi
     mov ecx,rep_226                             ;send ok
     call .reply_get_command
-
+.end_transfer_abort:
+    mov ecx,rep_426                             ;send ok
+    call .reply
+    jmps .end_transfer
 .transfer_error:
     pop edi
     sys_close edi                               ;close data connection = EOF
+    xor edi,edi
     mov ecx,rep_550                             ;send error
     call .reply_get_command
 ;___________________________________________________________________________________________
@@ -249,28 +403,52 @@ START:
 
 
 ;___________________________________________________________________________________________
+;               REST command
+;-------------------------------------------------------------------------------------------
+.clear_seek:
+    pop	   edi
+    mov    dword [seek],0
+    cmp    eax,'REST'
+    jnz    .list					;try LIST
+    mov    esi,req
+    add    esi,byte 5
+    call   .ascii_to_num 
+    mov    dword [seek],eax
+    mov    ecx,rep_350                             ;send OK
+    call   .reply_get_command
+;___________________________________________________________________________________________
 ;               LIST command
 ;-------------------------------------------------------------------------------------------
 .list:
-    mov byte[edi],3                             ;operation is LIST
-    pop edi                                     ;redo stack and data socket
+    mov byte[operation],3                             ;operation is LIST
+;    pop edi                                     ;redo stack and data socket
 
     cmp ax,'LI'                                 ;is command LIST?
-    jne near .port                              ;if not try PORT
-
+    jne  near .port                              ;if not try PORT
+    or edi,edi
+    jnz .has_data_socket
+    mov edx,059000
+    call .fd_setup
+.has_data_socket:
+    lea  ecx, [sts] 
+    sys_stat ls, EMPTY 
+    
+    test eax,eax
+    jns .has_ls
+    jmp .misc_common    
+.has_ls:
     mov ecx,rep_150                             ;send start of transmition
     call .reply
 
 
     sys_fork                                    ;for ctrl & data
     or eax,eax
-    jne near .list_ctrl
-
+    jne  near .list_ctrl
     sys_pipe pipein                             ;pipe between ls & filter
 
     sys_fork                                    ;for execute & filter
     or eax,eax
-    je near .execute_ls
+    je  .execute_ls
 
     sys_close [pipeout]                         ;filter process doesn't write into the pipe
 
@@ -278,14 +456,34 @@ START:
     sys_read [pipein],buff,buff_size            ;read a bunch for filtering
     cmp eax,byte 0                              ;if none read
     jz .end_filter                              ;it means its all done
-
+    push eax
+%ifdef SLEEP
+    pusha ;emulated 8kb/s tranfers on localhost
+    mov dword [sleep_n],1
+    sys_nanosleep sleep_n,NULL
+    popa
+%endif
+;    pusha
+    _mov 	edx,0
+    call .fd_setup
+    cmp eax,'ABOR' ;TODO not to lost other cmds
+    jz .nic
+    cmp eax,0x4f4241f2 ;TODO not to lost other cmds
+.nic:
+;    popa
+    pop eax
+    jz .filter_abort
     call .ascii
     jmps .filter
 
 .end_filter:
     jmp .true_exit
-
+.filter_abort:
+    mov ecx,rep_426                             ;send closing DATA
+    call .reply
+    jmp .false_exit
 .execute_ls:
+    sys_close edi ;???
     sys_close [pipein]
     sys_dup2 [pipeout],STDOUT                   ;redirecting output of ls_process
     push edi                                    ;opt3
@@ -312,8 +510,20 @@ START:
 .no_params:
     pop edi
     sys_execve ls,lsargs,0                      ;executing ls
+    sys_exit 255
 .list_ctrl:
+.wait4another: ;This is not yet completed its better to wait until child exit
+        sys_wait4 0xffffffff,rtn,WUNTRACED,NULL 
+	test    eax,eax 
+	js      .wait4another 
+			        ;RTN struc 
+				; 0-6 bit signal caught (0x7f is stopped)  
+				; 7 core ? 
+				;8-15 bit EXIT code 
+				;if 0x7f -> 9-15 signal which caused the stop 
+								
     sys_close edi
+    xor edi,edi
     mov ecx,rep_250                             ;transfer successful
     call .reply_get_command
 
@@ -322,12 +532,12 @@ START:
 
 
 ;___________________________________________________________________________________________
-;               PORT command
+;               PORT command - DANGEROUS someone can steel your file...
 ;-------------------------------------------------------------------------------------------
 .port:
 
     cmp ax,'PO'                                 ;is command PORT?
-    jne near .type                              ;if not try TYPE
+    jne  near .pasv                              	;if not try PASV
 
     mov esi,req
     add esi,byte 5
@@ -376,6 +586,85 @@ START:
     sys_shutdown ebp,2
     sys_close ebp
     jmp .false_exit
+
+;___________________________________________________________________________________________
+;               PASV command
+;-------------------------------------------------------------------------------------------
+.pasv_err_pop:
+    pop eax
+    pop eax
+.pasv_err: ;Who knows what to send if PASV failed ?
+    mov ecx,502
+    call .reply_get_command
+
+.pasv:
+    cmp eax,'PASV'                             ;is command PASV?
+    jne  near .type                              ;if not try TYPE
+    xor    ebx,ebx ;let kernel choose the port
+    mov    bl,AF_INET
+    mov    edi,bindctrl                            ;opt2
+    mov    [edi],ebx
+    mov    dword[edi+4],0                          ;INADDR_ANY
+    sys_socket PF_INET,SOCK_STREAM,IPPROTO_TCP  ;and let there be a socket...
+    test eax,eax
+    js .pasv_err
+    mov esi,eax
+    sys_setsockopt esi,SOL_SOCKET,SO_REUSEADDR,setsockoptvals,4
+    test eax,eax
+    js .pasv_err
+    sys_bind esi,bindctrl,16                    ;bind_ctrl
+    test eax,eax
+    js .pasv_err
+    push byte 16
+    mov edx,esp
+    sys_getsockname esi,bindctrl,EMPTY
+    push word [bindctrl+2] ;PORT
+    test eax,eax
+    js near .pasv_err_pop
+    sys_listen esi,1
+    test eax,eax
+    js near .pasv_err_pop
+    mov [pasv_socket],esi
+    sys_getsockname ebp,bindctrl,EMPTY
+    test eax,eax
+    js near .pasv_err_pop
+    mov esi,bindctrl+4
+    mov edi,buff
+    mov ecx,rep_227                     ;start reply
+    call .reply
+
+    xor ecx,ecx
+    mov cl,4
+    
+.ip_loop:
+    xor eax,eax
+    lodsb
+    xor edx,edx
+    call .int2str
+    mov al,','
+    stosb
+    loop .ip_loop
+    xor eax,eax
+    pop ecx ;have the port in CX
+    mov al,cl
+    xor edx,edx
+    call .int2str
+    mov al,','
+    stosb
+    xor eax,eax    
+    mov al,ch
+    xor edx,edx
+    call .int2str
+    pop eax
+    mov ax,0x0A0D
+    stosw
+;227 =h1,h2,h3,h4,p1,p2
+    mov ecx,buff                             
+    mov edx,edi
+    sub edx,buff 
+    call .send_custom_response
+
+    
 ;___________________________________________________________________________________________
 
 
@@ -426,23 +715,53 @@ START:
 
 .misc:
     cmp ax,'CD'
-    je .cdup
+    je near .cdup
 
     push eax                                    ;save command
     call .req2asciiz
     mov ebx,esi                                 ;zero ended parameter
     pop eax                                     ;load command
-
+;;;
+    pop edi                                     ;restore data socket if there was any
+    
+    test dword [config_flags],ALLOW_MODIFY
+    
     cmp ax,'MK'
     je .mkd
     cmp ax,'RM'
-    je .rmd
+    je  near .rmd
     cmp ax,'DE'
     je .dele
     cmp ax,'CW'
     je .cwd
-    jmps .small
+    cmp eax,'SIZE'
+    je  .size
+    jmp .small
+;___________________________________________________________________________________________
+;               SIZE command
+;-------------------------------------------------------------------------------------------
+; ebx hold param
+.size:
 
+    push    edi
+    lea     ecx, [sts] 
+    sys_stat EMPTY, EMPTY
+    test    eax,eax
+    js 	    near .misc_common
+    mov     edi,buff
+    cld
+    mov     ecx,rep_213
+    call    .reply
+    mov	    eax, [sts.st_size]
+    xor     edx,edx
+    call    .int2str
+    mov     ax,0x0A0D
+    stosw
+    mov     ecx,buff                             
+    mov     edx,edi
+    sub     edx,buff
+    pop	    edi
+    call    .send_custom_response
 
 ;___________________________________________________________________________________________
 ;               CWD CDUP command
@@ -460,29 +779,38 @@ START:
 ;               MKD command
 ;-------------------------------------------------------------------------------------------
 .mkd:
+    test dword [config_flags],ALLOW_MODIFY
+    jz .deny
     mov ecx,S_IRWXU|S_IRWXG|S_IRWXO
     sys_mkdir                                   ;try to mkdir
     jmps .misc_common
 ;___________________________________________________________________________________________
 
 
+;___________________________________________________________________________________________
+;               DELE command
+;-------------------------------------------------------------------------------------------
+.dele:
+    test dword dword [config_flags],ALLOW_MODIFY
+    jz .deny
+    sys_unlink                                  ;try to unlink
+    jmps .misc_common
 
 ;___________________________________________________________________________________________
 ;               RMD command
 ;-------------------------------------------------------------------------------------------
 .rmd:
+    test dword [config_flags],ALLOW_MODIFY
+    jz .deny
     sys_rmdir                                   ;try to rmdir
     jmps .misc_common
 ;___________________________________________________________________________________________
 
 
-
-;___________________________________________________________________________________________
-;               DELE command
-;-------------------------------------------------------------------------------------------
-.dele:
-    sys_unlink                                  ;try to unlink
-
+    
+.deny: ;send 550 or 530 wgen deny the service ???
+    jmps .misc_error
+    
 .misc_common:
     or eax, byte 0
     jnz .misc_error
@@ -502,9 +830,25 @@ START:
 ;               USER command
 ;-------------------------------------------------------------------------------------------
 .user:
-    sys_chdir [root]
-    sys_chroot [root]
-    mov ecx,rep_230
+;    sys_chdir  [root]
+;    sys_chroot [root]
+    call .req2asciiz
+    call .find_user_in_config ;OUT EAX return code, IN ESI username ASCIIZ
+    xchg  eax,ecx
+    jmps .misc_reply_get_command
+
+
+;___________________________________________________________________________________________
+;               PASS command
+;-------------------------------------------------------------------------------------------
+.pass:
+;pusha
+;    sys_kill 0,019    
+;    popa
+
+    call .req2asciiz
+    call .setup_user_config ;OUT EAX return code, IN ESI pass ASCIIZ
+    xchg  eax,ecx
     jmps .misc_reply_get_command
 ;___________________________________________________________________________________________
 
@@ -528,27 +872,39 @@ START:
     jmps .misc_reply_get_command
 ;___________________________________________________________________________________________
 
+;___________________________________________________________________________________________
+;               ABOR command
+;-------------------------------------------------------------------------------------------
+.abor:
+    mov ecx,rep_226
+    jmps .misc_reply_get_command
+;___________________________________________________________________________________________
+
 
 .small:
-    pop edi                                     ;restore data socket if there was any
+;    pop edi                                     ;restore data socket if there was any
 
     cmp ax,'US'
     je .user
+    cmp eax,'PASS'
+    je .pass
+    
     cmp ax,'SY'
-    je near .syst
+    je  .syst
     cmp ax,'NO'
     je .noop
     cmp ax,'QU'
     je .quit
     cmp ax,'PW'
     je .pwd
-
-
+    cmp eax,'ABOR'
+    jz .abor
+    cmp eax,0x4f4241f2 ;ABOR with \362
+    jz .abor
 
 ;___________________________________________________________________________________________
 ;               unknown command
 ;-------------------------------------------------------------------------------------------
-
     mov ecx,rep_502
     call .reply_get_command
 ;___________________________________________________________________________________________
@@ -616,8 +972,64 @@ START:
     ret
 ;___________________________________________________________________________________________
 
+.int2str:
+        ;; Print an integer as a decimal string
+        ;; REQUIRES: integer(dividend) in eax,
+        ;;      edx = 0 before calling (holds remainder),
+        ;;      string destination in edi
+        ;; MODIFIES: edi
 
+        push    eax
+        push    ebx
+        push    ecx
+        push    edx
+        or      eax, eax
+        jnz     .keep_recursing
+        ;; special case of zero
+        or      edx, edx
+        jz      .write_remainder
+        jmps    .break_recursion
 
+.keep_recursing:
+        mov     edx, 0
+        mov     ebx, 10
+        div     ebx
+
+        call    .int2str
+
+.write_remainder:
+        mov     eax, edx
+        add     eax, '0'
+        stosb
+
+.break_recursion:
+        pop     edx
+        pop     ecx
+        pop     ebx
+        pop     eax
+        ret
+;--------------------------------------- 
+; esi = string 
+; eax = number  
+.ascii_to_num: 
+    push    esi 
+    push    ebx
+    xor     eax,eax                 ; zero out regs 
+    xor     ebx,ebx 
+ 
+.next_digit: 
+    lodsb                           ; load byte from esi 
+    sub     al,'0'                  ; '0' is first number in ascii 
+    jb 	    .done
+    imul    ebx,10 
+    add     ebx,eax 
+    jmps     .next_digit 
+.done: 
+    xchg    ebx,eax 
+    pop     ebx
+    pop     esi 
+    ret 
+																					
 ;___________________________________________________________________________________________
 ;               function ASCII  ( edi buff eax )
 ;in case of incoming data cuts out the CR just before LF
@@ -679,6 +1091,7 @@ START:
 ;and return first parameter in esi
 ;-------------------------------------------------------------------------------------------
 .req2asciiz:
+    push edi
     mov ecx,req_len                             ;cover the request
     mov edi,req                                 ;take request
     mov al,32                                   ;find first argument
@@ -688,7 +1101,8 @@ START:
     repne scasb                                 ;lookin'...
     dec edi
     mov byte[edi],0                             ;replace CR with EOStr
-    pop esi                                     ;load argument
+    pop esi 
+    pop edi                                    ;load argument
     ret
 ;___________________________________________________________________________________________
 
@@ -698,11 +1112,20 @@ START:
 ;               function reply
 ;replacement for all kinds of sys_write
 ;-------------------------------------------------------------------------------------------
+
 .send_ascii:
     pusha
     mov ecx,esi
     mov edx,edi
     jmps .common_sys_write
+.send_custom_response:
+    inc byte[rgc]
+    pusha
+;    mov ecx,esi
+;    mov edx,edi
+    jmps .common_sys_write
+    
+
 .reply_get_command:
     inc byte[rgc]
 .reply:
@@ -735,9 +1158,197 @@ START:
     pop eax
     jmp .get_command
 ;___________________________________________________________________________________________
+;read_config
+;-------------------------------------------------------------------------------------------
+; 
+; ;username       password     flag           homedir
+; anonymous      *            2            /home/ftp/anonymous
+; EOF
+
+.find_new_line:    
+    lodsb
+    cmp al,0xA
+    jnz .find_new_line
+    ret
+
+.skip_blank:
+    lodsb
+    cmp al,' '
+    jz .skip_blank
+    cmp al,9
+    jz .skip_blank
+    dec esi
+    ret
+
+.EOF: db "EOF",0
+
+.find_user_in_config: ;OUT EAX return code, IN ESI username ASCIIZ
+
+    push edi
+    xchg edi,esi
+    mov esi,[config_ptr]
+    ;EDI = username ASCIZ ESI=config file
+
+.analyze_next_line:
+    call .skip_blank
+    cmp al,';'
+    jz .run_new_line
+    push edi
+    push esi
+    mov edi,.EOF
+    call .string_compare
+    pop esi
+    pop edi
+    or ecx,ecx
+    jz .not_found_such_user
+.analyze_line:
+    push edi
+    push esi
+    call .string_compare    
+    or ecx,ecx
+    jz .parse_rest_of_line
+    pop esi
+    pop edi
+.run_new_line:
+    call .find_new_line
+    jmps .analyze_next_line
+    
+.not_found_such_user:
+    xor eax,eax
+    mov [config_ptr_line],eax
+    mov eax,rep_331
+    pop edi
+    ret
+
+.parse_rest_of_line:
+    pop eax 
+    pop edi
+    mov [config_ptr_line],esi
+    mov eax,rep_331
+    pop edi
+    ret
+    
 
 
+.setup_user_config:
+;pusha
+;    sys_kill 0,019    
+;popa
+    mov byte [config_logged],0
+    push edi
+    xchg esi,edi
+    mov esi,[config_ptr_line]
+    or esi,esi
+    jz .bad_pass
+    ;ESI config line
+    ;EDI ASCIIZ password
+    call .skip_blank
+    push edi
+    push esi
+    cmp byte [esi],'*'
+    jz .pass_match
+    call .string_compare    
+    or ecx,ecx
+    jz .pass_match
+    ;dont
+    pop esi
+    pop edi
+.bad_pass:
+    mov eax,rep_530
+    pop edi
+    ret
+.pass_match:
+    pop eax
+    pop edi
+    inc esi
+    call .skip_blank
+    call .ascii_to_num
+    mov [config_flags],eax
+    ;ESI is not set after the flag Number ;fix this
+    inc esi ;WE assume that flag has only 1 char
+    call .skip_blank
+    push esi
+.dummy_loop2:
+    lodsb
+    cmp al,0x21
+    jnb .dummy_loop2
+    dec esi
+    mov byte [esi],0
+    pop esi
+    sys_chdir esi
+    test eax,eax
+    js .bad_pass
+    sys_chroot esi
+    test eax,eax
+    js .bad_pass
+    mov byte [config_logged],1
 
+    mov eax,rep_230
+    pop edi
+    ret
+    
+.account_read:
+    sys_open [cfg_name],O_RDONLY
+    test eax,eax
+    js near .false_exit
+    mov ebx,eax
+    sys_fstat EMPTY,sts
+    push ebx
+    sys_mmap 0,dword [sts.st_size],PROT_READ|PROT_WRITE,MAP_PRIVATE,ebx,0
+    test eax,eax
+    js near .false_exit
+    mov [config_ptr],eax
+    pop ebx
+    sys_close EMPTY
+    ret
+
+
+;**************************************************************************** 
+;* string_compare *********************************************************** 
+;**************************************************************************** 
+;* esi=>  pointer to string 1 
+;* edi=>  pointer to string 2 
+;* <=ecx  == 0 (string are equal), != 0 (strings are not equal) 
+;* <=esi  pointer to string 1 + position of first nonequal character 
+;* <=edi  pointer to string 2 + position of first nonequal character 
+;**************************************************************************** 
+.string_compare: 
+        push    edx 
+	push    edi 
+	call    .string_length 
+	mov     edx,ecx 
+	mov     edi,esi 
+	call    .string_length 
+	cmp     ecx,edx 
+	jae     .length_ok 
+	mov     ecx,edx 
+.length_ok: 
+	pop     edi 
+	cld 
+	repe    cmpsb 
+	pop     edx 
+	ret 
+    
+;**************************************************************************** 
+;* string_length ************************************************************ 
+;**************************************************************************** 
+;* edi=>  pointer to string 
+;* <=ecx  string length (including trailing \0) 
+;* <=edi  pointer to string + string length 
+;**************************************************************************** 
+.string_length: 
+	xor     ecx,ecx 
+.next_char:
+	inc    ecx
+	cmp     byte [edi],0x21
+	inc     edi
+	jnb .next_char
+;	dec     ecx 
+;	cld 
+;        repne   scasb 
+;	neg     ecx 
+	ret 
+									
 DATASEG
 
     ftpd_DPORT dw 20                            ;data port ; default 20
@@ -747,8 +1358,30 @@ DATASEG
 
     TMS_params db 'A','I','S','F'               ;transmition parameters implemented
                                                 ;ascii, image, stream, file
+; username      group   password                u m M um  l  mhds ip            home
+
 
 UDATASEG
+;		mov	eax, [DATAOFF(sts.st_size)]
+small_buff resb 1
+sts:
+%ifdef __BSD__
+B_STRUC Stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_mtime,.st_size,.st_blocks
+%else
+B_STRUC Stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_size,.st_blocks,.st_mtime
+%endif
+%ifdef SLEEP
+sleep_n resd 4
+%endif
+
+config_ptr resd 1
+config_ptr_line resd 1
+config_logged resb 1
+config_flags resd 1
+
+rtn resd 1
+    pasv_socket resd 1
+    seek resd 1
     rgc resb 1                                  ;ReplayGetCommand
 
     arg1 resb 0xff
@@ -762,10 +1395,37 @@ UDATASEG
     pipein resd 1
     pipeout resd 1
 
-    root resd 1
+    cfg_name resd 1
 
     operation resb 1                            ;RETR | STOR | LIST
 
     buff resb buff_size
     req resb 1024
+    tpoll: 
+    .fd1 resd 1 
+    .e1  resw 1 
+    .re1 resw 1 
+    .fd2 resd 1 
+    .e2  resw 1 
+    .re2 resw 1 
+    
 END
+
+;sample ftpd.conf: remove (one) leading ';' on each line and save as ftpd.conf
+
+;-------- cut --------
+
+;; flag OR 1 =>  right to (APPE, STOR, STOU)
+;; flag OR 2 =>  right to (APPE, CHMOD, DELE, MKD, RMD, RNFR, RNTO)
+;;
+;;use EOF to ensure the end of file...
+;;
+;; TODO: set default umask
+;;
+;;username      password     flag           homedir 
+;ruik           asmrulez     3            /home/ftp/anonymous
+;anonymous      *            0            /home/ftp/anonymous 
+;konst          asmruleztoo  2            /home/ftp/anonymous
+;EOF
+
+;-------- cut --------
