@@ -1,12 +1,23 @@
 ;Copyright (C) 2000, 2001	Alexandr Gorlov <alexandr@fssrf.spb.ru>, <ct@mail.ru>
 ;				Karsten Scheibler <karsten.scheibler@bigfoot.de>
-;				Rudolf Marek <marekr2@feld.cvut.cz>
+;				Rudolf Marek <marekr2@feld.cvut.cz>,
 ;
-;$Id: sh.asm,v 1.6 2001/09/24 16:49:19 konst Exp $
+;$Id: sh.asm,v 1.7 2002/01/31 05:46:13 konst Exp $
 ;
 ;hackers' shell
 ;
 ;syntax: sh
+;
+; Command syntax:
+;	[[relative]/path/to/]program [argument ...]
+;
+; Conditional syntax:
+;	command
+;	{and|or} command
+;	...
+;
+; Comment (may not be in conditional):
+;	: text without shell special characters
 ;
 ;example: sh
 ;
@@ -16,6 +27,7 @@
 ;			partial CTRL+C handling (RM)
 ;0.03: 16-Sep-2001      Added history handling (runtime hist), 
 ;			improved signal handling (RM)
+;0.04: 30-Jan-2002	Added and/or internals and scripting (JH)
 
 %include "system.inc"
 
@@ -85,6 +97,33 @@ START:
 			;null terminated list with pointers to environment variables
 			pop esi ;dont want argc
 
+			
+			pop 	edi ;prg name
+			call    environ_initialize
+			pop	edi	; shell_script
+			or	edi, edi
+			jz	.interactive_shell
+
+			;-----------------
+			;open shell script
+			;-----------------
+
+			sys_open	edi, O_RDONLY
+			or	eax, eax
+			jnz	.script_opened
+			sys_write  STDERR, text.scerror, text.scerror_length
+			sys_exit	; error code=2
+.script_opened:		mov	[script_id], eax
+			mov	[cmdline.prompt], dword text.prompt_ptrace
+			jmps	conspired_to_run
+			
+			;---------------------
+			;write welcome message
+			;---------------------
+
+.interactive_shell:	sys_write  STDOUT, text.welcome, text.welcome_length
+			mov	[script_id], edi	; edi = 0, STDIN
+
 			;-------------------
 			;initialize terminal
 			;-------------------
@@ -92,14 +131,6 @@ START:
 			
 			;Experimental error handling 
 			sys_signal 02,break_hndl
-			
-			pop 	edi ;prg name
-			call    environ_initialize
-			;---------------------
-			;write welcome message
-			;---------------------
-
-			sys_write  STDOUT, text.welcome, text.welcome_length
 
 			;------------------------------
 			;get UID and select prompt type
@@ -116,7 +147,7 @@ select_prompt:		sys_getuid
 			;set values for cmdline_parse
 			;----------------------------
 
-			xor	dword eax, eax
+conspired_to_run	xor	dword eax, eax
 			mov	dword [cmdline.flags], eax
 			mov	dword [cmdline.argument_count], eax
 			mov	dword [cmdline.buffer2_offset], eax
@@ -166,7 +197,7 @@ get_cmdline:
 			;-------------
 			call	cmdline_parse
 			test	dword eax, eax
-%ifdef	__LONG_JUMPS__		;fucking nasm!!!!!
+%ifdef	__LONG_JUMPS__		;f***ing nasm!!!!!
 			jz	near get_cmdline
 			js	near get_cmdline.incomplete_prompt ;this is somewhat broken
 %else
@@ -304,6 +335,8 @@ string_compare:
 ;* tty_initialize ***********************************************************
 ;****************************************************************************
 tty_initialize:
+			cmp	[script_id], byte 0
+			jne	near .bye
 
 ;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ;TODO: set STDIN options (blocking, echo, icanon etc ...) only on linux ?
@@ -323,7 +356,7 @@ tty_initialize:
 			and	dword eax, ~(O_NONBLOCK) ;dont work
 			sys_fcntl  STDIN, F_SETFL, eax
 %endif
-			ret
+.bye			ret
 
 
 
@@ -333,9 +366,11 @@ tty_initialize:
 
 tty_restore:
 %ifdef __LINUX__
+	cmp	[script_id], dword 0
+	jne	.bye
  	    sys_ioctl STDIN, TCSETS,termattrs
 %endif	    
-	ret
+.bye:	ret
 
 
 
@@ -362,8 +397,12 @@ tty_restore:
 ;>AL out
 %ifdef __LINUX__
 get_char:
-		        sys_read STDIN,getchar,1
-			mov 	al,[ecx]
+		        sys_read [script_id],getchar,1
+			cmp	[script_id], byte 0
+			je	.noeof
+			or	al, al
+			js	near cmd_exit
+.noeof			mov 	al,[ecx]
 			ret
 %endif
 
@@ -448,7 +487,7 @@ cmdline_get:
 			sys_write EMPTY,cur_move_tmp,3
 			jmp short .big_fat_jump2	
 .esc_seq_start:
-			sys_read STDIN,getchar+1,2 ;have control code in buffer 
+			sys_read [script_id],getchar+1,2 ;have control code in buffer 
 			cmp 	word [ecx],'[D'
 			jz  .cursor_left	
 			cmp 	word [ecx],'[C'
@@ -781,7 +820,7 @@ cmdline_get:
 			sys_write STDOUT,EMPTY,EMPTY
 			jmp short .pop_next 
  %else
- 			sys_read  STDIN, cmdline.buffer1, (CMDLINE_BUFFER1_SIZE - 1)
+ 			sys_read  [script_id], cmdline.buffer1, (CMDLINE_BUFFER1_SIZE - 1)
 			test	dword eax, eax
 			jns	.end
 			xor	dword eax, eax
@@ -960,7 +999,14 @@ execute_builtin:
 			sys_exit  1
 
 .wait:			mov 	[pid],eax
-			sys_wait4  0xffffffff, NULL, NULL, NULL
+			xor	ebx,ebx		; Code updated to support
+			dec	ebx		; background processes
+			_mov	ecx, rtn	; JH
+			xor	edx, edx
+			xor	esi, esi
+.wait4another:		sys_wait4	; 0xffffffff, rtn, NULL, NULL
+			cmp	[pid], eax
+			jne	.wait4another	; Wrong pid! - end update
 			mov 	dword [pid],0
 			call tty_restore
 			jmp	tty_initialize
@@ -1040,7 +1086,37 @@ cmd_export:
 		jmps	.env
 
 
+;****************************************************************************
+;* cmd_and, cmd_or **********************************************************
+;****************************************************************************
+cmd_and:
+			cmp	[rtn], dword 0
+			jne	cmd_and_nogo
 
+; Stupid hack to call executor
+cmd_and_go:		mov	esi, cmdline.arguments
+			mov	edi, esi
+copyloop:		add	edi, byte 4 
+			mov	eax, [edi]
+			mov	[esi], eax
+			add	esi, byte 4
+			or	eax, eax
+			jnz	copyloop
+
+			call	cmdline_execute		; Execute the program
+cmd_and_nogo:		ret
+
+cmd_or			cmp	[rtn], dword 0
+			jne	cmd_and_go
+			ret
+
+;****************************************************************************
+;* cmd_colon ****************************************************************
+;****************************************************************************
+
+cmd_colon:		xor	eax, eax
+			mov	[rtn], eax
+			ret
 
 ;****************************************************************************
 ;* cmd_exit *****************************************************************
@@ -1048,7 +1124,7 @@ cmd_export:
 cmd_exit:
 			call	tty_restore
 			sys_write  STDOUT, text.logout, text.logout_length
-			sys_exit  0
+			sys_exit  [rtn]	; last exit code
 
 
 
@@ -1093,6 +1169,7 @@ break_hndl:
 text:
 .welcome:			db	"asmutils shell", 10
 .welcome_length:		equ	$ - .welcome
+.prompt_ptrace:			db	"+ "
 .prompt_user:			db	"$ "
 .prompt_root:			db	"# "
 .prompt_incomplete:		db	"> "
@@ -1108,6 +1185,8 @@ text:
 .cd_failed_length:		equ	$ - .cd_failed
 .logout:			db	"logout", 10
 .logout_length:			equ	$ - .logout
+.scerror			db	"couldn't open scriptfile", 10
+.scerror_length			equ	$ - .scerror
 
 builtin_cmds:
 				align	4
@@ -1115,7 +1194,13 @@ builtin_cmds:
 				dd	.logout, cmd_exit
 				dd	.cd, cmd_cd
 				dd      .export, cmd_export
+				dd	.and, cmd_and
+				dd	.or, cmd_or
+				dd	.colon, cmd_colon
 				dd	0, 0
+.and				db	"and", 0
+.or				db	"or", 0
+.colon				db	":", 0
 .exit:				db	"exit", 0
 .logout:			db	"logout", 0
 .cd:				db	"cd", 0
@@ -1183,6 +1268,8 @@ history_cur   resd 1
 history_start resd 1
 %endif
 pid resd 1
+rtn resd 1		; Return code
+script_id resd 1	; Script handle
 END
 ;****************************************************************** AG + KS *
 
