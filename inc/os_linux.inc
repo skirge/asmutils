@@ -1,6 +1,6 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.14 2001/12/03 19:20:49 konst Exp $
+; $Id: os_linux.inc,v 1.15 2001/12/04 15:29:21 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
@@ -897,6 +897,25 @@ endstruc
 %assign SIOCDIFADDR	0x8936		;delete PA address		
 %assign	SIOCSIFHWBROADCAST	0x8937	;set hardware broadcast addr	
 %assign SIOCGIFCOUNT	0x8938		;get number of devices 
+
+;
+;linux/module.h
+;
+
+%assign MOD_UNINITIALIZED	0
+%assign MOD_RUNNING		1
+%assign MOD_DELETED		2
+%assign MOD_AUTOCLEAN		4
+%assign MOD_VISITED  		8
+%assign MOD_USED_ONCE		16
+%assign MOD_JUST_FREED		32
+%assign MOD_INITIALIZING	64
+
+%assign QM_MODULES	1
+%assign QM_DEPS		2
+%assign QM_REFS		3
+%assign QM_SYMBOLS	4
+%assign QM_INFO		5
 
 ;
 ;linux/sysctl.h

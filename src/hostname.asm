@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: hostname.asm,v 1.6 2001/12/03 19:19:45 konst Exp $
+;$Id: hostname.asm,v 1.7 2001/12/04 15:31:20 konst Exp $
 ;
 ;hackers' hostname/domainname
 ;
@@ -20,14 +20,19 @@
 
 %include "system.inc"
 
-;%ifdef	__BSD__
+;NOTE: sysctl-based version works on Linux as well;
+;however, as sysctl support can be disabled in Linux kernel,
+;sysctl-based version is not used by default on Linux.
+
+%ifdef	__BSD__
 %define	USE_SYSCTL
-;%endif
+%endif
 
 CODESEG
 
 START:
-	xor	edi,edi
+	xor	edi,edi			;{host|domain}name flag
+
 	pop	ebx
 	pop	esi
 .n1:
@@ -36,74 +41,75 @@ START:
 	jnz	.n1
 	cmp	dword [esi-9],'host'
 	jz	.n2
-	inc	edi			;domainname
+	inc	edi			;we are called as domainname
 .n2:
 	dec	ebx
-	jz	.getname
+	jz	.getname		;no parameters, write current name
 
-	pop	ebx
+	pop	ebx			;name parameter
 
-%ifdef	USE_SYSCTL
-	mov	esi,ebx
+	mov	esi,ebx			;calculate name length in esi
 .n3:
 	lodsb
 	or	al,al
 	jnz	.n3
 	sub	esi,ebx
 	dec	esi
-	_mov	eax,kern_hostname_req
-%else
-	_mov	ecx,MAXHOSTNAMELEN
-%endif
-	dec	edi
-	jz	.setdomain
 
-%ifdef USE_SYSCTL
-.sethostname:
-	sys_sysctl eax, 2, 0, 0, ebx, esi
-%else
-	sys_sethostname
-%endif
-	jmps	_exit
+%ifdef	USE_SYSCTL
 
-.setdomain:
-
-%ifdef USE_SYSCTL
-	add	eax, byte 8
-	jmps	.sethostname
-%else
-	sys_setdomainname
-	jmps	_exit
-%endif
-.getname:
-%ifdef USE_SYSCTL
-	pusha
-	mov	dword [len],SYS_NMLN
 	mov	eax,kern_hostname_req
 	dec	edi
-	jnz	.sysctl
+	jnz	.sysctl_set
 	add	eax,byte 8
-.sysctl:
-	sys_sysctl	eax, 2, h, len, 0, 0
-	test	eax,eax
-	js	.done_get
-	popa
-	mov	esi,h
-	dec	edi
-	jnz	.done_get
-;	sys_getdomainname
+.sysctl_set:
+	sys_sysctl eax, 2, 0, 0, ebx, esi
+
 %else
+
+	mov	ecx,esi
+	dec	edi
+	jz	.setdomain
+	sys_sethostname
+	jmps	.done_set
+.setdomain:
+	sys_setdomainname
+
+%endif
+
+.done_set:
+	jmps	_exit
+
+.getname:
+
+%ifdef USE_SYSCTL
+
+	mov	dword [len],SYS_NMLN*2
+	mov	eax,kern_hostname_req
+	mov	edx,buf
+	dec	edi
+	jnz	.sysctl_get
+	add	eax,byte 8
+.sysctl_get:
+	sys_sysctl	eax, 2, edx, len, 0, 0
+	test	eax,eax
+	js	_exit
+	mov	esi,edx
+
+%else
+
 	mov	esi,h
 	sys_uname esi
 	_add	esi,utsname.nodename
-;	lea	esi,[esi+utsname.nodename]
 	dec	edi
 	jnz	.done_get
 	_add	esi,utsname.domainname-utsname.nodename
+
 %endif
 
-.done_get:
-	_mov	edx,0
+.done_get:				;esi should point to name buffer
+
+	xor	edx,edx
 .strlen:
 	lodsb
 	inc	edx
@@ -112,6 +118,7 @@ START:
 	mov	byte [esi-1],__n
 	sub	esi,edx
 	sys_write STDOUT,esi
+	xor	eax,eax
 _exit:
 	sys_exit eax
 
@@ -127,9 +134,14 @@ kern_domainname_req:
 UDATASEG
 
 %ifdef	USE_SYSCTL
+
 len	resd	1
-%endif
+buf	resb	SYS_NMLN*2
+
+%else
 
 h B_STRUC utsname,.nodename,.domainname
+
+%endif
 
 END

@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.10 2001/12/03 19:20:49 konst Exp $
+; $Id: includes.inc,v 1.11 2001/12/04 15:29:21 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 03-Dec-2001
+; modified      : 04-Dec-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : generic constants and structures from header files (libc)
@@ -60,7 +60,12 @@
 
 %define		TIME_T		LONG
 %define		MODE_T		UINT
+%define		SIZE_T		ULONG
 %define		OFF_T		ULONG
+
+%define		PCHAR		resd
+%define		PINT		resd
+%define		PLONG		resd
 
 %define		_INT		dd
 %define		_UINT		dd
@@ -79,11 +84,8 @@
 
 %define		_TIME_T		_LONG
 %define		_MODE_T		_UINT
+%define		_SIZE_T		_ULONG
 %define		_OFF_T		_ULONG
-
-%define		PCHAR		resd
-%define		PINT		resd
-%define		PLONG		resd
 
 ;
 ;please provide corresponding include file when adding new entries

@@ -1,6 +1,6 @@
 ; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_freebsd.inc,v 1.5 2001/12/03 19:20:49 konst Exp $
+; $Id: os_freebsd.inc,v 1.6 2001/12/04 15:29:21 konst Exp $
 ;
 ; file          : os_freebsd.inc
 ; created       : 08-Feb-2000
@@ -21,6 +21,7 @@
 ;
 ;sys/syscall.h
 ;
+;see sys/sysproto.h to find out arguments for each syscall
 ;$FreeBSD: src/sys/sys/syscall.h,v 1.69.2.8 2001/06/16 20:41:40 tegge Exp $
 ;created from FreeBSD: src/sys/kern/syscalls.master,v 1.72.2.6 2000/11/02 04:25:15 marcel Exp 
 
@@ -459,6 +460,65 @@ endstruc
 %assign	USER_STREAM_MAX		19	;int: POSIX2_STREAM_MAX
 %assign	USER_TZNAME_MAX		20	;int: POSIX2_TZNAME_MAX
 %assign	USER_MAXID		21	;number of valid user ids
+
+;
+;sys/linker.h
+;
+
+%assign MODINFO_END		0x0000		;End of list
+%assign MODINFO_NAME		0x0001		;Name of module (string)
+%assign MODINFO_TYPE		0x0002		;Type of module (string)
+%assign MODINFO_ADDR		0x0003		;Loaded address
+%assign MODINFO_SIZE		0x0004		;Size of module
+%assign MODINFO_EMPTY		0x0005		;Has been deleted
+%assign MODINFO_ARGS		0x0006		;Parameters string
+%assign MODINFO_METADATA	0x8000		;Module-specfic
+
+%assign MODINFOMD_AOUTEXEC	0x0001		;a.out exec header
+%assign MODINFOMD_ELFHDR	0x0002		;ELF header
+%assign MODINFOMD_SSYM		0x0003		;start of symbols
+%assign MODINFOMD_ESYM		0x0004		;end of symbols
+%assign MODINFOMD_DYNAMIC	0x0005		;_DYNAMIC pointer
+%assign MODINFOMD_NOCOPY	0x8000		;don't copy this metadata to the kernel
+
+%assign MODINFOMD_DEPLIST	(0x4001 | MODINFOMD_NOCOPY)	;depends on */
+
+struc	kld_file_stat
+.version	INT	1		;set to sizeof(linker_file_stat)
+.name		CHAR	MAXPATHLEN
+.refs		INT	1
+.id		INT	1
+.address	PCHAR	1		;load address
+.size		SIZE_T	1		;size in bytes
+%endstruc
+
+%macro	sys_kldload 0-1
+	__syscall kldload 1, %0, %1
+%endmacro
+
+%macro	sys_kldunload 0-1
+	__syscall kldunload 1, %0, %1
+%endmacro
+
+%macro	sys_kldfind 0-1
+	__syscall kldfind 1, %0, %1
+%endmacro
+
+%macro	sys_kldnext 0-1
+	__syscall kldnext 1, %0, %1
+%endmacro
+
+%macro	sys_kldstat 0-2
+	__syscall kldstat 2, %0, %1, %2
+%endmacro
+
+%macro	sys_kldfirstmod 0-1
+	__syscall kldfirstmod 1, %0, %1
+%endmacro
+
+%macro	sys_kldsym 0-3
+	__syscall kldload 1, %0, %1, %2, %3
+%endmacro
 
 ;
 ;generic BSD stuff
