@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Paul Furber <m@verick.co.za>
 ;
-;$Id: fire256.asm,v 1.5 2002/02/02 12:33:38 konst Exp $
+;$Id: fire256.asm,v 1.6 2002/02/28 05:31:40 konst Exp $
 
 ;;  This program is free software; you can redistribute it and/or modify
 ;;  it under the terms of the GNU General Public License as published by
@@ -56,15 +56,15 @@ START:
 	;; memory map the screen mem
 
 	mov	eax,	[fd]		; get saved fd
-	mov	edi,	VMEM_SIZE
+	mov	ecx,	VMEM_SIZE
 
-	sys_mmap 0,eax,MAP_SHARED,PROT_READ|PROT_WRITE,edi,0
+	sys_mmap 0,EMPTY,PROT_READ|PROT_WRITE,MAP_SHARED,eax,0
 
 	test	eax,	eax		;have we mmaped it?
 	js	near	my_exit		; argh
 	
 	mov	[fix.mmio_start],eax	;  save this
-	mov	[fix.mmio_len],	edi	;  and this 
+	mov	[fix.mmio_len],	ecx	;  and this 
 
 	;; we want to change to this mode
 	mov	[var.xres], dword SIZE_X

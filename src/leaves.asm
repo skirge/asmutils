@@ -1,11 +1,11 @@
 ;Copyright (C) 1996-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: leaves.asm,v 1.9 2002/02/02 12:33:38 konst Exp $
+;$Id: leaves.asm,v 1.10 2002/02/28 05:31:40 konst Exp $
 ;
-;leaves		-	Linux fbcon intro in 396 bytes
+;leaves		-	Linux fbcon intro in 394 bytes
 ;
 ;Once I've took one of my old DOS intros made in tasm, and rewrote it
-;for nasm and Linux/fbcon.. Uhm.. I've got 396 bytes.
+;for nasm and Linux/fbcon.. Uhm.. I've got 394 bytes.
 ;(DOS 16-bit version was 381 bytes long)
 ;
 ;This intro is the smallest implementation
@@ -38,11 +38,11 @@
 
 %include "system.inc"
 
-%assign SIZE_X 640
-%assign SIZE_Y 480
-%assign DEPTH 8
+%assign	SIZE_X	640
+%assign	SIZE_Y	480
+%assign	DEPTH	8
 
-%assign VMEM_SIZE SIZE_X*SIZE_Y
+%assign	VMEM_SIZE	SIZE_X*SIZE_Y
 
 ;%define MaxX 640.0
 ;%define MaxY 480.0
@@ -176,7 +176,6 @@ leaves:
 
 START:
 	_mov	ebp,parameters
-	_mov	edi,VMEM_SIZE
 
 	lea	ebx,[OFFSET(fb)]
 	sys_open EMPTY, O_RDWR
@@ -184,18 +183,20 @@ START:
 ;	test	eax,eax			;have we opened file?
 ;	js	do_exit
 
+	_mov	ecx,VMEM_SIZE
+
 %if	__SYSCALL__=__S_KERNEL__
 ;prepare structure for mmap on the stack
 	_push	0			;.offset
 	_push	eax			;.fd
 	_push	MAP_SHARED		;.flags
 	_push	PROT_READ|PROT_WRITE	;.prot
-	_push	edi			;.len
+	_push	ecx			;.len
 	_push	0			;.addr
 	sys_oldmmap esp
 %else
 	push	ebp
-	sys_mmap 0,eax,MAP_SHARED,PROT_READ|PROT_WRITE,edi,0
+	sys_mmap 0,EMPTY,PROT_READ|PROT_WRITE,MAP_SHARED,eax,0
 	pop	ebp
 %endif
 ;	test	eax,eax		;have we mmaped file?
@@ -204,7 +205,6 @@ START:
 	mov	esi,eax
 
 ;clear screen
-	mov	ecx,edi
 	mov	edi,esi
 	xor	eax,eax
 	rep	stosb
