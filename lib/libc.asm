@@ -1,7 +1,7 @@
-;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-;$Id: libc.asm,v 1.11 2001/12/10 17:11:07 konst Exp $
+;$Id: libc.asm,v 1.12 2002/01/05 08:41:53 konst Exp $
 ;
 ;hackers' libc
 ;
@@ -33,7 +33,7 @@
 ;			to prepare main() arguments (argc, argv, envp),
 ;			PIC fixes (KB)
 ;0.07: 25-Feb-2001	added __VERBOSE__, memcmp(), getenv() (KB)
-;0.08: 10-Dec-2001	random fixes (KB)
+;0.08: 05-Jan-2001	strlen() bugfix, various fixes (KB)
 
 %undef __ELF_MACROS__
 
@@ -94,14 +94,12 @@
 %define	__INT_VAR(x) ebx + (x) wrt ..gotoff
 
 %macro __GET_GOT 0
-	call	%%get_GOT
+	call	__get_GOT
 %%get_GOT:
-	pop	ebx
 %define gotpc %%get_GOT wrt ..gotpc
 	add	ebx,_GLOBAL_OFFSET_TABLE_ + $$ - gotpc
 %undef gotpc
 %endmacro
-
 
 ;adjust cdecl call (1 - 3 parameters)
 ;
@@ -154,6 +152,12 @@
 %define	__edi	esp+4*0
 
 CODESEG
+
+%ifdef __PIC__
+__get_GOT:
+	mov	ebx,[esp]
+	ret
+%endif
 
 START:
 %ifdef __PIC__
@@ -573,7 +577,7 @@ getenv:
 
 strlen:
 	push	edx
-	__ADJUST_CDECL3 0,eax
+	__ADJUST_CDECL3 4*1,eax
 
 	mov	edx,eax
 .real:
