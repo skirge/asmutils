@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: ps.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: ps.asm,v 1.4 2000/09/03 16:13:54 konst Exp $
 ;
 ;hackers' ps
 ;
@@ -141,7 +141,7 @@ print_field:
 
 ; edi=buf
 ; 
-print_fields
+print_fields:
 		pushad
 		
 		; replace all ' ' with \0
@@ -164,7 +164,7 @@ print_fields
 		movzx	ecx,al
 		call	print_field
 		jmp	.next_f
-.ret				
+.ret:
 		popad
 		ret
 

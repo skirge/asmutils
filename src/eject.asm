@@ -1,30 +1,32 @@
 ;Copyright (C) 1999 Bart Hanssens <antares@mail.dma.be>
 ;Copyright (C) 2000 H-Peter Recktenwald <phpr@snafu.de>
 ;
-;$Id: eject.asm,v 1.4 2000/04/07 18:36:01 konst Exp $
+;$Id: eject.asm,v 1.5 2000/09/03 16:13:54 konst Exp $
 ;
-;hackers' eject (eject CD-ROM)
+;hackers' eject/ccd (eject CD-ROM)
 ;
 ;0.01: 29-Jul-1999	initial release
 ;0.10: 06-Apr-2000	ccd extension
+;0.11: 06-May-2000	cleanup
 ;
 ;syntax: eject [device]
 ;        ccd [device [mountpoint [filesys [options]]]]
 ;
+;if no device is given, use /dev/cdrom
 ; ----------------------------------------------------------------
 ; -ccd extension by H-Peter Recktenwald, Berlin <phpr@snafu.de>
 ;	file  	: eject.asm
 ;	started	: 0.00	15-jan-2000
-;	version	: 0.10	06-apr-2000
+;	version	: 0.10	06-mai-2000
 ;
 ; eject -ccd ("Change CD rom"):
 ;	un-mount cdrom, eject, wait for <enter>, re-mount
 ;
 ; syntax:
-;	eject [device]
-;	eject -ccd [device [mountpoint [filesys [options]]]]
+;	eject [specialfile]
+;	eject -ccd [specialfile [mountpoint [filesys [options]]]]
 ; defaults:
-; 	device:		'/dev/cdrom'
+; 	specialfile:	'/dev/cdrom'
 ;	mountpoint:	'/cdrom'
 ;	filesys:	'iso9660'
 ; 	options:	0 (binary! re below)
@@ -61,7 +63,7 @@
 
 ;compile options
 %define LINK_CCD	; enable <ccd> linked to <eject> for <eject -ccd> action
-%define WITH_CCD	; enable <eject -ccd>
+;%define WITH_CCD	; enable <eject -ccd>
 ;%define ONLY_CCD	; enable <eject> alias <eject -ccd>, disable plain eject syscall action
 ;%define SYS_EJECT	; disable any option passed in
 
@@ -86,6 +88,19 @@
 
 %include "system.inc"
 
+; test (ok)
+; %define __ASM2MKH to enable <asm2mkh> to
+; collecting currently valid constants from
+; system data (/usr/include, etc.).
+%ifndef __ASM2MKH
+; ioctl no.s
+%assign	CDROMEJECT	0x5309
+%assign CDROMCLOSETRAY	0x5319
+; flags
+%define MS_RDONLY	1
+%define MS_MGC_VAL	0xc0ed0000
+%endif
+
 
     CODESEG
 
@@ -97,7 +112,7 @@ START:
 	pop eax
 %endif; <= LINK_CCD
 	pop ecx			; prg.name
-	lea ebx,[dftdev]	; vari reference, device default
+	mov ebx,dftdev		; vari reference, device default
 %ifdef WITH_CCD
     %ifdef LINK_CCD
 	mov edi,ecx		; name
@@ -106,14 +121,14 @@ START:
 	repnz scasb
 	mov eax,edx		; arg count
 	mov ecx,[edi-4]		; program name
-	lea edi,[flag]
-	mov [edi],eax		; clear flag (might be dispensable..)
+	mov edi,flag
+;;;;	mov [edi],eax		; clear flag (might be dispensable..)
 	cmp ecx,0+'ccd'
 	setnz byte[edi]		; ccd mode/ioctl 'option' default := 00
     %else
-	lea edi,[flag]		; flag & mountoptions ptr
+	mov edi,flag		; flag & mountoptions ptr
         %ifdef ONLY_CCD
-	mov byte[edi],0
+;;;;	mov byte[edi],0		;(.bss <nul> initiated, anyway)
         %else
 	mov byte[edi],1
 	%endif; <= ONLY_CCD

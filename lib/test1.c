@@ -1,12 +1,11 @@
 /*
 	Copyright (C) 1999-2000 Konstantin Boldyshev
 
-	$Id: test1.c,v 1.1 2000/03/02 08:52:01 konst Exp $
+	$Id: test1.c,v 1.2 2000/09/03 16:13:54 konst Exp $
 
 	test program for assembly libc
 */
 
-#include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -15,7 +14,7 @@
 #include "libc.h"
 
 static char *fname = "_tst_",
-	    *s = "Hello,world!\n",
+	    *s = "Hello,world!\nType something, then press [Enter]\n",
 	    buf[100];
 
 static int fd, len;
@@ -39,5 +38,8 @@ int main(void)
 
     write(STDOUT_FILENO, buf, len);
 
-    exit(0); /* MUST be called to exit */
+    len = read(STDIN_FILENO, buf, 10);
+    write(STDOUT_FILENO, buf, len);
+
+    exit(len); /* MUST be called to exit */
 }

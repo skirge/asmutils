@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: hostname.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: hostname.asm,v 1.4 2000/09/03 16:13:54 konst Exp $
 ;
 ;hackers' hostname/domainname
 ;
@@ -8,6 +8,7 @@
 ;0.02: 17-Jun-1999	size improvements
 ;0.03: 04-Jun-1999	domainname added
 ;0.04: 18-Sep-1999	elf macros support 
+;0.05: 03-Sep-2000	portable utsname, BSD port
 ;
 ;syntax: hostname [name]
 ;	 domainname [name]
@@ -35,44 +36,51 @@ START:
 	jz	.getname
 
 	pop	ebx
-	_mov	ecx,UTS_LEN
+	_mov	ecx,MAXHOSTNAMELEN
 	dec	edi
 	jz	.setdomain
 	sys_sethostname
-	jmp short exit
+	jmps	_exit
 .setdomain:
 	sys_setdomainname
-	jmp short exit
+	jmps	_exit
 
 .getname:
-	sys_uname	h
+%ifdef __BSD__
+	mov	esi,h
+	sys_gethostname esi,MAXHOSTNAMELEN - 1
+	dec	edi
+	jnz	.done_get
+	sys_getdomainname
+%else
+	sys_uname h
 
-;	_mov	edx,0	;not needed, edx was not touched yet
+	_mov	edx,0	;not needed, edx was not touched yet
 	mov	esi,h.nodename
 	dec	edi
-	jnz	.next
+	jnz	.done_get
 	mov	esi,h.domainname
-.next:
+%endif
+.done_get:
 	lodsb
 	inc	edx
 	or	al,al
-	jnz	.next
-	mov	byte [esi-1],0x0A
+	jnz	.done_get
+	mov	byte [esi-1],__n
 	sub	esi,edx
-
 	sys_write STDOUT,esi
-exit:
+_exit:
 	sys_exit eax
 
 UDATASEG
 
-h I_STRUC new_utsname
-.sysname	CHAR	luts
-.nodename	CHAR	luts
-.release	CHAR	luts
-.version	CHAR	luts
-.machine	CHAR	luts
-.domainname	CHAR	luts
+h I_STRUC utsname
+.sysname	CHAR	SYS_NMLN
+.nodename	CHAR	SYS_NMLN
+.release	CHAR	SYS_NMLN
+.version	CHAR	SYS_NMLN
+.machine	CHAR	SYS_NMLN
+.domainname	CHAR	SYS_NMLN
 I_END
 
 END

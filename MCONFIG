@@ -1,0 +1,141 @@
+# Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
+#
+# MCONFIG -- Configuration stuff for asmutils
+#
+# $Id: MCONFIG,v 1.1 2000/09/03 16:13:53 konst Exp $
+
+#---------------------------------------------------------------------------#
+
+#			CONFIGURATION PARAMETERS
+
+#---------------------------------------------------------------------------#
+
+# Operating system (LINUX/FREEBSD/NETBSD/OPENBSD/BEOS/LIBC)
+
+OS = LINUX
+
+# Kernel version (1.4 = 14, 2.0 = 20, 3.2 = 32, etc)
+
+KERNEL = 22
+
+# Optimization method (SIZE/SPEED)
+
+OPTIMIZE = SIZE
+
+# Enable debug build
+
+#DEBUG = y
+
+# Include version stamp into binaries
+
+#STAMP = y
+
+# Use custom startup code
+# (currently works only with C style main() stack and BeOS)
+#STARTUP = y
+
+# LINUX only
+#
+# ELF hack for smaller binaries
+ELF_MACROS = y
+
+#---------------------------------------------------------------------------#
+
+#			DO NOT EDIT BELOW IF NOT SURE
+
+#---------------------------------------------------------------------------#
+
+${OS} = y
+
+AS = nasm
+LD = ld
+CC = gcc
+MAKE = gmake
+LN = ln -s
+RM = rm -f
+CP = cp -Rp
+MKDIR = mkdir -p
+
+ASFLAGS = -w+orphan-labels -w+macro-params -i../inc/
+CFLAGS = -Wall -O2 -fomit-frame-pointer -nostartfiles -nostdlib -Wl,-e,main
+DEFINES = -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__
+
+ifdef DEBUG
+LDFLAGS =
+ASFLAGS += -g
+ELF_MACROS =
+DEFINES += -DDEBUG
+else
+LDFLAGS =
+endif
+
+ifdef BUILD_LIB
+ELF_MACROS =
+endif
+
+ifndef LINUX
+
+ELF_MACROS =
+
+ifdef NETBSD
+AOUT = y
+endif
+ifdef OPENBSD
+AOUT = y
+endif
+
+ifdef LIBC
+LD = gcc
+DEFINES += -D__LIBC__
+ifndef STARTUP
+LDFLAGS = -nostartfiles
+endif
+endif
+
+endif
+
+ifdef STARTUP
+DEFINES += -D__STARTUP__
+endif
+ifdef KERNEL
+DEFINES += -D__KERNEL__=$(KERNEL) 
+endif
+ifdef STAMP
+DEFINES += -DSTAMP_VERSION="'asmutils 0.10'" -DSTAMP_DATE="'$(shell date "+%d-%b-%Y %H:%M")'"
+endif
+
+ifdef ELF_MACROS
+
+ASFLAGS += -f bin
+DEFINES += -D__ELF_MACROS__
+
+%:	%.asm
+	$(AS) $(ASFLAGS) $(DEFINES) $<
+	chmod +x $*
+
+else
+
+ifdef AOUT
+ASFLAGS += -f aoutb
+STRIP = strip
+ifdef BUILD_SRC
+LDFLAGS += -e _start
+endif
+DEFINES += -D__AOUT__
+else
+ASFLAGS += -f elf
+LDFLAGS += -s
+STRIP = strip --remove-section .note --remove-section .comment
+#STRIP = sstrip
+endif
+
+%.o:	%.asm
+	$(AS) $(ASFLAGS) $(DEFINES) $<
+
+%:	%.o
+	$(LD) $(LDFLAGS) -o $* $<
+ifndef DEBUG
+	$(STRIP) $*
+endif
+
+endif

@@ -1,16 +1,15 @@
-;--------------------------------------------------------------------------
-; simple netcat   for asmutils...
+;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-; 12/1999 -->>>> Cecchinel Stephan   (inter.zone@free.fr)
+;$Id: nc.asm,v 1.3 2000/09/03 16:13:54 konst Exp $
 ;
-; syntax:	nc -l [port] ip port	get input from port , output to ip port
+;hackers' netcat
+;
+;syntax:	nc -l [port] ip port	get input from port , output to ip port
 ;		nc -l |port]		get input from port, output to STDOUT
 ;		nc ip port		get input from STDIN, output to ip port
 ;
 ;			ip is in form xxx.xxx.xxx.xxx  only numeric (no DNS lookup)
-;
-;
-; $Id: nc.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+
 
 [bits 32]
 %include "system.inc"

@@ -1,6 +1,6 @@
 <!doctype linuxdoc system>
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.1 2000/04/07 18:36:01 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.2 2000/09/03 16:13:53 konst Exp $ -->
 
 <article>
 
@@ -9,7 +9,7 @@
 <author>
 <url url="mailto:konst@linuxassembly.org" name="Konstantin Boldyshev">
 
-<date>v0.2 07-Apr-2000
+<date>v0.3, August 23, 2000
 
 <abstract>
 This is the Asmutils HOWTO.
@@ -29,16 +29,25 @@ striving for the secret lore of the assembly entity.
 <sect1>Legal blurb
 <p>
 Copyright &copy; 1999-2000 Konstantin Boldyshev.
-Permission is granted to copy, distribute and/or modify
-this document under the terms of the GNU
-<url url="http://www.gnu.org/copyleft/fdl.html"
-name="Free Documentation License">,
-Version 1.1 or any later version published by the Free Software Foundation.
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU <url url="http://www.gnu.org/copyleft/fdl.html"
+name="Free Documentation License">, Version 1.1
+or any later version published by the Free Software Foundation.
+
+<sect1>Credits
+<p>
+
+I would like to thank following persons for contributing to this document:
+
+<itemize>
+<item>Brian Raiter (elf.inc description)
+<item>Dmitry Bakhvalov (using gdb)
+</itemize>
 
 <sect1>Before you begin
 <p>
 
-I assume you are familiar with Unix and assembly language to such an extent
+I assume you are familiar with Unix and assembly language to an extent
 when you are able to understand what is written here.
 If you are not understanding most of what is written here,
 probably this HOWTO is not for you.
@@ -50,25 +59,43 @@ Again, examine ALL source code. Look how command line parsing is done,
 how conditional assembly for different kernel versions is done and so on --
 I am not going to explain all and everything here.
 
-Mostly this HOWTO describes a set of macros I've developed to write fast
-and readable; they are hiding from you unneeded details,
-and also take care of optimization.
+This HOWTO deals with compiling, developing, debugging, contributing issues,
+it shows some tricks you can use;
+also it describes a set of macros I've developed to write fast and readable;
+they are hiding from you unneeded details,
+and take care of optimization.
 
-You may also want to read other documentation represented on the
-<url url="http://linuxassembly.org" name="Linux Assembly">
+You may also want to read other documentation represented at the
+<url url="http://linuxassembly.org" name="Linux Assembly"> site
 to get better general (not asmutils specific) understanding
 of asmutils source code.
 
-<sect1>Compilation
+<sect1>Compiling asmutils
 <p>
-Asmutils are build with usual GNU suite and <tt/nasm/. Except <tt/nasm/,
-you will need <tt/make/, <tt/ld/, <tt/strip/, <tt/sh/, <tt/ln/, <tt/rm/,
-possibly something else.
-If you want to compile libc version, you will also need gcc and libc headers.
 
-All compile-time configuration is in Makefile in src directory.
-There are enough comments in Makefile to figure out what you can do.
-<em/Note: several utils (currently kill and eject)
+Asmutils are build with the usual compile suite and <tt/nasm/.
+Except <tt/nasm/ you will need
+<tt/make/, <tt/ld/, <tt/sh/, <tt/ln/, <tt/rm/,
+possibly <tt/strip/ and something else, depending on your OS.
+
+Prefered program versions are:
+
+<itemize>
+<item>nasm 0.98
+<item>ld from GNU binutils 2.9 (on Linux)
+<item>GNU make 3.77
+</itemize>
+
+Older/other versions may work too.
+GNU <tt/make/ is required, on BSD systems it is usually called <tt/gmake/.
+
+All compile-time configuration is in the <tt/MCONFIG/ file,
+which has enough comments to figure out what you can do.
+You can try to fallback to libc functions instead of using direct
+system calls by defining OS=LIBC in <tt/MCONFIG/ if your really want to do so;
+then you will also need <tt/gcc/ and libc headers.
+
+<em/Note: several utils (cpuinfo, eject, httpd, kill, etc)
 have their own additional configuration in the source code./
 
 <sect>Program structure
@@ -119,11 +146,16 @@ without this file you'll have to write in usual boring way.
 <tt/CODESEG/, <tt/DATASEG/, <tt/UDATASEG/, <tt/END/, <tt/I_STRUC/, <tt/I_END/
 macros are here, some other will be added.
 
-Also it contains optimizing macros <tt/_mov/ (former <tt/__setreg32/),
-<tt/_add/, <tt/_sub/, that perform register assignment, addition and subtraction.
-You can use these macros instead of mov, add, sub instructions;
+Also it contains optimizing macros <tt/_mov/, <tt/_add/, <tt/_sub/,
+that perform register assignment, addition and subtraction.
+You can use these macros instead of mov, add, sub instructions --
 if you take care of size, this will produce quite good results
 (do not try to understand how they work :).
+<em>
+Note: when passing negative number in -0x80..0x00 range to <tt/_mov/,
+pass it as hex, i.e. 0xffffffff instead of -1, if you want size optimization.
+This is a "feature" of <tt/nasm/, not <tt/_mov/ bug.
+</em>
 
 This file includes two others:
 <ref id="inc-includes" name="includes.inc"> and
@@ -145,12 +177,14 @@ File holds system call macros, here are general things to know them:
 
 <itemize>
 <item>there can be up to 5 parameters (depends on syscall)
-<item>parameters are always optional
+<item>all parameters are always optional
 <item>registers corresponding to parameters are: ebx (1), ecx (2), edx (3), esi (4), edi (5)
+<item>registers are not touched, except eax, which holds return code
 <item>eax is used as syscall (function) number and is always destroyed; after call it contains return value
-<item>ecx and edx also can be destroyed by several system calls
-<item>if there are no parameters, macro thinks that all registers (except eax) are already set before syscall
-<item>number of registers used is equal to parameters passed + 1 (eax)
+<item>ecx and edx also can be destroyed by several system calls (at least on Linux)
+<item>flags can be touched, you should not assume that flags are the same after call
+<item>if there are no parameters, macro assumes that all registers (except eax) are already set before syscall
+<item>number of used registers is equal to number of passed parameters + 1 (eax)
 <item>parameter can be register, memory address, reference, constant or reserved word
 <item>reserved words are (currently only one): EMPTY
 (indicates that register is already set before macro and must be skipped).
@@ -174,8 +208,6 @@ it will expand to:
 	__syscall write...
 </code></tscreen>
 <item>generated code can be optimized for size (default) or speed
-<item>registers are not touched, except eax, which holds return code
-<item>flags can be touched
 </itemize>
 
 <bf/WARNING:/ *never* use <tt/__syscall/ macro in your program directly
@@ -189,16 +221,14 @@ it's simple, just look how others are done there;
 use sys_syscallname as macro name.
 
 
-<sect1>elf.inc
+<sect1>elf.inc<label id="inc-elf">
 <p>
 
 <bf/This file applies only to Linux./ ELF macros are defined here.
 These macros can be (and are, by default) used to reduce final size of executable.
-Brian Raiter wrote README.elf and comments in elf.inc containing
-all you need to know about what they do and how they work.
-But here are another good news: almost all of them (except ELF_BSTRUC and ELF_AT)
+Almost all of them (except ELF_BSTRUC and ELF_AT)
 are integrated into existing program structure.
-To enable them you just need to have <tt>ELF_MACROS = y</tt> line in Makefile (enabled by default),
+To enable them you just need to have <tt/ELF_MACROS = y/ line in <tt/MCONFIG/ (enabled by default),
 this turns on automatic usage of these macros (and you do not have to include elf.inc).
 And if you will follow simple rules when writing a program,
 then you will not have to carry out two different definitions for sections and structures;
@@ -213,7 +243,176 @@ but then you can't compile your source using usual nasm/ld procedure.
 If you want to go this way, take the time and read REAME.elf carefully
 (also do read it if you want to understand how they work).
 Personally I think that first way is simpler.
+
+Brian Raiter wrote the decription below and comments in elf.inc 
+containing all you need to know about what they do and how they work.
+
+<tscreen><code>
+	elf.inc macros description (by Brian Raiter)
+	--------------------------------------------
+
+ELF executable files can contain a great deal of overhead information.
+This overhead is used to define things such as the program's memory
+layout, dynamic libraries which it needs in order to run, and so on.
+The programs in asmutils, however, require almost none of this
+overhead (e.g., by making direct system calls). This permits the
+programs to be much smaller than they would be otherwise. In fact,
+they require less ELF overhead than Nasm and ld expect of any program.
+As a result, these tools create executables with unnecessary overhead.
+Some of this overhead can be removed afterwards using strip and/or
+sstrip, but not all of it.
+
+Therefore, as of version 0.05, the asmutils programs avoid using
+object files entirely, and instead define the ELF executable file
+images directly, byte for byte, using Nasm's "bin" output file format
+and the macros defined in elf.inc. These macros are defined here.
+
+
+BEGIN_ELF
+END_ELF
+
+These are the two main macros in elf.inc. They mark the beginning and
+the end of the program, and must be used together. All assembler
+instructions (and pseudo-instructions such as "DB") should appear
+between these two macros.
+
+Within these two macros, the START label should be defined, which will
+mark the entry point of the program.
+
+BEGIN_ELF uses the ORG pseudo-instruction to indicate where the file
+is to be loaded in memory, and then defines a minimal ELF header and
+program header table. BEGIN_ELF also defines the label _text to point
+to the area immediately following its usage (which is typically the
+beginning of the program).
+
+Note that if instructions do appear after the END_ELF macro, they will
+still be added to the executable file. However, nothing after END_ELF
+will be loaded into memory when the program is executed.
+
+If the program requires no writeable data storage outside of the
+stack, then nothing else from elf.inc will be needed.
+
+
+ELF_DATA
+
+This macro is used to reserve writeable memory. ELF_DATA should appear
+after the program proper, and before END_ELF. Between these two
+macros, the programmer can define "uninitialized" data using the
+RESB family of pseudo-instructions.
+
+Memory defined in the ELF_DATA section will not take up space in the
+executable file, but will instead be automatically allocated at
+runtime. The data will be initialized to all zeros. The builtin macro
+ALIGNB may also be used here.
+
+ELF_DATA also defines the label _data to point to the area immediately
+following its usage.
+
+Note: do not use the DB family of pseudo-instructions within the
+ELF_DATA section; those should appear before ELF_DATA, within the
+program proper.
+
+
+ELF_BSTRUC strucname [, fieldname ...]
+
+This macro declares an instance of a structure (previously defined
+with the builtin STRUC macro) within an ELF_DATA segment. The
+structure, in order to work with ELF_BSTRUC, must have been defined
+using local labels (i.e., prefixed with a dot) for the field names.
+
+The first argument to ELF_BSTRUC is the name of the structure to use.
+The remaining arguments (if any) list the field names to declare. Only
+those field names specified will be declared as labels within the
+program.
+
+Thus, for example, if the following structure has been defined:
+
+          struc mytype 
+.long:    resd 1 
+.word:    resw 1 
+.byte:    resb 1 
+.str:     resb 32 
+          endstruc
+
+then a program that included the following after ELF_DATA:
+
+mine:     elf_bstruc mytype .long, .word, .str
+
+would have 39 bytes added to its memory image, and could use the
+labels mine.long, mine.word, and mine.str. (mine.byte would not be
+created.)
+
+
+ELF_ISTRUC strucname
+ELF_IAT fieldname [, inst ...]
+ELF_IEND
+
+These macros correspond directly to the builtin macros ISTRUCT, AT,
+and IEND; they differ only in that they declare "uninitialized"
+memory, and thus can be used within an ELF_DATA section.
+</code></tscreen>
+
 </p>
+
+<sect>Debugging your code
+<p>
+
+<sect1>gdb
+<p>
+
+Although <tt/gdb/ is source-level debugger, it can be used to debug
+pure assembly code (the simplest way is to place <tt/int 3/ instructions
+as breakpoints over your code).
+And with some trickery you can force <tt/gdb/ to do what you want:
+
+<tscreen><verb>
+Using GDB with asmutils (by Dmitry Bakhvalov)
+--------------------------------------------
+
+Personally, I use gdb for debugging asmutils. Try this:
+ 
+1) Use the following stuff to compile:
+   $nasm -f elf -g smth.asm
+   $ld -o smth smth.o
+
+2) Fire up gdb:
+   $gdb smth
+
+3) In gdb:
+   (gdb) disassemble _start
+   Place a breakpoint at <_start+1> (If placed at _start the breakpoint
+   wouldnt work, dunno why)
+   (gdb) b *0x8048075
+
+   To step thru the code I use the following macro:
+   (gdb)define n
+   >ni
+   >printf "eax=%x ebx=%x ...etc...",$eax,$ebx,...etc...
+   >disassemble $pc $pc+15
+   >end
+
+   Then start the program with r command and debug with n.
+
+   Hope this helps.
+</verb></tscreen>
+
+<tscreen><verb>
+An additional note from ???
+---------------------------
+
+    I have such a macro in my .gdbinit for quite some time now, and it
+    for sure makes life easier. A small difference : I use "x /8i $pc",
+    which guarantee a fixed number of disassembled instructions. Then,
+    with a well chosen size for my xterm, gdb output looks like it is
+    refreshed, and not scrolling.
+</verb></tscreen>
+
+<sect1>strace
+<p>
+Definitely <tt/strace/ can help you a lot (<tt/ktrace/ and <tt/kdump/ on FreeBSD),
+it is used to trace system calls and signals.
+Read its manual page (<tt/man strace/) and <tt/strace --help/ output for details.
+
 
 <sect>Contribution guidelines
 <p>
@@ -230,7 +429,7 @@ may not be accepted if you ignore suggestions below.
 
 Although I think most of what is said in this section is evident
 to experienced developers of distributed free software, there might be
-brand new developers from proprietary software world, unaware of common
+brand new developers from the proprietary software world, unaware of common
 contribution practice; if you are the one, read with double attention.
 
 <sect1>First step
@@ -241,8 +440,9 @@ version of asmutils, I can reject contributions based on old versions.
 So, get the latest version of asmutils and look what is already done.
 Even if the program you want to contribute is not there, look at
 <url url="http://linuxassembly.org/asmutils.html" name="ChangeLog">, or
-CVS <tt>cvs.linuxassembly.org:/pub/asm/asmutils</tt> (using ssh and pserver),
-or contact maintainer first, may be somebody is already doing (or has done)
+CVS <tt>cvs.linuxassembly.org:/cvsroot/asm</tt> (using ssh and pserver,
+module name is &quot;asmutils&quot;), or contact maintainer first,
+may be somebody is already doing (or has done)
 what you're only going to do (ditto if you want to improve existing utils).
 This is very important! Asmutils are growing rapidly,
 do not duplicate effort of other hackers.
@@ -252,14 +452,14 @@ do not duplicate effort of other hackers.
 Here are few obvious requirements for the source code:
 
 <itemize>
-<item>you must use NASM, not GAS
-<item>you must not use libc or any other external library
+<item>you must use <tt/nasm/ assembler
 <item>you must use supplied macro set
+<item>you must not use libc or any other external library
 </itemize>
 
 <em>
-Note: I can accept utilities written in GAS, but this will just give me more
-boring work of converting them to NASM syntax and asmutils macro set.
+Note: I can accept utilities written in <tt/gas/, but this will give me just more
+boring work of converting them to <tt/nasm/ syntax and asmutils macro set.
 This is to be avoided when possible. I mean, do it on your own :)
 </em>
 
@@ -312,6 +512,15 @@ Simple, huh? :)
 With any additional questions refer to the asmutils webpage
 or contact asmutils maintainer.
 
+<sect1>Porting
+<p>
+asmutils are quite portable to any i386 (POSIX/UNIX) OS;
+if you are interested in asmutils running on your OS, I am willing to help.
+However of course I will need that OS, so you will have to donate me CD's
+(do not ask me to download gigs from the net!).
+Drop me a mail if you are interested.
+
+
 <sect>Optimization, tips and tricks
 <p>
 
@@ -320,7 +529,7 @@ optimizing assembler is just a sweet dream yet. So, I've took care of it.
 By default code is optimized for size, and you can get up to 20% smaller executable;
 speed optimization in fact is a fake, it's just an absence of size optimization :),
 though theoretically you can gain something on pentium processors..
-To enable speed optimization set OPTIMIZE to SPEED in Makefile.
+To enable speed optimization set OPTIMIZE to SPEED in <tt/MCONFIG/.
 Optimization touches register assignment, addition and subtraction
 (<bf/_mov/, <bf/_add/, <bf/_sub/ macros),
 and section alignment (<bf/CODESEG/, <bf/DATASEG/ macros).
@@ -396,6 +605,6 @@ Here are some assembly examples you can use instead of
 
 Seek, and you may find more..
 
-<tt>$Id: Asmutils-HOWTO.sgml,v 1.1 2000/04/07 18:36:01 konst Exp $</tt>
+$Id: Asmutils-HOWTO.sgml,v 1.2 2000/09/03 16:13:53 konst Exp $
 
 </article>

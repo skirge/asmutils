@@ -1,26 +1,20 @@
-;-----------------------------------------------------------
-; implementation of RC6 crypto algorythm
-; 1999 -->>>> Cecchinel Stephan   (interzone@pacwan.fr)
+;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-; $Id: rc6.asm,v 1.1 2000/01/26 21:19:10 konst Exp $
+;$Id: rc6.asm,v 1.2 2000/09/03 16:13:54 konst Exp $
 ;
-; RC6 algo  is made of mainly 3 functions:
+;implementation of RC6 crypto algorythm
+;
+;RC6 algo mainly consists of 3 functions:
 ;	setkey in_key, length		->>set the crypto key of length bits (256)
 ;	encrypt in_block,out_block	->>encrypt a block of 16 bytes
 ;	decrypt in_block,ou_block	->>decrypt a block of 16 bytes
 ;
-;		really simple to implement....no?
-;
+;	really simple to implement....no?
 
-%include "system.inc"		; include some C style call macro
+%include "system.inc"
 
+CODESEG
 
-	section .bss
-
-l_key	resd	45				; the internel RC6 key
-ll	resd	9
-
-	section .text
 	global set_key
 	global RC6_encrypt
 	global RC6_decrypt
@@ -239,4 +233,10 @@ PROC RC6_decrypt,in_blk2,out_blk2
 
 	popa
 	ENDP
-	
+
+UDATASEG
+
+l_key	resd	45				; internal RC6 key
+ll	resd	9
+
+END

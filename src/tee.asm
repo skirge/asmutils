@@ -1,11 +1,12 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: tee.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: tee.asm,v 1.4 2000/09/03 16:13:54 konst Exp $
 ;
 ;hackers' tee		[GNU replacement]
 ;
 ;0.01: 04-Jul-1999	initial release
 ;0.02: 27-Jul-1999	files are created with permissions of 664
+;0.03: 20-Aug-2000	"-i" bugfix, sys_sigaction instead of sys_signal (TH)
 ;
 ;syntax: tee [-ai] [file...]
 ;
@@ -42,13 +43,15 @@ START:
 	cmp	al,'a'
 	jnz	.i
 	_mov	ecx,O_CREAT|O_WRONLY|O_APPEND
-	jmp short .scan
+	jmps	.scan
 .i:
 	cmp	al,'i'
 	jnz	near _exit
-	sys_signal	SIGPIPE,SIG_IGN
-	sys_signal	SIGINT	;,SIG_IGN
-	jmp short .scan
+	push	ecx
+	sys_sigaction SIGPIPE,sa_struct,NULL	;sys_signal SIGPIPE,SIG_IGN
+	sys_sigaction SIGINT			;sys_signal SIGINT
+	pop	ecx
+	jmps	.scan
 	
 open_files:
 	pop	ebx		;pop filename pointer
@@ -59,10 +62,10 @@ open_2:
 	test	eax,eax
 	jns	open_ok
 	inc	ebp
-	jmp short open_files
+	jmps	open_files
 open_ok:
 	stosd
-	jmp short open_files
+	jmps	open_files
 
 open_done:
 	xor	eax,eax
@@ -80,7 +83,7 @@ read_loop:
 	or	eax,eax
 	jz	read_loop
 	sys_write eax
-	jmp short .write_loop
+	jmps	.write_loop
 read_error:
 	inc	ebp
 
@@ -95,6 +98,9 @@ close:
 
 _exit:
 	sys_exit ebp
+
+;dirty hack which works in our case
+sa_struct	dd	SIG_IGN,0,0,0
 
 UDATASEG
 

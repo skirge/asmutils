@@ -1,25 +1,17 @@
 ;Copyright (C) 1999 Cecchinel Stephan <interzone@pacwan.fr>
 ;
-;$Id: rmd.asm,v 1.1 2000/01/26 21:19:13 konst Exp $
-;
-;rmd160.asm:       assembly version for asmutils
-;
+;$Id: rmd.asm,v 1.2 2000/09/03 16:13:54 konst Exp $
 ;
 ;calculate the RIPEMD-160 checksum
 ;
-;
-; this code is free, you can eat it, drink it, fuck it , as you want...
-; just send me a mail if you use it, if you find bugs, or anything else...
-;
+;this code is free, you can eat it, drink it, fuck it , as you want...
+;just send me a mail if you use it, if you find bugs, or anything else...
 
-[BITS 32]
-
-%include "system.inc"			; include system calls definition
+%include "system.inc"
 
 %define FILEBUFFSIZE 8192	; the file buffer size for incoming data
 					; need to be fixed for RMD_Final
 					; need to be a power of two
-
 
 ;--==oo0 magic initialization constants. Ooo==--
 %define _A	0x67452301
@@ -49,10 +41,8 @@
 ; very simple no...
 ; this version is optimize for size , if you want to process big size of data, use rmd160s.asm
 ; which is the version optimize for speed...
-;
-;
 
-	section .text
+CODESEG
 
 	global RMD_Init
 	global RMD_Update
@@ -397,7 +387,7 @@ RMD_Final:
 	ret
 ;---------------------------------------------------------------------
 
-	section .bss
+UDATASEG
 
 ;=============--------------------------------------------------------
 ; the RMD-160 core registers, & buffer
@@ -415,3 +405,5 @@ Rounds:	resb (10*16*10)		; to store the expanded Round1 to Round8 tables
 ;---------------------------------------
 
 buffer:	resd FILEBUFFSIZE
+
+END

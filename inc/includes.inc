@@ -1,13 +1,13 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.3 2000/04/07 18:36:01 konst Exp $
+; $Id: includes.inc,v 1.1 2000/09/03 16:13:53 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 01-Apr-2000
-; version       : 0.09
+; modified      : 03-Sep-2000
+; version       : 0.10
 ; assembler     : nasm 0.98
-; description   : general constants and structures from header files (libc)
+; description   : generic constants and structures from header files (libc)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
 ; comment       : included internally from system.inc
 
@@ -40,6 +40,41 @@
 %assign	__s	0x20
 
 ;
+;datatypes
+;
+
+%define		INT		resd
+%define		UINT		resd
+%define		LONG		resd
+%define		ULONG		resd
+%define 	SHORT		resw
+%define		USHORT		resw
+%define		CHAR		resb
+%define		UCHAR		resb
+%define		BYTE		resb
+%define		WORD		resw
+%define		DWORD		resd
+%define		U8		resb
+%define		U16		resw
+%define		U32		resd
+
+%define		_INT		dd
+%define		_UINT		dd
+%define		_LONG		dd
+%define		_ULONG		dd
+%define 	_SHORT		dw
+%define		_USHORT		dw
+%define		_CHAR		db
+%define		_UCHAR		db
+%define		_BYTE		db
+%define		_WORD		dw
+%define		_DWORD		dd
+%define		_U8		db
+%define		_U16		dw
+%define		_U32		dd
+
+
+;
 ;please provide corresponding include file when adding new entries
 ;
 
@@ -68,6 +103,16 @@
 %assign O_LARGEFILE	100000q
 %assign O_DIRECTORY	200000q
 %assign O_NOFOLLOW	400000q
+
+%assign F_DUPFD		0	;Duplicate file descriptor
+%assign F_GETFD		1	;Get file descriptor flags
+%assign F_SETFD		2	;Set file descriptor flags
+%assign F_GETFL		3	;Get file status flags
+%assign F_SETFL		4	;Set file status flags
+%assign F_GETLK		5	;Get record locking info
+%assign F_SETLK		6	;Set record locking info (non-blocking)
+%assign F_SETLKW	7	;Set record locking info (blocking)
+
 
 ;
 ;unistd.h
@@ -259,41 +304,6 @@
 
 %endif
 
-
-;
-;datatypes and structures
-;
-
-%define		INT		resd
-%define		UINT		resd
-%define		LONG		resd
-%define		ULONG		resd
-%define 	SHORT		resw
-%define		USHORT		resw
-%define		CHAR		resb
-%define		UCHAR		resb
-%define		BYTE		resb
-%define		WORD		resw
-%define		DWORD		resd
-%define		U8		resb
-%define		U16		resw
-%define		U32		resd
-
-%define		_INT		dd
-%define		_UINT		dd
-%define		_LONG		dd
-%define		_ULONG		dd
-%define 	_SHORT		dw
-%define		_USHORT		dw
-%define		_CHAR		db
-%define		_UCHAR		db
-%define		_BYTE		db
-%define		_WORD		dw
-%define		_DWORD		dd
-%define		_U8		db
-%define		_U16		dw
-%define		_U32		dd
-
 ;
 ;time.h
 ;
@@ -303,47 +313,30 @@ struc timespec
 .tv_nsec	ULONG	1
 endstruc
 
+struc timeval
+.tv_sec		ULONG	1
+.tv_usec	ULONG	1
+endstruc
+
 ;
 ;sys/utsname.h
 ;
 
-%assign	UTS_LEN	64
-%assign	luts	65
+%ifdef __BSD__
+%assign SYS_NMLN 32
+%assign MAXHOSTNAMELEN 256
+%else
+%assign SYS_NMLN 65
+%assign MAXHOSTNAMELEN SYS_NMLN - 1
+%endif
 
-struc new_utsname
-.sysname	CHAR	luts
-.nodename	CHAR	luts
-.release	CHAR	luts
-.version	CHAR	luts
-.machine	CHAR	luts
-.domainname	CHAR	luts
-endstruc
-
-;
-;sys/stat.h
-;
-
-struc stat
-.st_dev		USHORT	1
-.__pad1		USHORT	1
-.st_ino		ULONG	1
-.st_mode	USHORT	1
-.st_nlink	USHORT	1
-.st_uid		USHORT	1
-.st_gid		USHORT	1
-.st_rdev	USHORT	1
-.__pad2		USHORT	1
-.st_size	ULONG	1
-.st_blksize	ULONG	1
-.st_blocks	ULONG	1
-.st_atime	ULONG	1
-.__unused1	ULONG	1
-.st_mtime	ULONG	1
-.__unused2	ULONG	1
-.st_ctime	ULONG	1
-.__unused3	ULONG	1
-.__unused4	ULONG	1
-.__unused5	ULONG	1
+struc utsname
+.sysname	CHAR	SYS_NMLN
+.nodename	CHAR	SYS_NMLN
+.release	CHAR	SYS_NMLN
+.version	CHAR	SYS_NMLN
+.machine	CHAR	SYS_NMLN
+.domainname	CHAR	SYS_NMLN
 endstruc
 
 ;

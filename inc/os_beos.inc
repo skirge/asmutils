@@ -1,11 +1,11 @@
 ; Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_beos.inc,v 1.2 2000/04/07 18:36:01 konst Exp $
+; $Id: os_beos.inc,v 1.1 2000/09/03 16:13:53 konst Exp $
 ;
 ; file          : os_beos.inc
 ; created       : 21-Feb-2000
-; modified      : 22-Mar-2000
-; version       : 0.09
+; modified      : 23-Jul-2000
+; version       : 0.10
 ; assembler     : nasm 0.98
 ; description   : beos kernel constants (R4.5.2)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -13,8 +13,7 @@
 ;
 ;IMPORTANT NOTES:
 ;
-;BeOS port doesnot work yet (mostly because of weird BeOS
-;kernel bugs, I hope that upcoming R5.0 will fix them).
+;BeOS port doesnot work yet (mostly because of weird BeOS kernel bugs)
 ;
 ;Be kernel developers do not want to share any information on syscalls,
 ;so I had to figure out these constants and system call convention
@@ -28,7 +27,7 @@
 ;Likely being the first who tried to play with direct kernel calls
 ;on BeOS, I immediatelly run into nasty system crashes.
 ;
-;Be has registered this bug and hopefully it will be fixed in 5.0,
+;Be has registered this bug before R5.0, but is not fixed in R5.0
 ;details are at http://bebugs.be.com/devbugs/detail.php3?oid=2324160
 ;
 ;Also there was a discussion on this bug in BeDevTalk mailing list
@@ -39,11 +38,15 @@
 ;
 ;Personally I think that at least half of entries here are correct ;)
 ;
-;In BeOS most calls are done through int 0x25, but some go through int 0x26,
-;and even syscall/sysenter instructions; quite common is practice of
-;implementing several library calls through one kernel call.
+;In BeOS most calls are done through int 0x25, but some
+;go through int 0x26 (or syscall/sysenter instructions).
+;Quite common is practice of implementing several library calls
+;through one kernel call.
 ;
 ;Here are listed only int 0x25 calls (and only for R4.5.2)
+;
+;R5.0 has 0xC7 syscalls
+;(according to libroot-obj.tgz, src/kernel/kit/obj.i586.dyn/scalls.o)
 ;
 ;BeOS kernel hackers, if you exist, HELP ME !!!
 
@@ -54,7 +57,7 @@
 %ifndef __BEOS_INC
 %define __BEOS_INC
 
-%error "Hey, are you crazy? Never play with fire!"
+;%error "Hey, are you crazy? Never play with fire!"
 
 %assign SYS_open		0
 %assign SYS_close		1

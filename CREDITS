@@ -12,12 +12,15 @@ and snail-mail address (S).
 
 N: Dmitry Bakhvalov (DB)
 E: dl@gazeta.ru
-D: id.asm ls.asm ps.asm strings.asm wc.asm
+D: cp.asm id.asm ls.asm ps.asm strings.asm wc.asm
 
 N: Konstantin Boldyshev (KB)
 E: konst@linuxassembly.org
-D: everything else not mentioned here
-D: original project author and current maintainer
+D: original asmutils hacker
+
+N: Paul Furber (PF) 
+E: m@verick.co.za
+D: fire256.asm, framebuffer stuff
 
 N: Alexandr Gorlov (AG)
 E: winct@mail.ru
@@ -27,6 +30,10 @@ N: Bart Hanssens (BH)
 E: antares@mail.dma.be
 D: eject.asm kill.asm
 
+N: Tani Hosokawa (TH)
+E: unknown@riverstyx.net
+D: OpenBSD port
+
 N: Yuri Ivliev (YI)
 E: yuru@black.cat.kazan.su
 D: pwd.asm (stat based part)
@@ -35,7 +42,6 @@ N: Indrek Mandre (IM)
 E: indrek.mandre@tallinn.ee
 D: basename.asm chvt.asm dmesg.asm false.asm lsmod.asm
 D: httpd.asm rmmod.asm true.asm yes.asm
-D: hackbin.pl testbasename.pl (in < 0.06)
 
 N: Edward Popkov (EP)
 E: evpopkov@carry.neonet.lv
@@ -48,12 +54,10 @@ D: factor.asm, elf.inc
 N: H-Peter Recktenwald (PR)
 E: phpr@snafu.de
 D: cpuinfo.asm extname.asm eject.asm (ccd extension)
+D: report.asm errno.inc
 
 N: Cecchinel Stephan (CS)
 E: inter.zone@free.fr
-D: md5sum.asm, rmdsum.asm, lzss.asm, nc.asm, rc6crypt.asm, clib.asm
+D: md5sum.asm rmdsum.asm lzss.asm nc.asm rc6crypt.asm
 D: rc6, md5, rmd160 algos
-
-N: Joel Williams (JW)
-E: joel@iweb.net.au
-D: old factor.asm in 0.04
+D: several libc functions

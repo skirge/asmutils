@@ -1,6 +1,6 @@
 ; Copyright (C) 1999 Brian Raiter <breadbox@muppetlabs.com>
 ;
-; $Id: elf.inc,v 1.2 2000/02/01 19:56:20 konst Exp $
+; $Id: elf.inc,v 1.1 2000/09/03 16:13:53 konst Exp $
 ;
 ; file		: elf.inc
 ; created	: 20-Aug-1999
@@ -12,6 +12,7 @@
 ;		  assembled with the "bin" output format.
 ; author	: Brian Raiter <breadbox@muppetlabs.com>
 ; comment	: can be used separately or included internally from system.inc
+
 
 %ifndef __ELF_INC
 %define __ELF_INC

@@ -2,10 +2,7 @@
 			       asmutils
 			       ********
 
-		 collection of different unix utilities
-		    written in pure assembly language
-
-			    (version 0.09)
+			    (version 0.10)
 
 			http://linuxassembly.org
 
@@ -22,7 +19,7 @@ Copyright information
 =====================
 
 All programs in this package are COPYRIGHTED by their authors,
-as shown in source code and in CREDITS file.
+as shown in the source code and in CREDITS file.
 
 These programs are free software; you can redistribute them and/or modify
 them under the terms of the version 2 of the GNU General Public License
@@ -32,18 +29,19 @@ These programs are distributed in the hope that they will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty
 of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 See the GNU General Public License for more details
-(http://www.gnu.org/copyleft/gpl.html).
+<http://www.gnu.org/copyleft/gpl.html>.
 
 
 Description
 ===========
 
-asmutils is a set of different utilities written in assembly language,
+asmutils is a set of miscellaneous utilities written in assembly language,
 targeted on embedded systems and small distributions (like rescue or
-installation disks). It features the smallest possible size and memory
-requirements, the fastest speed and good functionality.
-Currently project supports Linux and FreeBSD (BeOS support is
-in the works), however it is quite portable to any i386 OS. 
+installation disks); also it contains small libc and crypto library.
+It features the smallest possible size and memory requirements,
+the fastest speed and good functionality.
+Currently project supports Linux and BSD family (FreeBSD, NetBSD, OpenBSD),
+BeOS support is in the works; however it is quite portable to any i386 OS. 
 
 Another goal of this package is to provide PORTABLE source code library,
 and to encourage assembly programmers to write for Linux/UNIX.
@@ -52,20 +50,31 @@ Browse the source, look -- it is simple. Read the docs, start to write,
 and you will like it; assembly programming is a lot of fun, especially
 when you deal with UNIX-like operating systems.
 
-Usual way for small system is to replace binaries with shell scripts;
-however scripts require much more memory and are slow.
-This package provides:
+These utilities also may be useful for system administrators,
+there were several reports that they have rescued when libc crashed
+(when it was not possible to terminate some program with usual kill).
 
-    1) binaries
-    2) that do not require libc
-    3) are small as scripts
-    4) are fast as kernel
-    5) need only few KBytes of RAM
+So, in one word, this package provides:
 
-Several utilities are fully compliant with usual, examine NOTES for details.
+    - binaries, that
+	do not require libc
+	are small as scripts
+	are fast as kernel
+	need only few KBytes of RAM
 
-Anyway, you can try to fallback to libc functions instead of using direct
-system calls by defining OS=LIBC in Makefile, if your really want to do so.
+	Usual way for small system is to replace binaries with shell scripts,
+	however scripts require much more memory and are slow.
+
+	Several utilities are fully compliant with usual,
+	examine NOTES for details.
+
+    - small libc and crypto library; you can use them
+      in both C and assembly projects
+    
+    - portable & extendable source code library & macros
+      for fast and easy assembly development
+
+    - other various hacks, like small graphics intros, etc.
 
 
 How to install
@@ -76,7 +85,7 @@ How to install
 	1) i386 (however some programs may require higher CPU);
 	   some programs may require FPU (or kernel emulation)
 
-	2) ELF executable format (actually not a requirement,
+	2) ELF/AOUT executable format (actually not a requirement,
 	   you just need to write startup stack preparation
 	   for your executable format on your own)
 
@@ -86,30 +95,23 @@ How to install
  not as you expected. Syntax can be obtained from appropriate source from
  src directory (do not expect any answer from program on --help switch).
  
- Asmutils include few sets of precompiled binaries, for Linux 2.0/2.2
- and FreeBSD. Rule is simple -- use the one which suits your kernel.
+ Asmutils include few sets of precompiled binaries.
+ Rule is simple -- use the one which suits your kernel.
 
  Installation itself is simple too: take precompiled binaries from
  [bin] directory for your kernel and copy them where you need.
 
- If you want to compile source you will need:
-
-  - nasm 0.98
-  - ld from GNU binutils 2.9
-  - GNU make 3.77
-  - possibly something else
-
- Older/other versions may work too, just these are versions I used.
- Examine Asmutils-HOWTO for details on compilation process, then
- cd [src], edit Makefile, run make and hopefully all will be done.
+ If you want to compile the source, do examine Asmutils-HOWTO
+ for details on compilation process, then edit MCONFIG,
+ run make and hopefully all will be done.
 
 
 Other stuff
 ===========
 
  Contributions are welcome! If you wish to contribute
- please read Asmutils HOWTO in doc directory!
+ please read Asmutils-HOWTO in doc directory!
 
  Do not forget to send feedback & bugreports to project maintainter.
 
- $Id: README,v 1.5 2000/04/07 18:36:01 konst Exp $
+ $Id: README,v 1.6 2000/09/03 16:13:53 konst Exp $

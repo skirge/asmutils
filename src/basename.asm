@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: basename.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: basename.asm,v 1.3 2000/09/03 16:13:54 konst Exp $
 ;
 ;hackers' basename	[GNU replacement]
 ;
@@ -38,7 +38,7 @@ START:
 	jng	.noerror
 .error:
 	sys_exit_false
-.noerror
+.noerror:
 	pop	eax		;skip our name
 	pop	eax		;the path
 	mov	ebx,eax		;mark the beginning of path
@@ -87,11 +87,11 @@ START:
 
 	cmp	byte [eax],EOL
 	je	.goaftersuffix	;there was nothing in suffix string, so nothin to remove
-.suffixloop
+.suffixloop:
 	inc	eax
 	cmp	byte [eax],EOL
 	jne	.suffixloop
-.endsuffixloop
+.endsuffixloop:
 	sub	eax,ebx		;we have length of suffix here now
 	cmp	eax,edx		;in case suffix is longer jump out
 	jge	.goaftersuffix
@@ -122,9 +122,9 @@ START:
 
 ;end of checkinf of suffix
 
-.goaftersuffixpopeax
+.goaftersuffixpopeax:
 	pop	eax
-.goaftersuffix
+.goaftersuffix:
 	pop	edx
 	pop	ecx
 

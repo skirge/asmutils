@@ -1,12 +1,12 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: dmesg.asm,v 1.4 2000/04/07 18:36:01 konst Exp $
+;$Id: dmesg.asm,v 1.5 2000/09/03 16:13:54 konst Exp $
 ;
 ;hackers' dmesg
 ;
 ;0.01: 17-Jun-1999	initial release
 ;0.02: 04-Jul-1999	fixed bug with 2.0 kernel, removed leading <n> (KB)
-;0.03: 14-Mar-2000	
+;0.03: 14-Mar-2000
 ;			fixed the "-c" option bug,
 ;			empty kernel buffer coredump,
 ;			added "-n" option
@@ -15,6 +15,7 @@
 ;			check for unsuccessful sys_syslog,
 ;			clear buffer *after* print,
 ;			fast output (buffer-at-once) (KB)
+;0.04: 05-Aug-2000	increased buffer size (KB)
 ;
 ;syntax: dmesg [-c] [-n level]
 ;
@@ -92,7 +93,7 @@ START:
 
 UDATASEG
 
-BufSize	equ	8192
+BufSize	equ	0x8000
 Buf	resb	BufSize
 BufNew	resb	BufSize
 

@@ -1,6 +1,6 @@
 ;Copyright (C) 1996-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: leaves.asm,v 1.4 2000/03/02 08:52:01 konst Exp $
+;$Id: leaves.asm,v 1.5 2000/09/03 16:13:54 konst Exp $
 ;
 ;leaves		-	Linux fbcon intro in 396 bytes
 ;
@@ -62,9 +62,9 @@ CODESEG
 
 putpixel: 
 	push	edx		
-        lea	edx,[ebx+ebx*4]	;computing offset..
-        shl	edx,byte 7	;multiply on 640
-	add	edx,[esp+8]	;
+        lea	edx,[ebx+ebx*4]	;compute offset
+        shl	edx,byte 7	;multiply by 640
+	add	edx,[esp+8]
 	mov	[edx+esi],al	;write to frame buffer
 	pop	edx
 _return:
@@ -248,3 +248,74 @@ ColorEnd:
 fb	db	"/dev/fb0";,EOL
 
 END
+
+;/*
+; leaves.c : C implementation using /dev/fb0
+;
+; takes ~2KB
+;*/
+;
+;#include <unistd.h>
+;#include <fcntl.h>
+;#include <sys/mman.h>
+;
+;typedef unsigned char byte;
+;
+;#define MaxX 640
+;#define MaxY 480
+;#define VMEM_SIZE MaxX * MaxY
+;
+;#define xc	MaxX/2
+;#define yc	MaxY/2
+;#define xmin0	100
+;#define xmax0	-xmin0
+;#define ymin0	xmin0
+;#define ymax0	-ymin0
+;
+;#define colornum 8
+;
+;int color = 0;
+;
+;byte *p, ColorTable[colornum] = { 0, 0, 2, 0, 0, 2, 10, 2 };
+;
+;float	f = MaxY / (ymax0 - ymin0) * 3 / 2, x0 = 112,
+;	x1coef = MaxX - MaxY * 4 / 9 - yc, y1coef = MaxY / 4 + xc,
+;	x2coef = MaxY * 4 / 9 + yc,
+;	a = 0.7, b = 0.2, c = 0.5, d = 0.3;
+;
+;inline void putpixel(int x, int y, byte color)
+;{
+;    *(p + y * MaxX + x) = color;
+;}
+;
+;void leaves(float x, float y, byte n)
+;{
+;    int y1;
+;
+;    if (n <= 0) return;
+;
+;    y1 = f * x + y1coef;
+;
+;    putpixel(x1coef - f * y, y1, ColorTable[color]);
+;    putpixel(f * y + x2coef, y1, ColorTable[color]);
+;
+;    if (++color > colornum - 1) color = 0;
+;
+;    leaves(a * x + b * y, b * x - a * y, n - 1);
+;    leaves(c * (x - x0) - d * y + x0, d * (x - x0) + c * y, n - 1);
+;}
+;
+;int main(void)
+;{
+;    int i, h;
+;
+;    h = open("/dev/fb0", O_RDWR);
+;    p = mmap(0, VMEM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, h, 0);
+;
+;    for (i = 0; i < VMEM_SIZE; i++) *(p + i) = 0;
+;
+;    leaves(0, 0, 28);
+;
+;    munmap(p, VMEM_SIZE);
+;    close(h);
+;}

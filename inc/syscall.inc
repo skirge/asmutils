@@ -1,15 +1,17 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.5 2000/04/07 18:36:01 konst Exp $
+; $Id: syscall.inc,v 1.1 2000/09/03 16:13:54 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 04-Apr-2000
-; version	: 0.09
+; modified	: 21-Aug-2000
+; version	: 0.10
 ; assembler	: nasm 0.98
 ; description	: system call macros
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
 ; comment	: included internally from system.inc
+;		  if you're looking for a list of system calls,
+;		  better examine http://linuxassembly.org/syscall.html
 
 %ifndef	__SYSTEM_INC
 %error "this file must be included internally from system.inc !"
@@ -90,23 +92,13 @@ extern %{1}
 	call	%{1}
 	_add	esp, (%{2}) * 4
 
-%elifdef __FREEBSD__
+%else		;__BSD__ & __BEOS__
 
 	call	__syscall_gate	;CODESEG macro in system.inc
 	_add	esp, (%{2}) * 4
 
 ;	push	eax		;we are not using a.out
 ;	call	7:0		;
-;	_add	esp, (%{2} + 1) * 4
-
-%elifdef __BEOS__
-
-	call	__syscall_gate	;CODESEG macro in system.inc
-	_add	esp, (%{2}) * 4
-
-;	push	dword %%ret
-;	int	0x25
-;%%ret:
 ;	_add	esp, (%{2} + 1) * 4
 
 %endif
@@ -120,6 +112,8 @@ extern %{1}
 ;				System Calls
 ;--------------------------------------------------------------------------
 
+;Source references are made conforming to Linux Kernel,
+;so they will be different on other kernels
 
 ;--------------------------------------------------------------------------
 ;arch/i386/
@@ -157,8 +151,8 @@ extern %{1}
 	__syscall fork, 1, %0, %1
 %endmacro
 
-%macro sys_clone 0-1
-	__syscall clone, 1, %0, %1
+%macro sys_clone 0-2
+	__syscall clone, 2, %0, %1, %2
 %endmacro
 
 %macro sys_vfork 0-1
@@ -306,6 +300,14 @@ extern %{1}
 	__syscall ftruncate, 2, %0, %1, %2
 %endmacro
 
+%macro sys_chown 0-3
+	__syscall chown, 3, %0, %1, %2, %3
+%endmacro
+
+%macro sys_lchown 0-3
+	__syscall lchown, 3, %0, %1, %2, %3
+%endmacro
+
 ;
 ;fs/super.c
 ;
@@ -374,6 +376,11 @@ extern %{1}
 	__syscall unlink, 1, %0, %1
 %endmacro
 
+%macro sys_rename 0-2
+	__syscall rename, 2, %0, %1, %2
+%endmacro
+
+
 ;
 ;fs/ioctl.c
 ;
@@ -418,6 +425,10 @@ extern %{1}
 	__syscall nanosleep, 2, %0, %1, %2
 %endmacro
 
+%macro sys_gettimeofday 0-2
+	__syscall gettimeofday, 2, %0, %1, %2
+%endmacro
+
 %macro sys_getuid 0
 	__syscall getuid, 0
 %endmacro
@@ -454,6 +465,15 @@ extern %{1}
 %macro sys_setdomainname 0-2
 	__syscall setdomainname, 2, %0, %1, %2
 %endmacro
+
+%macro sys_gethostname 0-2
+	__syscall gethostname, 2, %0, %1, %2
+%endmacro
+
+%macro sys_getdomainname 0-2
+	__syscall getdomainname, 2, %0, %1, %2
+%endmacro
+
 
 ;
 ;kernel/mmap.c

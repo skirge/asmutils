@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.5 2000/04/07 18:36:01 konst Exp $
+; $Id: system.inc,v 1.1 2000/09/03 16:13:54 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 05-Apr-2000
-; version	: 0.09
+; modified	: 03-Sep-2000
+; version	: 0.10
 ; assembler	: nasm 0.98
 ; description	: generic (not OS specific) macros, sections, headers, etc.
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -25,6 +25,8 @@
 ;0.08: 28-Feb-2000	added stack convertion routine, libc support,
 ;			various bugfixes (_mov and co)
 ;0.09: 14-Mar-2000	jmps, syscall gates
+;0.10: 21-Aug-2000	started stub for BeOS, _mov improved,
+;			NetBSD and OpenBSD stuff
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
@@ -38,9 +40,15 @@
 ;
 
 %ifndef __LINUX__
-%ifndef __FREEBSD__
 %ifndef __BEOS__
+%define __BSD__
+%ifndef __FREEBSD__
+%ifndef __NETBSD__
+%ifndef __OPENBSD__
 %define __LIBC__
+%undef	__BSD__
+%endif
+%endif
 %endif
 %endif
 %endif
@@ -50,7 +58,7 @@
 ;
 
 %ifndef __KERNEL__
-%assign	__KERNEL__	20
+%assign	__KERNEL__	22
 %endif
 
 ;
@@ -74,6 +82,10 @@
 %include "os_linux.inc"
 %elifdef __FREEBSD__
 %include "os_freebsd.inc"
+%elifdef __NETBSD__
+%include "os_netbsd.inc"
+%elifdef __OPENBSD__
+%include "os_openbsd.inc"
 %elifdef __BEOS__
 %include "os_beos.inc"
 %endif
@@ -100,13 +112,32 @@
 
 BEGIN_ELF
 
+%ifdef STAMP_VERSION
+	db	__n
+__ver	db	STAMP_VERSION, EOL
+%endif
+
+%ifdef STAMP_DATE
+	db	__t
+__date	db	STAMP_DATE, EOL, __n
+%endif
+
+%else
+
+%ifdef __AOUT__
+
+    section	.text
+
 %else
 
 %if __OPTIMIZE__=__O_SPEED__
-section	.text	align=16
+section	.text align=16
 %elif __OPTIMIZE__=__O_SIZE__
-section	.text	align=1
+section	.text align=1
 %endif
+
+%endif
+
 	global	START
 
 %ifdef STAMP_VERSION
@@ -123,15 +154,15 @@ __date	db	STAMP_DATE, EOL, __n
 ; syscall gates
 ;
 
-%ifdef	__FREEBSD__
 __syscall_gate:
+
+%ifdef	__BSD__
 	int	0x80
 	jnc	.__ok
 	neg	eax
 .__ok:
 	ret
 %elifdef __BEOS__
-__syscall_gate:
 	int	0x25
 	ret
 %endif
@@ -148,10 +179,6 @@ __S	equ	4
 %ifdef __LIBC__
 	global	main
 main:
-%else
-	global	_start
-_start:
-%endif
 	mov	ebp,esp
 
 	xor	edx,edx
@@ -199,6 +226,32 @@ _start:
 	xor	ecx,ecx
 	xor	ebp,ebp
 	jmp	START
+%else
+	global	_start
+_start:
+
+%ifdef	__BEOS__
+	pop	eax
+	pop	eax
+	pop	esi
+;	mov	esi,[esi]
+	push	eax
+.__next1:
+	push	esi
+.__next2:
+	lodsb
+	or	al,al
+	jnz	.__next2
+	inc	esi
+	cmp	[esi],byte 0
+	jnz	.__next1
+
+	xor	eax,eax
+	mov	esi,eax
+	jmp	START
+%endif
+
+%endif
 
 %endif	;__STARTUP__
 
@@ -215,11 +268,20 @@ section	.bss
 
 %macro DATASEG 0
 %ifndef __ELF_MACROS__
+
+%ifdef __AOUT__
+
+    section	.data
+
+%else
+
 %if __OPTIMIZE__=__O_SPEED__
     section	.data	align=16
 %elif __OPTIMIZE__=__O_SIZE__
     section	.data	align=1
 %endif
+%endif
+
 %endif
 %endmacro
 
@@ -279,16 +341,9 @@ iend
     %elifnum %2
      %if %2=0
 	xor	%1,%1
-     %elif %2=1
-	xor	%1,%1
-	inc	%1
-    %elif %2=-1 || %2=0xffffffff
-	xor	%1,%1
-	dec	%1
-    %elif %2=-2 || %2=0xfffffffe
-	xor	%1,%1
-	dec	%1
-	dec	%1
+     %elif %2<0 && %2>0xffffff7f
+	push	byte %2
+	pop	%1
      %elif %2<0
 	mov	%1,%2
      %elif %2<0x80
@@ -576,6 +631,5 @@ GLOBAL %{1}
 	pop	ebp
 	ret
 %endmacro
-
 
 %endif	;__SYSTEM_INC

@@ -1,28 +1,19 @@
 /*
 	Copyright (C) 1999-2000 Konstantin Boldyshev
     
-	$Id: test2.c,v 1.1 2000/03/02 08:52:01 konst Exp $
+	$Id: test2.c,v 1.2 2000/09/03 16:13:54 konst Exp $
 
 	test program for assembly libc
 */
 
-#include <fcntl.h>
-#include <unistd.h>
-
+#include <stdio.h>
 #include "libc.h"
-
-static char buf[100];
-static int l;
-
-/*
-    fails with fastcall?
-*/
 
 int main(void)
 {
     FASTCALL(3);
 
-    l = read(STDIN_FILENO, buf, 10);
-    write(STDOUT_FILENO, buf, l);
-    exit(l); /* MUST be called to exit */
+    printf("\tprintf() test\nhex: %x, octal: %o, decimal: %d\n", 0x10, 010, 10);
+
+    exit(0); /* MUST be called to exit */
 }

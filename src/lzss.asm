@@ -1,8 +1,9 @@
-;LZSS compression algorithm implementation  (c) CECCHINEL Stephan 1999
-; contact:  interzone@pacwan.fr
+;Copyright (C) 1999 Cecchinel Stephan <interzone@pacwan.fr>
 ;
-;$Id: lzss.asm,v 1.1 2000/01/26 21:19:40 konst Exp $
+;$Id: lzss.asm,v 1.2 2000/09/03 16:13:54 konst Exp $
 ;
+;LZSS compression algorithm implementation
+
 [BITS 32]
 
 %define N_BITS 15

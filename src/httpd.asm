@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.4 2000/04/07 18:36:01 konst Exp $
+;$Id: httpd.asm,v 1.5 2000/09/03 16:13:54 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -36,10 +36,21 @@
 ;0.05: 25-Feb-2000	heavy rewrite of network code, size improvements,
 ;			portability fixes (KB)
 ;0.06: 05-Apr-2000	finally works on FreeBSD! (KB)
+;0.07: 30-Jun-2000	Added support for custom 404 error message
+;			(by default in /etc/httpd/404.html)
+;			thanks to Mooneer Salem <mooneer@earthlink.net>
+
 
 %include "system.inc"
 
+;%define	ERR404
+
 CODESEG
+
+%ifdef	ERR404
+msg404	db	"/etc/httpd/404.html",EOL
+len404	equ	$ - msg404
+%endif
 
 nl	db	0xa
 setsockoptvals	dd	1
@@ -123,7 +134,7 @@ acceptloop:
 
 ;wait4 ( pid, status, options, rusage )
 
-	sys_wait4	-1,NULL,WNOHANG,NULL
+	sys_wait4	0xffffffff,NULL,WNOHANG,NULL
 	sys_wait4
 
 ;there must be 2 wait4 calls! Without them zombies can stay on the system
@@ -136,8 +147,8 @@ acceptloop:
 .forward:
 	sys_read edi,filebuf,0xfff
 	cmp	eax,byte 7		;in request there must be at least 7 symbols
-	jb near .endrequest
-.endrequestnot3
+	jb near endrequest
+.endrequestnot3:
 	push	eax
 	mov	ebx,finalpath
 	mov	ecx,[document]
@@ -154,7 +165,7 @@ acceptloop:
 	pop	eax
 	add	ecx,eax
 	cmp	ecx,0xfff
-	ja near .endrequest
+	ja near endrequest
 
 .endrequestnot2:
 
@@ -165,7 +176,7 @@ acceptloop:
 	mov	al,[ecx]
 	mov	byte [ebx],al
 	cmp	word [ecx], '..'
-	jz near .endrequest	;security error, can't have '..' in request
+	jz near endrequest	;security error, can't have '..' in request
 .endrequestnot:
 	inc	ebx
 	inc	ecx
@@ -182,17 +193,21 @@ acceptloop:
 	jnz	.loopme
 .loopout:
 	cmp	byte [ebx-1],'/'		;append index.html :)
-	jne	.noindex
+	jne	noindex
 	mov	dword [ebx],'inde'
 	mov	dword [ebx+4],'x.ht'
 	mov	dword [ebx+8],0x6e006c6d	;'ml'
-	jmps	.index
-.noindex:
+	jmps	index
+noindex:
 	mov	byte [ebx],0;
-.index:
+index:
 	sys_open finalpath,O_RDONLY
 	test	eax,eax
-	js	.endrequest
+%ifdef	ERR404
+	js	error404
+%else
+	js	endrequest
+%endif
 	mov	ebx,eax
 	mov	esi,eax
 	mov	ecx,filebuf
@@ -213,11 +228,22 @@ acceptloop:
 ;so watch this code carefully in the future
 	sys_write edi,nl,1
 
-.endrequest:
+endrequest:
 ;	sys_read ebp,filebuf,0xff
 ;	sys_shutdown ebp,1	;shutdown ( sock, how )
 ;	sys_close ebp
 	jmp	true_exit
+
+%ifdef	ERR404
+error404:
+	pusha
+	_mov	ecx,len404
+	_mov	esi,msg404
+	_mov	edi,finalpath
+	rep	movsb
+	popa
+	jmp	index
+%endif
 
 UDATASEG
 

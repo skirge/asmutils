@@ -1,6 +1,6 @@
 ;Copyright (C) 1995-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: window.asm,v 1.4 2000/04/07 18:36:01 konst Exp $
+;$Id: window.asm,v 1.5 2000/09/03 16:13:54 konst Exp $
 ;
 ;text window example
 
@@ -52,7 +52,7 @@ sText:
 lText1	equ	$ - .t1
 	s_attr	0x09
 	db	' ]'
-sText2
+sText2:
 	s_xy	wX+(wXlen-lText2)/2, (wYlen)/2 + 1
 	s_attr	0x0A
 .t2:
@@ -81,8 +81,7 @@ START:
 ;
 ;calculate scr len
 ;
-	xor	eax,eax
-	mov	ax,word [sMaxY]
+	movzx	eax,word [sMaxY]
 	mul	ah
 	shl	eax,1
 	mov	[len_scr],eax
@@ -110,11 +109,18 @@ START:
 
 	call	window
 
-;read a key
-
+.read_key:
 	sys_read STDIN,tmp,1
+	test	eax,eax
+	js	.read_key
 
-;restore old screen
+	mov	al,byte [tmp]
+	cmp	al,0x1b	;Escape
+	jz	.restore_screen
+	cmp	al,0xd	;Enter
+	jnz	.read_key
+
+.restore_screen:
 
 	mov	eax,len_scr
 	mov	ebx,old_scr
@@ -123,7 +129,8 @@ START:
 
 	call	close_screen
 
-	sys_exit_true
+_exit:
+	sys_exit eax
 
 ;
 ; Window function
@@ -202,25 +209,46 @@ cDefAttr	equ	0x07
 
 cScreenDevice	db	"/dev/vcsa0",EOL
 
-_exit:
-	sys_exit eax
-
 open_screen:
-	pushad
+	pusha
+
+;
+;set non-blocking mode and one-char-at-a-time mode for STDIN
+;
+	sys_fcntl STDIN,F_SETFL,(O_RDONLY|O_NONBLOCK)
+	sys_ioctl STDIN,TCGETS,sattr				; saved until restore
+	sys_ioctl EMPTY,EMPTY,tattr				; will be modified
+	and dword [tattr+termios.c_lflag],~(ICANON|ECHO|ISIG)	;disable erase/fill processing, echo, signals
+	or  dword [tattr+termios.c_oflag],OPOST|ONLCR		;enable output processg, NL<-CR/NL
+	and dword [tattr+termios.c_iflag],~(INPCK|ISTRIP|IXON|ICRNL);disable parity chk, 8th bit strip,start/stop prot.
+	mov byte [tattr+termios.c_cc+VTIME],0			; timo * 1/10 s (if ~ICANON)
+	mov byte [tattr+termios.c_cc+VMIN],1			; min no. of chars for a single read opr
+	sys_ioctl STDIN,TCSETS,tattr
+
+;
+; open /dev/vcsa
+;
 	sys_open cScreenDevice, O_RDWR
 	mov	[sHandle],eax
 	test	eax,eax
-	js	_exit
+	js	near _exit
+;
+; get console size and cursor position
+;
 	sys_read eax,sMaxY,4
+
 	_mov	ecx,xy(0,0)
 	call	gotoXY
-	popad
+
+	popa
 	ret
 
+
 close_screen:
-	pushad
+	pusha
+	sys_ioctl STDIN,TCSETS,sattr
 	sys_close [sHandle]
-	popad
+	popa
 	ret
 
 ;
@@ -229,11 +257,11 @@ close_screen:
 ;<al	character
 ;
 write_char:
-	pushad
+	pusha
 	mov	ecx,sChar
 	mov	[ecx],al
 	sys_write [sHandle], EMPTY, 1
-	popad
+	popa
 	ret
 
 ;
@@ -242,14 +270,14 @@ write_char:
 ;<al	character
 ;
 write_attr:
-	pushad
+	pusha
 	mov	ecx,sAttr
 	mov	[ecx],al
 	push	ecx
 	sys_lseek [sHandle], 1, SEEK_CUR
 	pop	ecx
 	sys_write
-	popad
+	popa
 	ret
 
 ;
@@ -259,11 +287,11 @@ write_attr:
 ;<ah	attribute
 ;
 writech:
-	pushad
+	pusha
 	mov	ecx,sChar
 	mov	[ecx],ax
 	sys_write [sHandle], EMPTY, 2
-	popad
+	popa
 	ret
 
 ;
@@ -272,7 +300,7 @@ writech:
 ;<esi	string offset
 ;
 write:
-	pushad
+	pusha
 	_mov	eax,0
 	mov	ah,cDefAttr
 .loop:
@@ -288,16 +316,16 @@ write:
 	mov	ecx,eax
 	call	gotoXY
 	pop	eax
-	jmp	.loop
+	jmp	short .loop
 .attr:
 	lodsb
 	mov	ah,al
-	jmp	.loop
+	jmp	short .loop
 .put:
 	call	writech
-	jmp	.loop
-.end
-	popad
+	jmp	short .loop
+.end:
+	popa
 	ret
 
 ;
@@ -337,10 +365,10 @@ _ycoef		equ	0xa0
 ;>cl	Y
 ;
 getXY:
-	pushad
+	pusha
 	sys_lseek [sHandle], 2, SEEK_SET
 	sys_read EMPTY, sCurY, 2
-	popad
+	popa
 	mov	cx,word [sCurY]
 	ret
 
@@ -351,12 +379,12 @@ getXY:
 ;>ebx	destination
 ;
 vread:
-	pushad
+	pusha
 	call gotoXY
 	mov	ecx,ebx
 	mov	edx,eax
 	sys_read [sHandle]
-	popad
+	popa
 	ret
 
 vwrite:
@@ -384,5 +412,22 @@ tmp		resd	1
 len_scr		resd	1
 old_scr		resb	MAX_X * MAX_Y * 2
 
+tattr I_STRUC termios
+.c_iflag	UINT	1
+.c_oflag	UINT	1
+.c_cflag	UINT	1
+.c_lflag	UINT	1
+.c_line		UCHAR	1
+.c_cc		UCHAR	NCCS
+I_END
+
+sattr I_STRUC termios
+.c_iflag	UINT	1
+.c_oflag	UINT	1
+.c_cflag	UINT	1
+.c_lflag	UINT	1
+.c_line		UCHAR	1
+.c_cc		UCHAR	NCCS
+I_END
 
 END

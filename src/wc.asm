@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: wc.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: wc.asm,v 1.3 2000/09/03 16:13:54 konst Exp $
 ; 
 ;hackers' wc
 ;
@@ -8,6 +8,9 @@
 ;It doesnt support --long options, doesnt have --version and --help.
 ;It doesnt print total field when multiply files are given in the command
 ;line.
+;
+;0.01: 20-Feb-2000	initial release
+;0.02: 23-Aug-2000	reading from stdin fixed (TH)
 ;
 ;syntax: wc [option] [file, file, file...]
 ;
@@ -26,7 +29,6 @@
 ; options - just ask me or better yet add 'em yourself :)
 ;
 ; Send me any feedback,suggestions,additional code, etc.
-;
 
 		%include "system.inc"
 		
@@ -35,8 +37,10 @@
 START:
 		pop	eax			; get argc
 		dec	eax
-		jz	set_filehandle		; read from stdin (eax=0)
-		
+		jnz	has_arguments
+		pop	ebx
+		jmp	use_stdin
+has_arguments:
 		pop	eax			; get argv[0]
 get_next_arg:		
 		pop	ebx
@@ -63,14 +67,16 @@ try_next_option:
 just_open_it:		
 		xor	eax,eax
 		cmp	byte [ebx],'-'		; user wants STDIN
-		jz	set_filehandle
+		jz	use_stdin
 		
 		mov	edi,ebx			; save filename
 		
 		sys_open EMPTY,O_RDONLY
 		test	eax,eax
 		js	near error
-		
+		jmp	set_filehandle
+use_stdin:
+		mov	byte [_use_stdin], 1
 set_filehandle:
 		mov	ebp,eax
 read_file:		
@@ -139,7 +145,10 @@ skip_it:
 		loop	next_counter
 		
 		pop	ecx			; restore filename
+		cmp	byte [_use_stdin], 1
+		jz	print_newline
 		call	print
+print_newline:
 
 		mov	ecx,cr			; print \n
 		call	print
@@ -237,11 +246,10 @@ cr:		db	10,0
 _lines:		resd	1
 _words:		resd	1
 _bytes:		resd	1
-
+_use_stdin:	resb	1
 
 num_buf:	resb	16
 buf:		resb	4096
 buf_size	equ	$-buf
 
 		END
-		

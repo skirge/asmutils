@@ -1,40 +1,56 @@
 # Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 #
-# Makefile for libc
+# Makefile for libc (GNU make is required)
 #
-# $Id: Makefile,v 1.4 2000/03/02 08:52:01 konst Exp $
+# $Id: Makefile,v 1.5 2000/09/03 16:13:54 konst Exp $
 
-# Operating system (LINUX/FREEBSD/BEOS)
+BUILD_LIB = y
 
-OS = LINUX
+include ../MCONFIG
 
-# Optimization method (SIZE/SPEED)
+#---------------------------------------------------------------------------#
 
-OPTIMIZE = SIZE
+#			DO NOT EDIT BELOW
 
-#
+#---------------------------------------------------------------------------#
 
-AS = nasm
-LD = ld
-CC = gcc
-ASFLAGS = -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__  -i ../src/ -f elf
-CFLAGS = -Wall -O2 -fomit-frame-pointer -nostartfiles -nostdlib -Wl,-e,main 
+BUILD_SHARED = y
 
-FILES = libc #clib
+CRYPTO = md5.o rc6.o rmd.o
+LIBC = libc.o
 TESTS = test1 test2
-SO = ./libc.so #./clib.so
 
-all:	libc tests
+LIBSO = ./libc.so
 
-%:	%.asm
-	$(AS) $(ASFLAGS) $<
-	$(LD) -shared -o $*.so $*.o
+all:	libc tests crypto
+	rm -f *.o
 
-clean:
-	rm -f *.o *.so *.fc $(TESTS)
-
-tests: $(TESTS)
+%.o:	%.asm
+	$(AS) $(ASFLAGS) $(DEFINES) $<
 
 %:	%.c
-	$(CC) $(CFLAGS) -o $@ $< $(SO)
-	$(CC) $(CFLAGS) -mregparm=3 -D__FASTCALL__ -o $@.fc $< $(SO)
+	$(CC) $(CFLAGS) -o $@ $< $(LIBSO)
+	$(CC) $(CFLAGS) -mregparm=3 -D__FASTCALL__ -o $@.fc $< $(LIBSO)
+
+libc:	$(LIBC)
+	$(AR) rcv $@.a $(LIBC)
+ifdef BUILD_SHARED
+	$(LD) $(LDFLAGS) -shared -soname $(LIBSO) -o $(LIBSO) $(LIBC)
+endif
+
+crypto:	$(CRYPTO)
+	$(AR) rcv lib$@.a $(CRYPTO)
+ifdef BUILD_SHARED
+	$(LD) $(LDFLAGS) -shared -soname lib$@.so -o lib$@.so $(CRYPTO)
+endif
+
+ifdef AOUT
+tests:
+else
+tests: $(TESTS)
+endif
+
+install:
+
+clean:
+	rm -f $(TESTS) *.o *.a *.so *.fc

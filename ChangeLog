@@ -1,4 +1,28 @@
-07-Apr-2000:	asmutils 0.08
+03-Sep-2000:	asmutils 0.10
+
+	- cp, mv, rm (DB)
+	- report (PR)
+	- cpuinfo and cpuspeed merged (PR)
+	- httpd: optional custom 404 error message (KB, MS)
+	- dirname: '/' bugfix (PR)
+	- tee: "-i" bugfix, sys_sigaction instead of sys_signal (TH)
+	- wc: reading from stdin fixed (TH)
+	- libc: fastcall bugfix, clib.asm & string.asm merged (KB)
+	- hostname/domainname, uname/arch: *BSD port (KB)
+	- window.asm extended with input functions (KB)
+	- special bonus: fbcon intro fire256.asm (PF)
+	- lots of new defines added to os_linux.inc, from
+	  linux/fb.h, linux/kd.h, asm/termbits.h, etc (KB)
+	- os dependent include files (os_*.inc) updated
+	  to be in-line with the latest kernel versions (KB)
+	- top Makefile and MCONFIG added, include files separated (KB)
+	- clib.html removed (KB)
+	- OpenBSD port (TH)
+	- NetBSD port (KB)
+	- Asmutils-HOWTO: added section on debugging, README.elf merged (KB)
+
+
+07-Apr-2000:	asmutils 0.09
 
 	- ccd, cpuinfo, cpuspeed, extname (PR)
 	- dirname (AG)

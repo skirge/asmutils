@@ -1,20 +1,27 @@
 ;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Yuri Ivliev <yuru@black.cat.kazan.su>
 ;
-;$Id: pwd.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: pwd.asm,v 1.4 2000/09/03 16:13:54 konst Exp $
 ;
 ;hackers' pwd
 ;
 ;0.01: 05-Jun-1999	initial release (KB)
 ;0.02: 17-Jun-1999	size improvements (KB)
-;0.03: 04-Jul-1999	kernel 2.0 support added (YI)
+;0.03: 04-Jul-1999	Linux 2.0 stat-based part added (YI)
 ;0.04: 18-Sep-1999	elf macros support (KB)
 ;0.05: 17-Dec-1999	size improvements (KB)
 ;0.06: 08-Feb-2000	(KB)
+;0.07: 21-Aug-2000	STAT_PWD define (KB)
 ;
 ;syntax: pwd
 
 %include "system.inc"
+
+%ifdef __LINUX__
+%if __KERNEL__ = 20
+%define STAT_PWD
+%endif
+%endif
 
 %assign	lPath 0xff
 
@@ -22,7 +29,7 @@ CODESEG
 
 START:
 
-%if __KERNEL__ = 20
+%ifdef STAT_PWD
 
 %assign	lBackPath	0x00000040
 
@@ -142,7 +149,7 @@ START:
 
 Root.path	db	'/',EOL
 
-%elif __KERNEL__ = 22
+%else
 
 	sys_getcwd Path,lPath
 
@@ -164,7 +171,7 @@ UDATASEG
 
 Path	CHAR	lPath		;path buffer
 
-%if __KERNEL__ = 20
+%ifdef STAT_PWD
 
 BackPath	CHAR	lBackPath	;back path buffer
 

@@ -1,24 +1,24 @@
-;-------------------------------------------------------------------------
-; md5 algorithm  assembly version for asmutils  (c) CECCHINEL Stephan 1999
+;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-; $Id: md5.asm,v 1.1 2000/01/26 21:19:09 konst Exp $
+;$Id: md5.asm,v 1.2 2000/09/03 16:13:54 konst Exp $
 ;
-; contact:    interzone@pacwan.fr
+;md5 algorithm, assembly version for asmutils.
+;based on the C MD5 algorithm implementation from RSA Labs.
 ;
-; based on the C MD5 algorithm implementation from RSA Labs.
-;
-;
-; this code is free, you can eat it, drink it, fuck it , as you want...
-; just send me a mail if you use it, if you find bugs, or anything else...
-;
+;this code is free, you can eat it, drink it, fuck it , as you want...
+;just send me a mail if you use it, if you find bugs, or anything else...
 
-[BITS 32]
+%include "system.inc"
 
-	global MD5_Init
-	global MD5_Update
-	global MD5_Final
+;--==oo0 magic initialization constants. Ooo==--
+%define _A	0x67452301
+%define _B	0xefcdab89
+%define _C	0x98badcfe
+%define _D	0x10325476
+;========----------------
 
-;
+CODESEG
+
 ; the MD5 engine is based on the 3 functions above
 ;
 ; usage is simple:
@@ -36,35 +36,15 @@
 ; once the MD5 engine is initialize with MD5_Init
 ; you can call MD5_Update , a number of times you want to process data
 ; in multiple blocks,  you have the MD5 hash value when you call MD5_Final
-;
 
-
-
-;--==oo0 magic initialization constants. Ooo==--
-%define _A	0x67452301
-%define _B	0xefcdab89
-%define _C	0x98badcfe
-%define _D	0x10325476
-;========----------------
-	section .bss
-
-;=============--------------------------------------------------------
-; the MD5 core registers, & buffer
-; don't change their order 'cause the MD5 engine is based on this order
-A:	resd 1
-B:	resd 1
-C:	resd 1
-D:	resd 1
-LowPart:	resd 1
-HighPart:	resd 1
-buff1:	resd 16
-;---------------------------------------------------------------------
+	global MD5_Init
+	global MD5_Update
+	global MD5_Final
 
 ;===========-----------------------------------------------------------
 ; the MD5 core constants , bit shifts, offsets, and functions addresses
 ; (never change the order)
 ;
-	section .data
 
 Round1:	dd FF
 	dd 0xd76aa478
@@ -212,13 +192,7 @@ Round4:	dd II
 	db 2,15
 	dd 0xeb86d391		; -
 	db 9,21
-;============-------------------
 
-
-
-	section .text
-	global _start
-_start:
 ;---------------------------------------------
 ; initialize the MD5 engine with the 4 magic constants(_A to _D)
 ; and clear the LowPart & HighPart counters & the calculation buffer
@@ -469,4 +443,19 @@ MD5_Final:
 	rep movsd
 	popa
 	ret
-;--------------------------------------
+
+
+UDATASEG
+
+;=============--------------------------------------------------------
+; the MD5 core registers, & buffer
+; don't change their order 'cause the MD5 engine is based on this order
+A:	resd 1
+B:	resd 1
+C:	resd 1
+D:	resd 1
+LowPart:	resd 1
+HighPart:	resd 1
+buff1:	resd 16
+
+END

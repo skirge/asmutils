@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Cecchinel Stephan <interzone@pacwan.fr>
 ;
-;$Id: md5sum.asm,v 1.1 2000/01/26 21:19:40 konst Exp $
+;$Id: md5sum.asm,v 1.2 2000/09/03 16:13:54 konst Exp $
 ;
 ;hackers' md5sum	(calculate the MD5 checksum of the input files)
 ;
@@ -374,8 +374,6 @@ MD5_Final:
 ; the MD5 core constants , bit shifts, offsets, and functions addresses
 ; (never change the order)
 ;
-
-DATASEG
 
 Round1:	dd FF
 	dd 0xd76aa478

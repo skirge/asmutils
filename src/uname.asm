@@ -1,12 +1,13 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: uname.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: uname.asm,v 1.4 2000/09/03 16:13:54 konst Exp $
 ;
 ;hackers' uname/arch	[GNU replacement]
 ;
 ;0.01: 17-Jun-1999	initial release
 ;0.02: 03-Jul-1999	arch support
 ;0.03: 18-Sep-1999	elf macros support
+;0.04: 03-Sep-2000	portable utsname
 ;
 ;syntax: uname [-snrvma]
 ;	 arch (same as uname -m)
@@ -129,7 +130,7 @@ get_uname:
 	sys_write	EMPTY,space,1
 	
 .skip:
-	_add	ebp,luts
+	_add	ebp,SYS_NMLN
 	pop	ecx
 	loop	.printinfo
 
@@ -139,13 +140,13 @@ _exit:
 
 UDATASEG
 
-h I_STRUC new_utsname
-.sysname	CHAR	luts
-.nodename	CHAR	luts
-.release	CHAR	luts
-.version	CHAR	luts
-.machine	CHAR	luts
-.domainname	CHAR	luts
+h I_STRUC utsname
+.sysname	CHAR	SYS_NMLN
+.nodename	CHAR	SYS_NMLN
+.release	CHAR	SYS_NMLN
+.version	CHAR	SYS_NMLN
+.machine	CHAR	SYS_NMLN
+.domainname	CHAR	SYS_NMLN
 I_END
 
 END
