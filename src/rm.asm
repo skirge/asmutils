@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: rm.asm,v 1.4 2002/02/02 08:49:25 konst Exp $
+;$Id: rm.asm,v 1.5 2003/05/13 16:03:17 konst Exp $
 ;
 ;hackers' rm
 ;
@@ -192,7 +192,7 @@ fix_slash:
 is_dir:
 		pushad
 		
-		sys_stat edi,stat_buf
+		sys_lstat edi,stat_buf
 		test	eax,eax
 		js	.error
 		
