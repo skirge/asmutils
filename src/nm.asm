@@ -1,6 +1,6 @@
 ; Copyright (C) 2002 Thomas M. Ogrisegg
 ;
-; $Id: nm.asm,v 1.3 2002/02/16 17:54:03 konst Exp $
+; $Id: nm.asm,v 1.4 2002/02/16 18:13:01 konst Exp $
 ;
 ; nm - list symbols from ELF binary
 ;
@@ -49,6 +49,20 @@ hextostr:
 
 aout	db	"a.out", EOL
 
+do_error:
+		sys_write STDOUT, errstr, errlen
+		xor edx, edx
+		call write_fname
+		inc ebp
+
+argv_loop:
+		pop ebx
+		or ebx, ebx
+		jnz do_open
+
+do_exit:
+		sys_exit ebp
+
 START:
 		pop ecx
 		pop ebx
@@ -56,23 +70,8 @@ START:
 		mov [argc],ecx
 		jnz argv_loop
 		mov ebx, aout
-		jmps open
 
-do_error:
-		sys_write STDOUT, errstr, errlen
-		xor edx,edx
-		call write_fname
-		inc ebp
-
-argv_loop:
-		pop ebx
-		or ebx, ebx
-		jnz open
-
-do_exit:
-		sys_exit ebp
-
-open:
+do_open:
 		mov [fname], ebx
 		sys_open EMPTY, O_RDONLY
 		or eax, eax
@@ -98,7 +97,7 @@ open:
 .Lsrch_symtab:
 		add eax, byte 40
 		dec ecx
-		jz argv_loop
+		jz near argv_loop
 		cmp byte [eax+ELF32_Shdr.sh_type], SHT_SYMTAB
 		jnz .Lsrch_symtab
 		;; found symtab entry  ;;
