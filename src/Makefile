@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.48 2002/03/21 08:43:36 konst Exp $
+# $Id: Makefile,v 1.49 2002/03/26 05:25:29 konst Exp $
 
 #DEBUG = y
 
@@ -14,7 +14,7 @@ FILES = basename cal cat chmod chroot chown cmp cpuinfo cut date dc dd dirname\
 	echo env extname factor fromdos grep head hexdump hostname\
 	id init kill ln lzss mkdir mknod nice nm nohup od rot13 paste\
 	readelf readlink reboot renice scons sleep strings sync\
-	tail tar tee telnet tr true uname wc whoami yes\
+	tail tar tee telnet tr true uname uptime wc whoami yes\
 	md5sum rmdsum rc6crypt\
 
 FILES += readkey less\
@@ -27,9 +27,9 @@ LINKS = arch cpuspeed domainname false mkfifo more rmdir size sln todos\
 BONUS =	execve report asmutils
 
 ifdef LINUX
-FILES += chvt dmesg df eject fdisk finger ifconfig killall lsmod mesg ps\
+FILES += chvt dmesg df eject fdisk finger free ifconfig killall lsmod mesg ps\
 	 softdog swapon sysctl tty update
-LINKS += ccd deallocvt killall5 pidof rmmod route swapoff 
+LINKS += ccd deallocvt fingerd killall5 pidof rmmod route swapoff 
 BONUS += window leaves fire256 snake game
 endif
 
@@ -67,6 +67,7 @@ links:	$(FILES)
 	mkln sleep usleep;\
 	mkln less more;\
 	mkln nm size;\
+	mkln finger fingerd;\
 	)
 
 install:$(FILES)
