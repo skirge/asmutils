@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 by Joshua Hudson
 ;
-;$Id: which.asm,v 1.4 2001/09/24 16:56:21 konst Exp $
+;$Id: which.asm,v 1.5 2002/02/02 08:49:25 konst Exp $
 ;
 ;hacker's which
 ;
@@ -207,9 +207,9 @@ current	resd 1		; The current command pointer
 
 sts:
 %ifdef __BSD__
-B_STRUC stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_mtime,.st_size,.st_blocks
+B_STRUC Stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_mtime,.st_size,.st_blocks
 %else
-B_STRUC stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_size,.st_blocks,.st_mtime
+B_STRUC Stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_size,.st_blocks,.st_mtime
 %endif
 
 END

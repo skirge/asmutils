@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Cecchinel Stephan <interzone@pacwan.fr>
 ;
-;$Id: rc6crypt.asm,v 1.5 2001/09/24 16:49:19 konst Exp $
+;$Id: rc6crypt.asm,v 1.6 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' rc6crypt
 ;
@@ -44,7 +44,7 @@ START:
 
 usage:
 	sys_write STDOUT,syntax,lsyntax
-_exit:
+do_exit:
 	sys_exit_true
 
 arg_ok:
@@ -66,7 +66,7 @@ arg_ok:
 .begin:
 	pop 	ebx
 	test	ebx,ebx
-	jz	_exit
+	jz	do_exit
 
 	sys_open EMPTY,O_RDWR
 	mov	ebp,eax
@@ -84,7 +84,7 @@ arg_ok:
 	jns	.read_ok
 .error:
 	sys_write STDOUT,texterr,ltexterr
-	_jmp	_exit
+	jmp	do_exit
 .read_ok:
 	jz	near .next_f2
 	

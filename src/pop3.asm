@@ -1,6 +1,6 @@
 ;Copyright (C) 2002 Michal Medvecky <m.medvecky@sh.cvut.cz>
 ;
-;$Id: pop3.asm,v 1.1 2002/01/11 17:52:24 konst Exp $
+;$Id: pop3.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
 ;
 ;pop3 server
 ;
@@ -582,9 +582,9 @@ parsecmd:					; scans for command
 	mov		edx, dword 0xFFFF
 .retr_fread_3:
 	sys_read	[mbox_fd], filebuf, EMPTY
-	mov		[read], eax
+	mov		[wasread], eax
 	add		[written], dword eax
-	sys_write	[comm_sock], filebuf, [read]
+	sys_write	[comm_sock], filebuf, [wasread]
 	mov		eax, [written]
 	cmp		eax, [mail_len]
 	jne		.retr_fread
@@ -630,7 +630,7 @@ START:
 	ja	.done
 	imul	ebx,byte 10
 	add	ebx,eax
-	_jmp	.next_digit
+	jmps	.next_digit
 .done:
 	xchg	bh,bl		;now save port number into bindsock struct
 	shl	ebx,16
@@ -657,7 +657,7 @@ START:
 
 	sys_setsockopt ebp,SOL_SOCKET,SO_REUSEADDR,setsockoptvals,4
 	or	eax,eax
-	jz	bind
+	jz	do_bind
 
 false_exit:
 	sys_write STDOUT, errnoparm, len_errnoparm
@@ -669,7 +669,7 @@ bind_error:
 real_exit:
 	sys_exit
 
-bind:
+do_bind:
 	sys_bind ebp,bindsockstruct,16	;bind ( s, struct sockaddr *bindsockstruct, 16 );
 	or	eax,eax
 	jnz	bind_error		;bind error
@@ -744,7 +744,7 @@ authorized      resb      1               ;0-unauthorized(default); 1-authorized
 user_issued     resb      1               ;0-no 1-yes - user has to issue USER first 
 integer		resb	10	;for returning integers
 cmd_len		resd	1	
-read		resd	1
+wasread		resd	1
 written		resd	1
 mbox_fd		resd	1
 parm_len	resd	1

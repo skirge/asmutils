@@ -23,7 +23,7 @@
 ;| Requires	 : asmutils package, nasm                                     |
 ;|----------------------------------------------------------------------------|
 ;
-; $Id: readelf.asm,v 1.3 2002/01/28 18:53:26 konst Exp $                                                                         
+; $Id: readelf.asm,v 1.4 2002/02/02 08:49:25 konst Exp $                                                                         
 
 BITS 32
 
@@ -129,7 +129,7 @@ START:
 	jae .getparam
 .noparam:
 	sys_write EMPTY, usage, usagelen	;write the "HOWTO" :)
-	jmp _exit		;and return to caller
+	jmp do_exit		;and return to caller
 
 .getparam:
 	pop eax			;get our own name (argv[0])
@@ -178,7 +178,7 @@ START:
 	pop ecx			;clear the stack (previously saved argv[1])
 	sys_close EMPTY				;close the FD
 	sys_write STDOUT, noelfmsg, noelflen	;the file is not ELF
-_exit:
+do_exit:
 	sys_exit eax
 
 ; File is an ELF... let's do our thang'
@@ -216,7 +216,7 @@ ELF:
 ; Close the file
 .close:
 	sys_close [fhandle]
-	jmp _exit
+	jmp do_exit
 
 
 ;==============================================================================

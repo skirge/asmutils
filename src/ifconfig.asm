@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Jani Monoses <jani@astechnix.ro>
 ;
-;$Id: ifconfig.asm,v 1.2 2001/09/19 07:47:29 konst Exp $
+;$Id: ifconfig.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' ifconfig/route
 ;
@@ -40,7 +40,7 @@ START:
 	jle		.exit1					;if argc <= 2 bail out	
 
 	sys_socket	AF_INET,SOCK_DGRAM,IPPROTO_IP		;subject to ioctls
-	mov		dword[socket],eax			;save sock descr
+	mov		dword [sockfd],eax			;save sock descr
 
 	pop		esi					;program name
 
@@ -111,7 +111,7 @@ START:
 ;	jmps		.argloop	
 
 .do_ioctl:
-	mov		ebx, dword[socket]
+	mov		ebx, dword [sockfd]
 	sys_ioctl	EMPTY,EMPTY,ifreq	
 	ret
 .exit:
@@ -217,7 +217,7 @@ START:
 .doit:	
 	push		ebx
 	pop		ecx
-	mov		ebx, dword[socket]
+	mov		ebx, dword [sockfd]
 	sys_ioctl	EMPTY,EMPTY,rtentry
 
 	jmp		.exit 			
@@ -231,7 +231,7 @@ START:
 
 
 UDATASEG
-	socket		resb	4
+	sockfd		resd	1
 	
 ;this corresponds to struct ifreq
 	ifreq:		resb	16	;interface name

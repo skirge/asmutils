@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: sleep.asm,v 1.4 2001/03/18 07:08:25 konst Exp $
+;$Id: sleep.asm,v 1.5 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' sleep		[GNU replacement]
 ;
@@ -33,7 +33,7 @@ START:
 .args:
 	pop	esi
 	or	esi,esi
-	jz	.exit
+	jz	do_exit
 	mov	edi,esi
 
 	xor	eax,eax
@@ -47,17 +47,14 @@ START:
 	imul	ebx,byte 10
 	add	ebx,eax
 	adc	edx,byte 0
-	_jmp	.next_digit
+	jmps	.next_digit
 .done:
 	mov	eax,ebx
 	test	edx,edx
-	jnz	.ok
+	jz	do_exit
 	test	eax,eax
-	jnz	.ok
-.exit:
-	sys_exit eax
+	jz	do_exit
 
-.ok:
 	_mov	ebx,1
 	mov	cl,byte [esi - 1]
 
@@ -79,7 +76,7 @@ START:
 	cmp	cl,'d'
 	jz	.set_sleep	
 	cmp	cl,'n'
-	jnz	.exit
+	jnz	do_exit
 	xchg	eax,edx
 	jmps	.set_sleep2
 .set_sleep:
@@ -91,7 +88,10 @@ START:
 	mov	dword [ebx+4],edx
 .do_sleep:
 	sys_nanosleep EMPTY,NULL
-	_jmp	.args
+	jmps	.args
+
+do_exit:
+	sys_exit eax
 
 UDATASEG
 

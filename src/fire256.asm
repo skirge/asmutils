@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Paul Furber <m@verick.co.za>
 ;
-;$Id: fire256.asm,v 1.3 2001/11/24 09:46:18 konst Exp $
+;$Id: fire256.asm,v 1.4 2002/02/02 08:49:25 konst Exp $
 
 ;;  This program is free software; you can redistribute it and/or modify
 ;;  it under the terms of the GNU General Public License as published by
@@ -59,13 +59,7 @@ START:
 	mov	eax,	[fd]		; get saved fd
 	mov	edi,	VMEM_SIZE
 
-	_push	0			;.offset
-	_push	eax			;.fd
-	_push	MAP_SHARED		;.flags
-	_push	PROT_READ|PROT_WRITE	;.prot
-	_push	edi			;.len
-	_push	0			;.addr
-	sys_oldmmap esp
+	sys_mmap 0,eax,MAP_SHARED,PROT_READ|PROT_WRITE,edi,0
 
 	test	eax,	eax		;have we mmaped it?
 	js	near	my_exit		; argh

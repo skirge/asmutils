@@ -19,7 +19,7 @@
 ;; given as the number of seconds since the start of 1970 UTC, to
 ;; display instead of the current time.
 ;;
-;; $Id: date.asm,v 1.2 2001/11/24 09:46:18 konst Exp $
+;; $Id: date.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
 
 %include "system.inc"
 
@@ -77,6 +77,9 @@ mmapfile:
 		js	.return
 		xchg	eax, ebx
 		lea	ecx, [byte edi + buf - tm]
+
+		pusha
+
 		sys_fstat
 
 ;; An mmap structure is filled out and handed off to the system call,
@@ -91,7 +94,6 @@ mmapfile:
 ;		mov	[byte ebx + 12], eax
 ;		sys_mmap
 
-		pusha
 		sys_mmap 0,dword [ecx + 20],PROT_READ,MAP_SHARED,ebx,0
 		mov	[esp + 4*7],eax
 		popa

@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 by Joshua Hudson
 ;
-;$Id: m_inetd.asm,v 1.2 2001/11/24 09:46:18 konst Exp $
+;$Id: m_inetd.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
 ;
 ;m_inetd by Joshua Hudson 08/09/2001
 ;
@@ -46,12 +46,14 @@ nopassip:
 ; socketopt(socket, SOL_SOCKET, SO_REUSEADDER, &setsockoptvals, 4)
 	sys_setsockopt	ebp, SOL_SOCKET, SO_REUSEADDR, sockoptvals, 4
 	or	eax, eax
-	jz	bind
+	jz	do_bind
 
 fail:	mov	bl, 1
-exit:	sys_exit
+do_exit:
+	sys_exit
 
-bind:	pop	eax
+do_bind:
+	pop	eax
 	mov	[bindsockstruct], dword AF_INET
 	mov	byte [bindsockstruct + 2], ah		; htons port
 	mov	byte [bindsockstruct + 3], al
@@ -88,7 +90,7 @@ nopathreq:
 	inc	edx
 	sys_write	STDOUT
 	xor	bl, bl
-	jmp	exit
+	jmp	do_exit
 
 ;*** Listen for connections
 acceptanother:
@@ -135,7 +137,7 @@ activate:
 	sys_dup2	eax, STDOUT		; to socket
 	sys_execve	application, execptrs, emptyenviron
 	sys_write	STDERR, ExecFailed, 12
-	sys_exit	; Failed to exec!
+	jmp	do_exit	; Failed to exec!
 
 ExecFailed	db	"exec failed", __n
 

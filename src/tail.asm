@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Jani Monoses <jani@astechnix.ro>
 ;
-;$Id: tail.asm,v 1.3 2001/09/24 16:49:19 konst Exp $
+;$Id: tail.asm,v 1.4 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' tail
 ;
@@ -113,5 +113,5 @@ UDATASEG
 	buf	resb	BUFSIZE
 	buf2	resb	BUFSIZE
 	safety	resb	BUFSIZE
-	statbuf	B_STRUC	stat,.st_mode,.st_size
+	statbuf	B_STRUC	Stat,.st_mode,.st_size
 END

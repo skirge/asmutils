@@ -1,6 +1,6 @@
 ; Copyright (C) 2002 Thomas M. Ogrisegg
 ;
-; $Id: killall.asm,v 1.1 2002/01/17 08:16:25 konst Exp $
+; $Id: killall.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
 ;
 ; hackers' killall/killall5/pidof
 ;
@@ -187,7 +187,7 @@ find_next_proc:
 
 		sys_getdents [pfd], dir, 0x600
 		or eax, eax
-		jz .Lout
+		jz near .Lout
 
 		mov ebp, dir
 .Lread_next_ent:
@@ -236,7 +236,7 @@ find_next_proc:
 		call [func]			;; call the target function ;;
 		jmp .Lread_next_ent
 .Lout:
-		jmp [efunc]			;; jump to exit function ;;
+		jmp [efunc]			;; jump to exit function ;;		
 
 ;; optimize: merge with set_signal ;;
 parse_opts:
@@ -264,11 +264,11 @@ parse_opts:
 		cmp al, 'l'
 		jz near .Lint3
 		cmp al, 'q'
-		jz .Lset_q
+		jz near .Lset_q
 		cmp al, 'v'
-		jz .Lset_v
+		jz near .Lset_v
 		cmp al, 'V'
-		jz .Lset_V
+		jz near .Lset_V
 		cmp al, 'w'
 		jz .Lnext_opt
 		cmp al, 's'

@@ -1,6 +1,6 @@
 ;Copyright (C) 1995-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: window.asm,v 1.11 2001/11/24 15:18:10 konst Exp $
+;$Id: window.asm,v 1.12 2002/02/02 08:49:25 konst Exp $
 ;
 ;text window example
 
@@ -135,7 +135,7 @@ START:
 
 	call	close_screen
 
-_exit:
+do_exit:
 	sys_exit eax
 
 ;
@@ -265,7 +265,7 @@ open_screen:
 	sys_open cScreenDevice, O_RDWR
 	mov	[sHandle],eax
 	test	eax,eax
-	js	near _exit
+	js	near do_exit
 ;
 ; get console size and cursor position
 ;

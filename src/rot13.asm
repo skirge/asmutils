@@ -1,6 +1,6 @@
 ; Copyright (c) 2001 Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
 ;
-; $Id: rot13.asm,v 1.1 2001/11/24 09:47:09 konst Exp $
+; $Id: rot13.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
 ;
 ; Enc/Decrypt strings by rotating characters (with 13).
 ; Often used in Usenet articles
@@ -19,7 +19,7 @@ START:
 IOLoop:
 	sys_read STDIN, esp, BUFSIZE ;84
 	or eax, eax
-	jz _exit
+	jz do_exit
 	mov ebp, eax
 	mov ecx, eax
 	mov esi, esp
@@ -59,7 +59,7 @@ over:		; %al == n-z, N-Z
 _out:
 	sys_write STDOUT, esp, ebp
 	jmp IOLoop
-_exit:
+do_exit:
 	sys_exit eax
 
 END

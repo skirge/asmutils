@@ -1,13 +1,12 @@
 ;Copyright (C) 2000 Edward Popkov <evpopkov@carry.neonet.lv>
 ;
-;$Id: env.asm,v 1.2 2000/04/07 18:36:01 konst Exp $
+;$Id: env.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' env
 ;
-;0.01: 27-Feb-2000	initial release
-;
 ;syntax: env
-
+;
+;0.01: 27-Feb-2000	initial release
 
 %include "system.inc"
 
@@ -19,7 +18,7 @@ START:
 	inc	ebp
 	mov	esi,[esp + ebp * 4]
 	test	esi,esi
-	jz	_exit
+	jz	do_exit
 	mov	ecx,esi
 	xor	edx,edx
 	dec	edx
@@ -33,7 +32,7 @@ START:
 	sys_write STDOUT
 	jmps	.env
 
-_exit:
+do_exit:
 	sys_exit_true
 
 END

@@ -1,10 +1,8 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: chroot.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: chroot.asm,v 1.4 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' chroot
-;
-;0.01: 19-Dec-1999	initial release
 ;
 ;syntax: chroot directory [command]
 ;
@@ -14,6 +12,8 @@
 ;Runs command with specified root directory
 ;If no command is given, runs /bin/sh
 ;You must be root to succeed
+;
+;0.01: 19-Dec-1999	initial release
 
 %include "system.inc"
 
@@ -22,14 +22,14 @@ CODESEG
 START:
 	pop	ebp			;get argc
 	dec	ebp			;exit if no args
-	jz	_exit
+	jz	do_exit
 
 	pop	ebx
 
 	pop	ebx
 	sys_chroot
 	or	eax,eax
-	js	_exit
+	js	do_exit
 
 	mov	ebx,[esp]		;ebx -- program name (*)
 	or	ebx,ebx
@@ -41,7 +41,7 @@ START:
 
 	sys_execve
 
-_exit:
+do_exit:
 	sys_exit eax
 
 shell	db	"/bin/sh";,EOL

@@ -1,18 +1,18 @@
 ;Copyright (C) 1999-2000 Alexandr Gorlov <winct@mail.ru>
 ;Partial Copyright (C) 1999 Kir Smirnov <ksm@mail.ru>
 ;
-;$Id: df.asm,v 1.3 2000/04/07 18:36:01 konst Exp $
+;$Id: df.asm,v 1.4 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' df
+;
+;syntax: df --help
+;
+;example: df 
 ;
 ;0.01: 29-Jul-1999	initial release
 ;0.02: 11-Feb-2000	bugfixes 
 ;0.03: 06-Apr-2000	portability fixes, removed sys_brk,
 ;			initial FreeBSD support (KB)
-;
-;syntax: df --help
-;
-;example: df 
 
 %include "system.inc"
 
@@ -72,7 +72,7 @@ START:
 	jmp	error_exit
 .main11:
 	cmp	dword [esi+2], "vers"
-	jne	near _exit
+	jne	near do_exit
 	_mov	ecx,msg_version
 	_mov	edx,len_msg_version
 	jmp	error_exit
@@ -87,13 +87,13 @@ START:
 	mov	esi,r_buf
 	sys_getfsstat esi,0x4000,MNT_WAIT
 ;	test	eax,eax
-;	js	_exit
+;	js	do_exit
 ;	mov	ecx,eax
 ;.nextfs:
 ;	sys_write STDOUT, esi.f_mntfromname,MNAMELEN
 ;	add	esi,sizeof_statfs	
 ;	loop	.nextfs
-	jmp	_exit
+	jmp	do_exit
 
 %else
 	sys_open mtab, O_RDONLY	;В eax дескриптор !!!
@@ -127,7 +127,7 @@ FindString:
 	repne scasb		;edi указывает на начало новой строки
 	mov esi, edi
 	or ecx, ecx
-	je near _exit		;!!!Выход с ошибкой.
+	je near do_exit		;!!!Выход с ошибкой.
 
 ;2. Ищем первый пробел	 
 FindSpace:
@@ -137,7 +137,7 @@ FindSpace:
 
 .sub1:
 	or ecx, ecx 		
-	je near _exit
+	je near do_exit
 .sub:
 	dec ecx
 	movsb			;[esi] -> [edi]
@@ -304,7 +304,7 @@ FindSpace:
 error_exit:
 	sys_write STDERR
 
-_exit:
+do_exit:
 	sys_exit
 
 ;============================================================================
@@ -418,7 +418,7 @@ Space:
 
 UDATASEG	
 
-sfs I_STRUC statfs		;структура для системного вызовы statfs
+sfs I_STRUC Statfs		;структура для системного вызовы statfs
 
 %ifdef	__LINUX__
 .f_type		LONG	1	;тип файловой системы

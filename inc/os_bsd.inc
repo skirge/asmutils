@@ -1,6 +1,6 @@
 ; Copyright (C) 2001-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_bsd.inc,v 1.7 2002/01/20 18:19:38 konst Exp $
+; $Id: os_bsd.inc,v 1.8 2002/02/02 08:49:25 konst Exp $
 ;
 ; file          : os_bsd.inc
 ; created       : 12-Nov-2001
@@ -100,7 +100,7 @@ __syscall_gate:
 %assign	MFSNAMELEN	16	;length of fs type name, including null
 %assign	MNAMELEN	90	;length of buffer for returned name
 
-struc statfs
+struc Statfs
 .f_spare2	LONG	1	;placeholder
 .f_bsize	LONG	1	;fundamental file system block size
 .f_iosize	LONG	1	;optimal trasfer block size
@@ -123,7 +123,7 @@ endstruc
 ;sys/stat.h
 ;
 
-struc stat
+struc Stat
 .st_dev		U32	1
 .st_ino		U32	1
 .st_mode	U16	1

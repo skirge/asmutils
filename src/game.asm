@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@fel.cvut.cz>
 ;
-;$Id: game.asm,v 1.1 2001/08/28 06:31:55 konst Exp $
+;$Id: game.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
 ;
 ;0.01: 26-Jul-2001	initial release  (RM)
 ;
@@ -78,7 +78,7 @@ START:
     jz .finish_reading
     sys_open EMPTY,NULL ;open the 1st fighter code
     test 	eax,eax
-    js .error
+    js near .error
     mov 	ebx,eax
     sys_read EMPTY,edi,PLAYER_MAX_SIZE ;read it into MEM max 4Kb
     mov 	[ebp],eax

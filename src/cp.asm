@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: cp.asm,v 1.5 2001/09/17 09:38:30 konst Exp $
+;$Id: cp.asm,v 1.6 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' cp
 ;
@@ -395,6 +395,6 @@ recursive	resb	1
 
 buf		resb	buf_size
 
-stat_buf B_STRUC stat,.st_mode
+stat_buf B_STRUC Stat,.st_mode
 
 		END

@@ -1,10 +1,8 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: grep.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: grep.asm,v 1.4 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' grep
-;
-;0.01: 19-Dec-1999	initial release (dumb and slow version)
 ;
 ;syntax: grep [-q] PATTERN [file...]
 ;
@@ -12,15 +10,17 @@
 ;
 ;there's no support for regexp, only pure string patterns.
 ;returns 0 on success (if pattern was found), 1 otherwise
+;
+;0.01: 19-Dec-1999	initial release (dumb and slow version)
 
 %include "system.inc"
 
 CODESEG
 
-BufSize	equ	0x4000
 _q	equ	00000001b
+%assign	BUFSIZE	0x4000
 
-_exit:
+do_exit:
 	sys_exit [retcode]
 
 START:
@@ -29,7 +29,7 @@ START:
 
 	pop	ebx
 	dec	ebx
-	jz	_exit
+	jz	do_exit
 	pop	esi
 	pop	edi		;get pattern
 
@@ -47,7 +47,7 @@ START:
 .next_file:
 	pop	ebx		;pop filename pointer
 	or	ebx,ebx
-	jz	_exit		;exit if no more agrs
+	jz	do_exit		;exit if no more agrs
 
 ; open O_RDONLY
 
@@ -57,7 +57,7 @@ START:
 	js	.next_file
 
 .mainloop:
-	mov	esi,Buf
+	mov	esi,buf
 	call	gets
 	cmp	[tmp], byte 0
 	jnz	.next_file
@@ -162,6 +162,6 @@ UDATASEG
 retcode	resd	1
 tmp	resb	1
 flag	resb	1
-Buf	resb	BufSize
+buf	resb	BUFSIZE
 
 END

@@ -1,6 +1,6 @@
 ; Copyright (c) 2001 Thomas M. Ogrisegg
 ;
-; $Id: finger.asm,v 1.1 2001/12/04 15:31:20 konst Exp $
+; $Id: finger.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
 ;
 ; finger - user information lookup program
 ;
@@ -46,7 +46,7 @@ START:
 read_next_utmp:
 	sys_read [utmpfd], utmpbuf, 384
 	or eax, eax
-	jz near _exit
+	jz near do_exit
 	cmp long [utmpbuf.ut_type], USER_PROCESS
 	jnz read_next_utmp
 	mov edi, buf
@@ -149,7 +149,7 @@ _write:
 	not ecx
 	sys_write STDOUT, buf, ecx
 	jmp read_next_utmp
-	jmp _exit
+	jmp do_exit
 
 nidle:
 	mov long [edi],   '    '
@@ -219,7 +219,7 @@ rn_found:
 rn_lloop:
 	lodsb
 	or al, al
-	jz _exit
+	jz do_exit
 	cmp al, ':'
 	jnz rn_lloop
 	dec ecx
@@ -243,7 +243,7 @@ rn_copy:
 	pop ecx
 	ret
 
-_exit:
+do_exit:
 	sys_exit 0x0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -260,7 +260,7 @@ utmpfd  LONG    1
 pwdfd   LONG    1
 pwptr   LONG    1
 
-statbuf B_STRUC stat,.st_size,.st_atime
+statbuf B_STRUC Stat,.st_size,.st_atime
 utmpbuf B_STRUC utmp,.ut_type,.ut_line,.ut_user,.ut_host,.ut_tv
 
 buf	LONG    0x1000

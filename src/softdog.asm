@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: softdog.asm,v 1.5 2001/03/18 07:08:25 konst Exp $
+;$Id: softdog.asm,v 1.6 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' softdog (software watchdog)
 ;
@@ -43,7 +43,7 @@ START:
 	ja	.done
 	imul	ebx,byte 10
 	add	ebx,eax
-	_jmp	.next_digit
+	jmps	.next_digit
 .done:
 	or	ebx,ebx		;zero?
 	jz	.start
@@ -70,7 +70,7 @@ START:
 .child:
 	sys_write ebp,softdog,1
 	sys_nanosleep t,NULL
-	_jmp	.child
+	jmps	.child
 
 softdog	db	'/dev/watchdog',EOL
 

@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: hostname.asm,v 1.7 2001/12/04 15:31:20 konst Exp $
+;$Id: hostname.asm,v 1.8 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' hostname/domainname
 ;
@@ -78,7 +78,7 @@ START:
 %endif
 
 .done_set:
-	jmps	_exit
+	jmps	do_exit
 
 .getname:
 
@@ -93,7 +93,7 @@ START:
 .sysctl_get:
 	sys_sysctl	eax, 2, edx, len, 0, 0
 	test	eax,eax
-	js	_exit
+	js	do_exit
 	mov	esi,edx
 
 %else
@@ -119,7 +119,7 @@ START:
 	sub	esi,edx
 	sys_write STDOUT,esi
 	xor	eax,eax
-_exit:
+do_exit:
 	sys_exit eax
 
 %ifdef	USE_SYSCTL

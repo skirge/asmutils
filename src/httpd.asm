@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.12 2002/01/10 08:43:44 konst Exp $
+;$Id: httpd.asm,v 1.13 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -150,14 +150,14 @@ START:
 
 	sys_setsockopt ebp,SOL_SOCKET,SO_REUSEADDR,setsockoptvals,4
 	or	eax,eax
-	jz	bind
+	jz	do_bind
 
 false_exit:
 	_mov	ebx,1
 real_exit:
 	sys_exit
 
-bind:
+do_bind:
 	sys_bind ebp,bindsockstruct,16	;bind(s, struct sockaddr *bindsockstruct, 16)
 	or	eax,eax
 	jnz	false_exit

@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.13 2002/01/28 18:53:26 konst Exp $
+; $Id: syscall.inc,v 1.14 2002/02/02 08:49:25 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 28-Jan-2002
+; modified	: 02-Feb-2002
 ; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: system call macros
@@ -21,10 +21,10 @@
 %define __SYSCALL_INC
 
 ;
-;
+;internal system call macros
 ;
 
-%macro	__PUSH_ARGS 1
+%macro	__push_syscall_args 1
 %assign	P %1
 %if P>0
  %if P>1
@@ -46,11 +46,7 @@
 %endif
 %endmacro
 
-;
-;internal system call macros
-;
-
-; system call definition
+; system call macro
 ;
 ; NEVER USE THIS MACRO DIRECTLY!
 ;
@@ -59,7 +55,7 @@
 ; %3	number of registers to prepare
 ; %4...	parameters
 
-%macro	__syscall 2-10
+%macro	__syscall 2-9
 
 %if %0>2
 %if %3>0
@@ -80,6 +76,13 @@
  %endif
 	_mov	ebx,%4
 %endif
+%if %3 < %2
+%assign __ARGS %2
+%else
+%assign __ARGS %3
+%endif
+%else
+%assign __ARGS %2
 %endif
 
 %if	__SYSCALL__=__S_KERNEL__
@@ -94,38 +97,37 @@
 	int	0x20
 %else		;__BSD__ & other
 ;Note:
-;BSD related part is optimized for size by moving all 'push'es
-;and add 'esp,x' to __syscall_gate. However this will cause problems
+;BSD related part is optimized for size by moving all 'push'es and
+;add 'esp, N' to __syscall_gate. However this could cause problems
 ;with syscalls with more than 6 args, fortunately there are no such
 ;monsters yet :)
 
+;%if	__OPTIMIZE__=__O_SPEED__
+;	__push_syscall_args __ARGS
+;%endif
 	call	__syscall_gate	;defined in os_osname.inc
+;%if	__OPTIMIZE__=__O_SPEED__
+;%if __ARGS > 0
+;	add	esp,byte (__ARGS) * 4
+;%endif
+;%endif
 
-;	push	eax		;we are not using a.out
+;	push	eax		;older convention
 ;	call	7:0		;
 ;	add	esp,byte (%{2} + 1) * 4
-%endif
+%endif	;__BSD__
 
 %elif	__SYSCALL__=__S_LIBC__
 
-%if %0 > 2		;anything to prepare?
-%if %3 < %2
-%assign __ARGS %2
-%else
-%assign __ARGS %3
-%endif
-%else
-%assign __ARGS %2
-%endif
-
-	__PUSH_ARGS __ARGS
-
+;	pusha	;preserve all registers
+	__push_syscall_args __ARGS
 extern %{1}
 	call	%{1}
-
 %if __ARGS > 0
 	add	esp,byte (__ARGS) * 4
 %endif
+;	mov	[esp + 4*7],eax
+;	popa	;restore all registers
 
 %else	; unknown syscall convention
 
@@ -138,12 +140,6 @@ extern %{1}
 ;--------------------------------------------------------------------------
 ;				System Calls
 ;--------------------------------------------------------------------------
-
-;%macro __SYSCALL 2
-;%macro sys_%1 0-%2
-;__syscall %1, %2, %0, %1, %2
-;%endmacro
-;%endmacro
 
 ;
 ;Fake "generic" syscall
@@ -179,9 +175,11 @@ extern %{1}
 	__syscall pipe, 1, %0, %1
 %endmacro
 
+%ifndef __OS_SYSCALL_GETDENTS__
 %macro sys_getdents 0-3
 	__syscall getdents, 3, %0, %1, %2, %3
 %endmacro
+%endif
 
 %macro sys_getcwd 0-2
 	__syscall getcwd, 2, %0, %1, %2
@@ -534,22 +532,24 @@ extern %{1}
 %endmacro
 
 ;--------------------------------------------------------------------------
-;OS specific syscalls
+;possible OS specific syscalls
 ;--------------------------------------------------------------------------
-
-%ifndef __ALT_SYSCALLS__	;alternative implementation in os_*.inc
 
 ;
 ;sys/reboot.h
 ;
 
+%ifndef __OS_SYSCALL_REBOOT__
 %macro sys_reboot 0-1
 	__syscall reboot, 1, %0, %1
 %endmacro
+%endif
 
 ;
 ;sys/socket.h
 ;
+
+%ifndef __OS_SYSCALL_NETWORK__
 
 %macro	sys_socket 0-3
 	__syscall socket, 3, %0, %1, %2, %3
@@ -591,15 +591,18 @@ extern %{1}
 	__syscall recvfrom, 6, %0, %1, %2, %3, %4, %5, %6
 %endmacro
 
+%endif	;__OS_SYSCALL_NETWORK__
+
 ;
 ;sys/mman.h
 ;
 
+%ifndef __OS_SYSCALL_MMAP__
 %macro	sys_mmap 0-6
 	__syscall mmap, 6, %0, %1, %2, %3, %4, %5, %6
 %endmacro
+%endif
 
-%endif	;__ALT_SYSCALLS__
 ;--------------------------------------------------------------------------
 
 %endif

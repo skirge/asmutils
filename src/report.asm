@@ -1,7 +1,7 @@
 ;-====================================================================;
 ;- Copyright (C) 2000 H-Peter Recktenwald, Berlin <phpr@snafu.de>
 ;-
-;- $Id: report.asm,v 1.1 2000/09/03 16:13:54 konst Exp $
+;- $Id: report.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
 ;-
 ;-  file  	: report.asm
 ;-  created	: 06-jun-2000
@@ -118,7 +118,7 @@ pver:
     lea ecx,[ebp+vert-Z]	; version
 .p:
     call print
-exit:
+do_exit:
     xor ebx,ebx
 xxit:
     sys_exit		
@@ -129,7 +129,7 @@ ready:
     call sgnum			; fetch signal/error number to ecx
     pop esi
     mov eax,ecx
-    lea ebx,[ebp+exit-Z]
+    lea ebx,[ebp+do_exit-Z]
     xchg ebx,[esp]		; options flags, push exit return
     shr ebx,1
     jc pver			;?; version

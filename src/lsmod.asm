@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: lsmod.asm,v 1.4 2001/12/04 18:22:51 konst Exp $
+;$Id: lsmod.asm,v 1.5 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' lsmod/rmmod
 ;
@@ -40,17 +40,17 @@ START:
 
 do_rmmod:
 	dec	ebp
-	jz	_exit	;no arguments - error
+	jz	do_exit	;no arguments - error
 
 .rmmod_loop:
 	pop	ebx	;take the name of the module
 	sys_delete_module
 	test	eax,eax
-	js	_exit
+	js	do_exit
 	dec	ebp
 	jnz	.rmmod_loop
 
-_exit:
+do_exit:
 	sys_exit eax
 
 do_lsmod:
@@ -67,12 +67,13 @@ do_lsmod:
 .write:
 	sys_write STDOUT
 ;	sys_close ebp
-	jmps	_exit
+.w2:
+	jmps	do_exit
 
 .query_module:
 	sys_query_module NULL, QM_MODULES, buf, BUFSIZE, qret
 	test	eax,eax
-	js	_exit
+	js	.w2
 
 	mov	ecx,[qret]
 	mov	esi,edx

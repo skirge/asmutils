@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.13 2002/01/28 18:53:26 konst Exp $
+; $Id: system.inc,v 1.14 2002/02/02 08:49:25 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 28-Jan-2002
+; modified	: 02-Feb-2002
 ; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: generic (not OS specific) macros, sections, headers, etc.
@@ -113,16 +113,6 @@
 %define	__LONG_JUMPS__
 %endif
 
-;
-;
-;
-
-%ifdef	__LINUX__
-%if __SYSCALL__=__S_KERNEL__
-%define	__ALT_SYSCALLS__
-%endif
-%endif
-
 ;--------------------------------------------------------------------------
 ;
 ;--------------------------------------------------------------------------
@@ -152,11 +142,6 @@
 %ifdef __ELF_MACROS__
 %include "elf.inc"
 %endif
-
-%ifdef __LIBC__
-%include "os_libc.inc"
-%endif
-
 
 ;--------------------------------------------------------------------------
 ;

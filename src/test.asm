@@ -1,6 +1,6 @@
 ; Copyright (C) 2001, 2002 Thomas M. Ogrisegg
 ;
-; $Id: test.asm,v 1.1 2002/01/11 17:52:24 konst Exp $
+; $Id: test.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
 ;
 ; test - evaluate expression
 ;
@@ -175,10 +175,10 @@ do_option:
 		js near _exit_error
 		mov byte bl, [edi+1]
 		;;;;;;;;;;;;;;
+		cmp bl, 's'
+		jz	has_size
 		cmp bl, 'r'
 		jz is_readable
-		cmp bl, 's'
-		jz has_size
 		cmp bl, 'w'
 		jz is_writeable
 		;;;;;;;;;;;;;;
@@ -193,7 +193,7 @@ do_option:
 		jmp near syntax_error
 .Lfound:
 		lodsd
-		mov ebx, [statbuf+stat.st_mode]
+		mov ebx, [statbuf.st_mode]
 		and ebx, eax
 		cmp eax, ebx
 		jz near _exit_success
@@ -206,7 +206,10 @@ is_term:
 		or eax, eax
 		js near _exit_error
 		jmp _exit_success
-
+has_size:
+		cmp long [statbuf.st_size], 0
+		jz _exit_success
+		jmp _exit_error
 is_writeable:
 		mov ecx, O_WRONLY
 		jmp do_open
@@ -217,12 +220,6 @@ do_open:
 		or eax, eax
 		js _exit_error
 		jmp _exit_success
-
-has_size:
-		cmp long [statbuf+stat.st_size], 0
-		jz _exit_success
-		jmp _exit_error
-
 nis_zero_str:
 		or ebp, OP_NOT
 is_zero_str:
@@ -287,6 +284,6 @@ dd 0x40
 db 0x0 ; End Of Table
 
 UDATASEG
-statbuf	B_STRUC	stat, .st_mode
+statbuf	B_STRUC	Stat, .st_mode, .st_size
 termbuf	B_STRUC	termios
 END

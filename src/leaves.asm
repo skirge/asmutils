@@ -1,6 +1,6 @@
 ;Copyright (C) 1996-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: leaves.asm,v 1.7 2001/11/24 09:46:18 konst Exp $
+;$Id: leaves.asm,v 1.8 2002/02/02 08:49:25 konst Exp $
 ;
 ;leaves		-	Linux fbcon intro in 396 bytes
 ;
@@ -53,6 +53,8 @@
 ;%define ymin0 xmin0
 ;%define ymax0 -ymin0
 
+%define	OFFSET(x) ebp + ((x) - parameters)
+
 CODESEG
 
 ;
@@ -78,7 +80,7 @@ leaves:
         test	cl,cl
 	jz	_return
 
-	fld	dword [ebp+16]	;[f]
+	fld	dword [OFFSET(f)]	;[f]
         mov	[esp-13],cl
         mov	eax,[edi]
 
@@ -88,29 +90,29 @@ leaves:
 	fld	st0
 	mov	edx,esp
 	fmul	dword [edx+16]
-	fadd	dword [ebp+24]	;[y1coef]
+	fadd	dword [OFFSET(y1coef)]	;[y1coef]
 	fistp	dword [edx]
         mov	ebx,[edx]
 
 	fmul	dword [edx+20]
-	fsubr	dword [ebp+20]	;[x1coef]
+	fsubr	dword [OFFSET(x1coef)]	;[x1coef]
 	fistp	dword [edx]
 
         call	putpixel
 
 	fmul	dword [edx+20]
-	fadd	dword [ebp+28]	;[x2coef]
+	fadd	dword [OFFSET(x2coef)]	;[x2coef]
 	fistp	dword [edx]
         call	putpixel
 
 	inc	edi
-        cmp	edi,ColorEnd
+        cmp	edi,color_end
         jl	.rec
-	sub	edi,byte ColorEnd-ColorBegin
+	sub	edi,byte color_end-color_begin
 .rec:
 
-	fld	dword [ebp+4]	;[b]
-	fld	dword [ebp]	;[a]
+	fld	dword [OFFSET(b)]	;[b]
+	fld	dword [OFFSET(a)]	;[a]
 	fld	st1
 	fld	st1
 	fxch
@@ -134,10 +136,10 @@ leaves:
         call	leaves		;esp+12
 
 	mov	edx,esp
-	fld	dword [ebp+12]	;[d]
+	fld	dword [OFFSET(d)]	;[d]
 	fld	dword [edx+28]
-	fld	dword [ebp+8]	;[c]
-	fld	dword [ebp+32]	;[x0]
+	fld	dword [OFFSET(c)]	;[c]
+	fld	dword [OFFSET(x0)]	;[x0]
 	fsub	to st2
 	fld	st3
 	fld	st2
@@ -175,28 +177,21 @@ leaves:
 START:
 
 ;init fb
-	mov	edi,VMEM_SIZE
-	mov	ebp,Params
 
-	lea	ebx,[ebp + 0x2c]	;fb-Params
-	sys_open EMPTY,O_RDWR
+	sys_open fb, O_RDWR
 
 ;	test	eax,eax			;have we opened file?
-;	js	exit
+;	js	do_exit
 
-;prepare structure for mmap on the stack
-	_push	0			;.offset
-	_push	eax			;.fd
-	_push	MAP_SHARED		;.flags
-	_push	PROT_READ|PROT_WRITE	;.prot
-	_push	edi			;.len
-	_push	0			;.addr
-	sys_oldmmap esp
+	mov	edi,VMEM_SIZE
+
+	sys_mmap 0,eax,MAP_SHARED,PROT_READ|PROT_WRITE,edi,0
 
 ;	test	eax,eax		;have we mmaped file?
-;	js	exit
+;	js	do_exit
 
 	mov	esi,eax
+	mov	ebp,parameters
 
 ;clear screen
 	mov	ecx,edi
@@ -205,7 +200,8 @@ START:
 	rep	stosb
 
 ;leaves
-	lea	edi,[ebp + 0x24]	;ColorBegin-Params
+	lea	edi,[OFFSET(color_begin)]
+;	lea	edi,[ebp + 0x24]	;ColorBegin-Params
         _push	28			;recursion depth
 	_push	eax
 	_push	eax
@@ -215,14 +211,14 @@ START:
 ;	sys_munmap esi,VMEM_SIZE
 ;	sys_close mm.fd
 
-exit:
+do_exit:
 	sys_exit
 
 ;
 ;
 ;
 
-Params:
+parameters:
 
 a	dd	0.7
 b	dd	0.2
@@ -235,9 +231,9 @@ y1coef	dd	0x43dc0000	;MaxY/4+xc
 x2coef	dd	0x43e28000	;MaxY*4/9+yc
 x0	dd	112.0
 
-ColorBegin:
+color_begin:
 	db	0,0,2,0,0,2,10,2
-ColorEnd:
+color_end:
 
 fb	db	"/dev/fb0";,EOL
 

@@ -1,23 +1,23 @@
 ;Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: tty.asm,v 1.1 2000/04/07 18:36:01 konst Exp $
+;$Id: tty.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' tty
 ;
-;0.01: 21-Mar-2000	initial release
-;
 ;syntax: tty
+;
+;0.01: 21-Mar-2000	initial release
 
 %include "system.inc"
 
-%assign	BufSize	0x1000
+%assign	BUFSIZE	0x1000
 
 CODESEG
 
 START:
-	sys_readlink fd0, Buf, BufSize
+	sys_readlink fd0, buf, BUFSIZE
 	test	eax,eax
-	js	_exit
+	js	do_exit
 
 	inc	eax
 	mov	edx,eax
@@ -30,13 +30,13 @@ START:
 
 	sys_write STDOUT
 
-_exit:
+do_exit:
 	sys_exit eax
 
 fd0	db	"/proc/self/fd/0"	;,EOL
 
 UDATASEG
 
-Buf	resb	BufSize
+buf	resb	BUFSIZE
 
 END

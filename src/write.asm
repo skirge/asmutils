@@ -1,6 +1,6 @@
 ; (c) 2001 Thomas M. Ogrisegg
 ;
-; $Id: write.asm,v 1.1 2001/11/20 15:31:52 konst Exp $
+; $Id: write.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
 ;
 ; write utility
 ;
@@ -96,16 +96,16 @@ io_loop:
 
 eof:
 	sys_write [ttyfd], EOF, eoflen
-	jmp exit
+	jmp do_exit
 
 noperm:
 	sys_write STDERR, perm, permlen
-	jmp exit
+	jmp do_exit
 
 error:
 	sys_write STDERR, nologin, nologlen
 
-exit:
+do_exit:
 	sys_exit 0x0
 
 helptxt	db	"Usage: write user [ttyname]", __n

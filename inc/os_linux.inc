@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.18 2002/01/28 18:53:26 konst Exp $
+; $Id: os_linux.inc,v 1.19 2002/02/02 08:49:25 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 28-Jan-2002
+; modified      : 02-Feb-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : linux kernel constants and structures (from headers)
@@ -322,7 +322,8 @@ endstruc
 ;asm/stat.h
 ;
 
-struc stat
+struc Stat			;guess why uppercase S?
+%if __SYSCALL__=__S_KERNEL__
 .st_dev		USHORT	1
 .__pad1		USHORT	1
 .st_ino		ULONG	1
@@ -343,6 +344,21 @@ struc stat
 .__unused3	ULONG	1
 .__unused4	ULONG	1
 .__unused5	ULONG	1
+%elif __SYSCALL__=__S_LIBC__
+.st_dev		ULONG	2
+.st_ino		ULONG	1
+.st_mode	USHORT	1
+.st_nlink	USHORT	1
+.st_uid		USHORT	1
+.st_gid		USHORT	1
+.st_rdev	ULONG	2
+.st_size	ULONG	1
+.st_blksize	ULONG	1
+.st_blocks	ULONG	1
+.st_atime	ULONG	1
+.st_mtime	ULONG	1
+.st_ctime	ULONG	1
+%endif
 endstruc
 
 struc __old_kernel_stat
@@ -379,11 +395,18 @@ struc sigset_t
 		U32	_NSIG / 32
 endstruc
 
-struc sigaction
+struc Sigaction
 .sa_handler	ULONG	1
+%if __SYSCALL__=__S_KERNEL__
 .sa_flags	ULONG	1
 .sa_restorer	ULONG	1
 .sa_mask	resb	sigset_t_size
+%elif __SYSCALL__=__S_LIBC__
+.sa_sigaction	ULONG	1
+.sa_mask	resb	sigset_t_size
+.sa_flags	ULONG	1
+.sa_restorer	ULONG	1
+%endif
 endstruc
 
 ;
@@ -394,8 +417,12 @@ struc dirent
 .d_ino		ULONG	1
 .d_off		ULONG	1
 .d_reclen	USHORT	1
+%if __SYSCALL__=__S_LIBC__
+.d_type		UCHAR	1
+%endif
 .d_name		CHAR	256
 endstruc
+
 
 ;
 ;linux/fb.h
@@ -552,7 +579,7 @@ endstruc
 ;sys/vfs.h
 ;
 
-struc statfs
+struc Statfs
 .f_type		LONG	1	;fs type
 .f_bsize	LONG	1	;optimal transfer block size
 .f_blocks	LONG	1	;total data blocks
@@ -1111,11 +1138,13 @@ endstruc
 %endif
 %endmacro
 
-%ifdef	__ALT_SYSCALLS__
-
 ;
 ;net/socket.c
 ;
+
+%if __SYSCALL__=__S_KERNEL__
+
+%define	__OS_SYSCALL_NETWORK__
 
 %macro sys_socketcall 0-3
         __syscall socketcall, 3, %0, %1, %2, %3
@@ -1175,9 +1204,16 @@ endstruc
 	_add	esp,(6 * 4)
 %endmacro
 
+%endif
+
+
 ;
 ;arch/i386/kernel/sys_i386.c
 ;
+
+%if __SYSCALL__=__S_KERNEL__
+
+%define	__OS_SYSCALL_MMAP__
 
 struc	mmap_arg_struct
 .addr	ULONG	1
@@ -1202,16 +1238,25 @@ endstruc
 %endif
 %endmacro
 
+%endif
+
 ;
 ;kernel/sys.c
 ;
 
+%if __SYSCALL__=__S_KERNEL__
+%define	__OS_SYSCALL_REBOOT__
 %macro sys_reboot 0-4
 	__syscall reboot, 4, %0, %1, %2, %3, %4
 %endmacro
+%endif
 
-
-%endif	;__ALT_SYSCALLS__
+%if __SYSCALL__=__S_LIBC__
+%define __OS_SYSCALL_GETDENTS__
+%macro sys_getdents 0-3
+	__syscall getdents64, 3, %0, %1, %2, %3
+%endmacro
+%endif
 
 ;
 ;Linux specific syscalls
@@ -1347,6 +1392,7 @@ endstruc
 %endmacro
 
 ;
+
 %macro sys_umount2 0-2
 	__syscall umount2, 2, %0, %1, %2
 %endmacro

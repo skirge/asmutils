@@ -1,6 +1,6 @@
 ;Copyright (C) 2001, Tiago Gasiba (ee97034@fe.up.pt)
 ;
-;$Id: less.asm,v 1.4 2001/09/24 16:49:19 konst Exp $
+;$Id: less.asm,v 1.5 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' less
 ;
@@ -41,7 +41,7 @@ TAB			equ	9
 CODESEG
 
 START:
-main:
+begin:
 		push	byte STDIN
 		pop	dword [fd]
 
@@ -127,7 +127,7 @@ event_key_up:
 	cmp	dword [nlines],NumLines
 	jl	near	bell
 	dec	dword [pos]
-	jmp	near main.reescreve
+	jmp	near begin.reescreve
 
 ;=====================================================
 ;                  event_key_down
@@ -140,7 +140,7 @@ event_key_down:
 	cmp	dword [pos],eax
 	je	near bell
 	inc	dword [pos]
-	jmp	near main.reescreve
+	jmp	near begin.reescreve
 
 ;=====================================================
 ;                  event_key_pgdown
@@ -158,7 +158,7 @@ event_key_pgdown:
 	jmp	short	bell
 .lbl1:
 	mov	dword [pos],ebx
-	jmp	near main.reescreve
+	jmp	near begin.reescreve
 
 ;=====================================================
 ;                  event_key_pgup
@@ -174,7 +174,7 @@ event_key_pgup:
 	jmp	short bell
 .lbl1:
 	mov	dword [pos],eax
-	jmp	near main.reescreve
+	jmp	near begin.reescreve
 
 ;=====================================================
 ;                  event_key_end
@@ -196,7 +196,7 @@ event_key_home:
 	pop	dword	[pos]
 bell:
 	sys_write	STDOUT,bell_str,bell_str_len
-	jmp	near main.reescreve
+	jmp	near begin.reescreve
 
 
 ;-----------------------------------------------------

@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: rm.asm,v 1.3 2001/03/18 07:08:25 konst Exp $
+;$Id: rm.asm,v 1.4 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' rm
 ;
@@ -266,7 +266,7 @@ strcat:
 
 		UDATASEG
 
-stat_buf B_STRUC stat,.st_mode
+stat_buf B_STRUC Stat,.st_mode
 
 buf:		resb	4096
 buf_size	equ 	$-buf

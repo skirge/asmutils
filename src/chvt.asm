@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: chvt.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: chvt.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' chvt/deallocvt
 ;
@@ -72,11 +72,11 @@ START:
 	jnz	errorexit
 	pop	esi
 	or	esi,esi
-	jz	exit
+	jz	do_exit
 	call	atoi
 	sys_ioctl ebp,VT_ACTIVATE,eax
 	sys_ioctl EMPTY,VT_WAITACTIVE
-exit:
+do_exit:
 	sys_exit_true
 
 deallocvt:
@@ -86,7 +86,7 @@ deallocvt:
 next_arg:
 	pop	esi
 	or	esi,esi
-	jz	exit
+	jz	do_exit
 	call	atoi
 do_dealloc:
 	sys_ioctl ebp,VT_DISALLOCATE,eax

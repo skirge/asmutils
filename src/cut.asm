@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 by Joshua Hudson
 ;
-;$Id: cut.asm,v 1.2 2002/01/28 18:53:26 konst Exp $
+;$Id: cut.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
 ;
 ;hacker's cut
 ;
@@ -187,9 +187,10 @@ done:	mov	edx, ebp
 	sys_write	STDOUT, outbuf
 empty:	mov	ebx, [filehandle]
 	xor	bl, bl
-_exit:	sys_exit
+do_exit:
+	sys_exit
 fail:	mov	bl, 1
-	jmps	_exit
+	jmps	do_exit
 
 ; This routine reads from the input file.
 ; Caller will preserve ebx, edx for us.

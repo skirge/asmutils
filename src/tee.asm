@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: tee.asm,v 1.5 2001/03/18 07:08:25 konst Exp $
+;$Id: tee.asm,v 1.6 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' tee		[GNU replacement]
 ;
@@ -51,7 +51,7 @@ START:
 	jmps	.scan
 .i:
 	cmp	al,'i'
-	jnz	near _exit
+	jnz	near do_exit
 	push	ecx
 	sys_sigaction SIGPIPE,sa_struct,NULL	;sys_signal SIGPIPE,SIG_IGN
 	sys_sigaction SIGINT			;sys_signal SIGINT
@@ -97,11 +97,11 @@ close:
 ;.close_loop:
 ;	lodsd
 ;	or	eax,eax
-;	jz	_exit
+;	jz	do_exit
 ;	sys_close eax
 ;	jmp	short .close_loop
 
-_exit:
+do_exit:
 	sys_exit ebp
 
 ;dirty hack which works in our case

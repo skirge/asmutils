@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.14 2002/01/28 18:53:26 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.15 2002/02/02 08:49:25 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -23,7 +23,7 @@
 </author>
 
 <releaseinfo>Version 0.8</releaseinfo>
-<pubdate role="cvs">$Date: 2002/01/28 18:53:26 $</pubdate>
+<pubdate role="cvs">$Date: 2002/02/02 08:49:25 $</pubdate>
 
 <copyright>
 <year>1999-2002</year><holder>Konstantin Boldyshev</holder>
@@ -131,7 +131,7 @@ Preferred program versions are:
 nasm 0.98
 </para></listitem>
 <listitem><para>
-ld from GNU binutils 2.9 (on Linux)
+ld from GNU binutils 2.9
 </para></listitem>
 <listitem><para>
 GNU make 3.79
@@ -158,7 +158,7 @@ if your really want to do so; then you will also need
 
 <note><para>
 Well, to be sincere, if you set <function>SYSCALL=LIBC</function>
-do not expect it to work out-of-the-box.
+do not expect it to work out-of-the-box, even if it compiles flawlessly.
 Instead, prepare to hack <filename>MCONFIG</filename> (hint:
 <function>STARTUP=y</function> may help if startup stack differs from usual),
 <filename>.inc</filename> files and source code to animate this malformation.
@@ -166,6 +166,8 @@ After a couple of sleepless nights you may understand that it is impossible
 to get things right -- you are bypassing libc headers, and on various libc
 versions miscellaneous functions can be implemented as macros,
 or can be just missing (e.g. getdents on glibc 2.2.x).
+You may find out that sometimes libc function which has
+the same name as some system call is not what you think of it.
 Also, expect any other kind of disaster and affliction
 when trying to run what you have built after all,
 especially on weird systems like BeOS or QNX
@@ -174,6 +176,10 @@ Finally, find yourself on the brink of suicide,
 screaming and pulling out your hair,
 and devising your all to developers of your libc.
 They say, life ain't easy.
+</para>
+<para>
+Now that being said.. Some (and perhaps most) utilities
+<emphasis>will</emphasis> compile and work as usual.
 </para></note>
 
 <note><para>
@@ -790,8 +796,8 @@ I think you've got an idea. Just try to imagine your program on other OS,
 and ask yourself: what one will need to do make it run?
 what should I do to make compile on as many OSes as possible?
 If your program is not OS specific, try to set <function>OS</function>
-parameter in <filename>MCONFIG</filename> to some other value
-and see what happens.
+parameter to some other value
+(e.g. <command>make OS=FREEBSD KERNEL=44</command>) and see what happens.
 Even your program is OS specific (e.g. <command>lsmod</command>),
 at least try to make it readable.
 </para>
@@ -827,13 +833,16 @@ version every day, this will save him (and you) from the mess of versions.
 </para>
 
 <para>
-Next, try to compile your program with different parameters in
+Next, try to compile your program with different parameters from
 <filename>MCONFIG</filename>: at least compile it with different
 <function>KERNEL</function> and <function>OPTIMIZE</function> parameters.
 If your program is intended to be portable (which is recommended),
 also try another <function>OS</function> parameter. As a rule, compiling
 with <function>OS=LINUX</function> and <function>OS=FREEBSD</function>
 cleans out most (but not necessary all) issues.
+Also, be aware of code size difference when <function>OPTIMIZE=SPEED<function>
+and/or <function>SYSCALL=LIBC</function> are set -- short jumps can became
+out of range.
 </para>
 
 <para>
@@ -1014,7 +1023,7 @@ Seek, and you may find more..
 <para><revhistory>
 
 <revision>
-<revnumber>0.8</revnumber><date>28 Jan 2002</date><authorinitials>konst</authorinitials>
+<revnumber>0.8</revnumber><date>02 Jan 2002</date><authorinitials>konst</authorinitials>
 <revremark>more notes on contributions, updates and cleanups</revremark>
 </revision>
 
@@ -1087,7 +1096,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.14 2002/01/28 18:53:26 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.15 2002/02/02 08:49:25 konst Exp $
 </literal></para>
 </appendix>
 

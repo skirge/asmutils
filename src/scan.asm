@@ -1,7 +1,7 @@
 ; Copyright (C) 2001 Stanislav Ryabenkiy <stani@ryabenkiy.com>
 ; Licensed under the GPL, version 2. 
 ;
-; $Id: scan.asm,v 1.1 2001/12/28 06:51:55 konst Exp $
+; $Id: scan.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
 ;
 ; hackers' scan
 ; (simple connect() portscanner)
@@ -160,7 +160,7 @@ START:
 	inc	si
 	cmp	si, [endport]
 	jnz	short .loop1
-	jmp	exit
+	jmp	do_exit
 
 
 	
@@ -187,7 +187,7 @@ START:
 	sys_close eax
 	ret
 
-exit:
+do_exit:
     sys_exit_true
 
 

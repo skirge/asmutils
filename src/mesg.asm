@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
 ;
-;$Id: mesg.asm,v 1.2 2001/11/14 16:02:44 konst Exp $
+;$Id: mesg.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
 ;
 ;syntax: mesg [y|n]
 ;
@@ -8,18 +8,18 @@
 
 %include "system.inc"
 
-%assign BufSize 0x100
+%assign BUFSIZE 0x100
 
 CODESEG
 
 START:
-	sys_readlink fd0, Buf, BufSize
+	sys_readlink fd0, buf, BUFSIZE
 	test eax, eax
-	js _exit
+	js do_exit
 
 	xor eax, eax
-	sys_stat Buf, statbuf
-	mov eax, [ecx+stat.st_mode]
+	sys_stat buf, statbuf
+	mov eax, [ecx+Stat.st_mode]
 	add esp, 8
 	pop ebx
 	test ebx, ebx
@@ -35,22 +35,22 @@ isn:
 _write:
 	sys_write STDOUT, ecx, 5
 
-_exit:
+do_exit:
 	sys_exit eax
 
 _chmod:
 	cmp byte [ebx], 'n'
 	jz _no
 	cmp byte [ebx], 'y'
-	jnz _exit
+	jnz do_exit
 	or eax, 16
 	jmp __do_chmod
 _no:
 	or eax, 16
 	xor eax, 16
 __do_chmod:
-	sys_chmod Buf, eax
-	jmp _exit
+	sys_chmod buf, eax
+	jmp do_exit
 
 yes	db	"is y", __n
 no	db	"is n", __n
@@ -58,7 +58,7 @@ fd0	db	"/proc/self/fd/0"
 
 UDATASEG
 
-Buf resb BufSize
-statbuf B_STRUC stat, .st_mode
+buf	resb BUFSIZE
+statbuf B_STRUC Stat, .st_mode
 
 END

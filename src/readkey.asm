@@ -1,6 +1,6 @@
 ; Copyright (C) 2001, Tiago Gasiba (ee97034@fe.up.pt)
 ;
-; $Id: readkey.asm,v 1.2 2001/08/20 15:22:03 konst Exp $
+; $Id: readkey.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
 ;
 ; hacker's readkey
 ;
@@ -13,7 +13,7 @@ CODESEG
 
 hex	db	'0123456789abcdef'
 
-ioctl:
+do_ioctl:
 	sys_ioctl	STDIN
 	ret
 
@@ -23,19 +23,19 @@ START:
 	push	dword TCGETS
 	pop	ecx
 	sub	sp,byte 4
-	call	ioctl
+	call	do_ioctl
 
 	pop	ecx
 	_mov    edx,newtermios
 	push	edx
-	call	ioctl
+	call	do_ioctl
 
 	and	dword [newtermios+termios.c_lflag],~(ICANON|ECHO|ISIG)
 
 	_mov	ecx,TCSETS
 	pop	edx
 	push	ecx
-	call	ioctl
+	call	do_ioctl
 
 	_mov	eax,0
 	mov	dword [newtermios],eax		; clean buffer ; #######
@@ -43,8 +43,7 @@ START:
 
 	pop	ecx
 	pop	edx
-	call	ioctl
-	
+	call	do_ioctl
 
 	_mov	ecx,8				; convert number to ascii (hex)
 	_mov	esi,oldtermios+7

@@ -2,7 +2,7 @@
 ;				Karsten Scheibler <karsten.scheibler@bigfoot.de>
 ;				Rudolf Marek <marekr2@feld.cvut.cz>,
 ;
-;$Id: sh.asm,v 1.7 2002/01/31 05:46:13 konst Exp $
+;$Id: sh.asm,v 1.8 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -554,7 +554,7 @@ cmdline_get:
 			sys_write STDOUT,erase_line,5
 			sys_write EMPTY, [cmdline.prompt], text.prompt_length			
 			sys_write EMPTY, cmdline.buffer1, ebp
-			jmp    short .big_fat_jump3
+			jmp	.big_fat_jump3
 %endif
 
 .last_slash:
@@ -692,7 +692,7 @@ cmdline_get:
 			or 	al,al
 			jnz .copy_loop3 
 			xchg 	ebx,edi
-			jmps .find_next
+			jmp .find_next
 
 .we_have_really_one:	mov esi,file_name
 .we_have_really_one2:				
@@ -740,10 +740,10 @@ cmdline_get:
 			jmps .skip
 .finish_lookup:		;restore promt
 			cmp 	byte [first_time],0
-			jz  .we_have_really_one
+			jz  near .we_have_really_one
 			mov 	esi,file_equal
 			cmp 	byte [esi],0
-			jnz .we_have_really_one2	
+			jnz near .we_have_really_one2	
 			;we have something same for all files...
 .skip:			sys_write STDOUT,erase_line,5
 			sys_write STDOUT, [cmdline.prompt], text.prompt_length			
@@ -1261,7 +1261,7 @@ first_chance resb 1
 file_name resb 255
 file_equal resb 255
 first_time  resb 1 ;stupid
-stat_buf B_STRUC stat,.st_mode
+stat_buf B_STRUC Stat,.st_mode
 %endif
 %ifdef HISTORY
 history_cur   resd 1

@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Jonathan Leto <jonathan@leto.net>
 ;
-;$Id: head.asm,v 1.3 2001/10/16 15:44:03 konst Exp $
+;$Id: head.asm,v 1.4 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' head
 ;
@@ -16,6 +16,7 @@
 
 %include "system.inc"
 
+%assign	BUFSIZE	0x2000
 
 ;ebp = file descriptor
 ;edi = return code
@@ -75,7 +76,7 @@ START:
 
 .read:
 	_mov	ecx,buf
-	_mov	edx,bufsize
+	_mov	edx,BUFSIZE
 .readloop:
 	sys_read ebp
 	test	eax,eax
@@ -109,7 +110,7 @@ START:
 	inc	esi			; add one to esi for last newline
 .print_chars:
 	sys_write STDOUT,ecx,esi	; print
-	_jmp	.nextfile
+	jmp	.nextfile
 
 ;---------------------------------------
 ; esi = string
@@ -132,9 +133,8 @@ START:
 
 UDATASEG
 
-bufsize	equ	8192
-buf	resb	bufsize
 lines	resd	1
 chars	resd	1
+buf	resb	BUFSIZE
 
 END

@@ -1,6 +1,6 @@
 ;Copyright (C) Rudolf Marek <marekr2@fel.cvut.cz>, <ruik@atlas.cz>
 ;			    
-;$Id: fdisk.asm,v 1.2 2002/01/10 08:43:44 konst Exp $
+;$Id: fdisk.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
 ;
 ;hackers' fdisk 
 ;
@@ -31,18 +31,19 @@
 
 CODESEG
 newline db __n
-exit:
+
+do_exit:
 	sys_exit 0
 
 START:
 	pop	eax
 	cmp	eax,2
-	jnz	exit
+	jnz	do_exit
 	pop	ebx
 	pop	ebx
 	sys_open EMPTY, O_RDONLY|O_LARGEFILE
 	test   	eax,eax
-	js exit
+	js	do_exit
 	push   	eax
 	xchg   	ecx,ebx
 	mov    	edx,ecx

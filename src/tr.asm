@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 by Joshua Hudson
 ;
-; $Id: tr.asm,v 1.1 2001/09/17 09:36:19 konst Exp $
+; $Id: tr.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
 ;
 ; May be used under GPL
 ;
@@ -76,7 +76,7 @@ scandelnext:
 fail:					; Failed: exit 1
 	xor	bl, bl
 	inc	bl
-	jmp	exit
+	jmp	do_exit
 
 ; Set up indexes to 'replace' mode
 replaceset:
@@ -128,7 +128,7 @@ replace:
 	jne	checkdelete
 	mov	bl, [this]
 	mov	al, [index+ebx]
-	jmps	write
+	jmps	_write
 
 checkdelete:
 	mov	bl, [this]
@@ -136,17 +136,20 @@ checkdelete:
 	or	cl, cl
 	jz	replace
 	mov	al, bl
-write:
+_write:
 	cmp	[merge], byte 0
 	je	nomerge
 	cmp	al, [last]
 	je	replace
-nomerge	mov	[last], al
+nomerge:
+	mov	[last], al
 	sys_write	ebp, last, 1
 	jmps	replace
 
-done	xor	bl, bl
-exit	sys_exit
+done:
+	xor	bl, bl
+do_exit:
+	sys_exit
 
 ;DEBUG	pusha
 ;	sys_write	STDOUT, DEBUGM, 6

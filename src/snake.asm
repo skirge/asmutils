@@ -17,7 +17,7 @@
 ;; instead you see a lot of non-ASCII characters) you may need to use
 ;; a console font with the VT100 character set in order to play.
 ;;
-;; $Id: snake.asm,v 1.1 2001/03/18 07:08:25 konst Exp $
+;; $Id: snake.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
 
 %include "system.inc"
 
@@ -219,7 +219,7 @@ _start:
 
 		xor	edx, edx
 		lea	ecx, [DATAOFF(sigact)]
-		mov	dword [byte ecx + sigaction.sa_handler], tick
+		mov	dword [byte ecx + Sigaction.sa_handler], tick
 		sys_sigaction SIGALRM
 		lea	ecx, [DATAOFF(timer)]
 		mov	eax, 200 * 1000
@@ -472,7 +472,7 @@ mainloop:
 .newfood:	mov	eax, [DATAOFF(foodpos)]
 		mov	ecx, [DATAOFF(foodvalue)]
 		cmp	byte [DATAOFF(key)], FF
-		jz	.drawfood
+		jz	near .drawfood
 
 ;; The old food block is erased.
 
@@ -735,7 +735,7 @@ B_STRUC itimerval
 ;; The structure passed to the sigaction system call.
 
 sigact:
-B_STRUC sigaction,.sa_handler
+B_STRUC Sigaction,.sa_handler
 
 ;; The player's current score.
 

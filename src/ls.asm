@@ -14,7 +14,7 @@
 ;; -b  show non-graphic characters using C-style backslash sequences
 ;; -R  recursively list contents of subdirectories
 ;;
-;; $Id: ls.asm,v 1.8 2002/01/28 08:38:01 konst Exp $
+;; $Id: ls.asm,v 1.9 2002/02/02 08:49:25 konst Exp $
 
 %include "system.inc"
 
@@ -881,9 +881,9 @@ ALIGNB 16
 
 sts:
 %ifdef __BSD__
-B_STRUC stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_mtime,.st_size,.st_blocks
+B_STRUC Stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_mtime,.st_size,.st_blocks
 %else
-B_STRUC stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_size,.st_blocks,.st_mtime
+B_STRUC Stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_size,.st_blocks,.st_mtime
 %endif
 
 ;; The current end of the directory queue.
