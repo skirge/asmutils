@@ -1,39 +1,39 @@
 ; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_beos.inc,v 1.6 2002/02/02 12:33:38 konst Exp $
+; $Id: os_beos.inc,v 1.7 2002/06/24 16:54:55 konst Exp $
 ;
 ; file          : os_beos.inc
 ; created       : 21-Feb-2000
 ; modified      : 10-Dec-2001
-; version       : 0.16
+; version       : 0.17
 ; assembler     : nasm 0.98
 ; description   : BeOS kernel constants (R4.5+)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
 ; comment       : included from system.inc
 ;
-;IMPORTANT NOTES:
+;NOTES:
 ;
 ;Now that Be and BeOS are dead, it doesn't really matter.
 ;This stuff is kept here only for history.. so if yours 'date'
 ;shows something like "Mon Aug 7 2541 10:23", you may read on
 ;and marvel at what those ancient crazy humans did.
 ;
-;BeOS port is no longer unsupported and is eternally in alpha stage
+;BeOS port is no longer supported and eternally is in alpha stage
 ;(though it works sometimes) mostly because of weird BeOS kernel bugs.
 ;
 ;Be kernel developers did not want to share any information on syscalls,
 ;so I had to figure out these constants and system call convention
 ;manually by disassembling libroot.so (of course BIEW helped a lot).
 ;As BeOS source code is closed, do not even think of blaming me
-;if these little digits will destroy your hard disk data,
+;when these teeny inoffensive digits will destroy your hard disk data,
 ;my BeOS hanged dozens times when I was playing with them.
 ;
 ;***
 ;Yes, syscall with invalid stack kills BeOS, shame on it!
 ;Likely being the first who tried to play with direct kernel calls
-;on BeOS, I immediatelly run into nasty system crashes.
+;on BeOS, I had immediatelly run into nasty system crashes.
 ;
-;Be has registered this bug before R5.0, but is not fixed in R5.0
+;Be has registered this bug before R5.0, but was not fixed in R5.0
 ;details are at http://bebugs.be.com/devbugs/detail.php3?oid=2324160
 ;
 ;Also there was a discussion on this bug in BeDevTalk mailing list

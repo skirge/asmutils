@@ -1,10 +1,15 @@
-; Joshua Hudson
+; Copyright (C) 2002 by Joshua Hudson
 ;
-; $Id: mkfs.minix.asm,v 1.1 2002/06/16 08:05:06 konst Exp $
+; hacker's mkfs.minix
 ;
-; hackers mkfs.minix
+; usage: mkfs.minix [-i inodecount] device [size-in-blocks]
 ;
-; We need to make filesystems
+;NOTE:
+; -c and -l are not supported. If someone decides to support them,
+; please make it a compilation conditional. There is a good reason
+; to omit them (e.g. ramdisk-only usage, as in a rescue floppy).
+;
+; $Id: mkfs.minix.asm,v 1.2 2002/06/24 16:55:10 konst Exp $
 
 %include 'system.inc'
 
@@ -18,12 +23,6 @@
 %define INODESPERBLOCK 32
 %define INODESHIFT 5
 %define SETINODEMASK 0xFFE0
-
-;Note: -c and -l are not supported.
-; If someone decides to support them, please
-; make it a compilation conditional. There is
-; a good reason to omit them (e.g. ramdisk-only
-; usage, as in a rescue floppy).
 
 CODESEG
 
