@@ -1,147 +1,182 @@
-; Copyright (C) 2001 Stanislav Ryabenkiy <stani@ryabenkiy.com>
-; Licensed (of course) under the GPL, version 2. 
+; Copyright (C) 2001 Joshua Hudson <joshudson@hotmail.com>
 ;
-; $Id: mknod.asm,v 1.1 2001/07/20 07:04:18 konst Exp $
+; $Id: mknod.asm,v 1.2 2001/09/17 09:36:19 konst Exp $
 ;
-; hackers' mknod/mkfifo
+; hacker's mknod/mkfifo
 ;
-; This program is free software; you can redestribute it and/or modify
-; it under the terms of the GNU General Public License as published by
-; the Free Software Foundation; either version 2 of the License, or
-; (at your option) any later version.
+; Usage: mknod [-m mode] name type major minor
+; Type is b	block     (e.g. /dev/hda1)
+; 	  c	character (e.g. /dev/ttyS1)
+;	  p	fifo	  (e.g. /dev/fifo)
 ;
-; This program is distributed in the hope that it will be useful, 
-; but WITHOUT ANY WARRANTY; without even the implied warranty of
-; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the 
-; GNU General Public License for more details.
-; 
-; NOTES
-; no modes are set. hey, wtf do you think we have chmod for? :-)
-; otherwise, syntax identical to GNU mknod/mkfifo
+; Usage: mkfifo name
 ;
-; bear with me, this is my first asm prog :-)
-; please email me any comments/suggestions/flames
-;
-;0.5:	16-Jul-2001	initial release (didn't make it to my outbox)
-;0.6:	18-Jul-2001	size improvements (8 bytes)
-;
-;syntax: mknod NAME b|u|c|p MAJ MIN
-;	 mkfifo NAME
-; 
-;ex:	 mknod /dev/null c 1 3
-;	 mkfifo pipe
-;
-	 
+; This mknod/mkfifo is GNU compatible
+
 %include "system.inc"
 
 CODESEG
 
 START:
-	pop	edi		; argc	
-	pop	esi		; argv[0], progname
-	pop	edi		; argv[1], NAME
-	test	edi,edi
-	jz	near .exit
-.n1:				; how are we called?
-	lodsb
-	or	al,al
-	jnz	.n1
-	cmp	dword [esi-7], 'mkfif'
-	jz	near .mkfifo
+; Here we load esi with umask and set umask to 0
+	xor	ebx, ebx
+	sys_umask
+	mov	esi, 0x1B6
+	xor	esi, eax
+	pop	ebx
+	pop	ebx		;argv[0]
+check_fifo:			;See if we are being called as mkfifo
+	inc	ebx
+	cmp	byte [ebx], 0
+	jne	check_fifo
+	dec	ebx
+	cmp	byte [ebx], 'o'
+	je	mkfifo
 
-	;; parse argv[2], ie. wtf are we gonna do?
+; Parse mknod options [ only -m ]
+	pop	ebx
+	or	ebx, ebx
+	jz	bad_args
+	cmp	word [ebx], '-m'
+	jne	mknod_notmode
+	inc	ebx
+	inc	ebx
+	cmp	byte [ebx], 0
+	jne	mknod_setmode
+	pop	ebx
+	or	ebx, ebx
+	jz	bad_args
+mknod_setmode:
+	call	setmode
+	pop	ebx
+	or	ebx, ebx
+	jz	bad_args
 
-	pop	ebx		; argv[2], type
-	test	ebx,ebx
-	jz	near .exit
+mknod_notmode:		; Should have name type major minor
+	; Name already in ebx.
+	pop	ebp			; Loaded type
+	or	ebp, ebp
+	jz	bad_args
+	cmp	byte [ebp], 'b'
+	je	block
+	cmp	byte [ebp], 'c'
+	je	char
+	cmp	byte [ebp], 'u'		; 'u' is sometimes used for char !!!
+	je	char
+	cmp	byte [ebp], 'p'
+	je	fifo
+	jmps	bad_args
 
-	cmp	byte [ebx], "p"
-	jnz	.skip0
-.mkfifo:
-	mov 	word [type], S_IFIFO
-	jmp	.dirty 		; skip all the stuff that we won't need
-.skip0:
-	cmp	byte [ebx], "c"
- 	jnz	.skip1
-	mov	word [type], S_IFCHR	
-	jmp	.majmin
-.skip1:	
- 	cmp	byte [ebx], "u"
- 	jnz	.skip2
-	mov	word [type], S_IFCHR	
-	jmp	.majmin
-.skip2:	
- 	cmp	byte [ebx], "b"
- 	jnz	.exit
-	mov	word [type], S_IFBLK	
+; Got here in processing mkfifo
+mkfifo:
+	pop	ebx
+	or	ebx, ebx
+	jz	bad_args	
+	cmp	word [ebx], '-m'
+	jne	fifo
+	inc	ebx
+	inc	ebx
+	cmp	[ebx], byte 0
+	jne	mkfifo_setmode
+	pop	ebx
+	or	ebx, ebx
+	jz	bad_args
+mkfifo_setmode:	
+	call	setmode
+	pop	ebx
+	or	ebx, ebx
+	jz	bad_args
+	jmps	fifo
 
-.majmin:	
-	pop	ecx		; argv[3], maj
-	test	ecx,ecx
-	jz	.exit
-	pop	edx		; argv[4], min
-	test	edx,edx
-	jz	.exit		
+bad_args:
+	sys_write	STDERR, BadArgs, BadArgsLen
+	mov	bl, 1
+	jmp	goodbye
 
-	;; translate strings for maj/min
-	mov	esi,ecx
- 	call	.atoi
- 	mov	ecx,eax
- 	mov	esi,edx
-  	call	.atoi
- 	mov	edx,eax
+block	_mov	ecx, S_IFBLK
+	jmps	mknod_ok
+char	_mov	ecx, S_IFCHR
+	jmps	mknod_ok
+fifo	_mov	ecx, S_IFIFO
+	xor	edx, edx
+	or	ecx, esi
+	jmps	mknod_go	; No need for major / minor
 
-	;; construct dev_t from maj/min
-	shl	ecx, 8
-	or	ecx,edx
-.dirty:
-	;; create node. ecx will be ignored if S_IFIFO
-	sys_mknod edi, [type],ecx
-	jmp	short .exit		
+mknod_ok:
+	or	ecx, esi
+	; Find major << 8 + minor
+	pop	ebp
+	or	ebp, ebp
+	jz	bad_args
+	call	atoi		; Input in ebp, output in eax
+	shl	eax, 8
+	xchg	eax, edx	; mov edx, eax
+	pop	ebp
+	or	ebp, ebp
+	jz	bad_args
+	push	edx
+	call	atoi
+	pop	edx
+	add	edx, eax
+mknod_go:
+	sys_mknod	; ebx = name, ecx = mode | perm, edx = dev
+	xchg	ebx, eax ; return mknod's error code
+goodbye:
+	sys_exit
 
+BadArgs	db	"Usage: mknod [-m mode] NAME TYPE MAJOR MINOR", __n
+BadArgsLen equ $-BadArgs
 
-	
-.exit:
-	sys_exit eax
+; process mode: return in esi
+setmode:
+	xor	eax, eax
+	xor	esi, esi
+	mov	cl, 3
+.setmode_read:
+	mov	al, [ebx]
+	inc	ebx
+	sub	al, '0'
+	js	.setmode_done
+	cmp	al, 8
+	jge	.setmode_done
+	shl	esi, cl
+	or	esi, eax
+	jmps	.setmode_read
+.setmode_done:
+	ret
 
-.atoi:			; 'borrowed' from jonathan leto's chown :-)
-			; (hey, my first asm prog, what do you want?)
-	xor	eax,eax
-	xor	ebx,ebx
-.next:
-	lodsb			; argument is in esi 
-	test	al,al
-	jz	.done
-	sub	al,'0'
-	imul	ebx,10
-	add	ebx,eax
-	jmp	.next		
-.done:
-	xchg	ebx,eax
-	ret			; return value is in eax
+; Convert string in [ebp] to number in eax
+; Preserve ebx, ecx, edx !
+atoi:
+	push	ebx
+	push	ecx
+	push	edx
+	xor	eax, eax
+	xor	ebx, ebx
+atoi_go:
+	mov	bl, [ebp]
+	inc	ebp
+	sub	bl, '0'
+	js	atoi_done
+	cmp	bl, 9
+	jg	atoi_done
+	xor	edx, edx
+	_mov	ecx, 10
+	mul	ecx
+	add	eax, ebx
+	jmps	atoi_go
+atoi_done:
+	pop	edx
+	pop	ecx
+	pop	ebx
+	ret
 
-		
-UDATASEG			; I just couldn't keep it on one segment..
-
-type:	resb	2
+;DEBUG:
+;	pusha
+;	sys_write	STDERR, DEBUGMSG, 6
+;	popa
+;	ret
+;
+;DEBUGMSG	db	"DEBUG", __n
 
 END
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

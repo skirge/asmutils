@@ -1,6 +1,6 @@
 ;Copyright (C) 1995-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: window.asm,v 1.8 2001/03/18 07:08:25 konst Exp $
+;$Id: window.asm,v 1.9 2001/09/17 09:36:19 konst Exp $
 ;
 ;text window example
 
@@ -211,7 +211,7 @@ window:
 %assign	MAX_X	200
 %assign	MAX_Y	100
 
-cScreenDevice	db	"/dev/vcsa0",EOL
+cScreenDevice	db	"/dev/vcsa",EOL
 
 open_screen:
 	pusha

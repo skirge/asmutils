@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: cp.asm,v 1.4 2001/03/18 07:08:25 konst Exp $
+;$Id: cp.asm,v 1.5 2001/09/17 09:38:30 konst Exp $
 ;
 ;hackers' cp
 ;
@@ -16,6 +16,7 @@
 ;Send me any feedback,suggestions,additional code, etc.
 
 		%include "system.inc"
+
 		CODESEG
 
 usage_msg	db	"Usage: cp [-r] source dest",__n
