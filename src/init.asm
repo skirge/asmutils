@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Karsten Scheibler <karsten.scheibler@bigfoot.de>
 ;
-;$Id: init.asm,v 1.3 2002/06/24 16:54:38 konst Exp $
+;$Id: init.asm,v 1.4 2002/08/16 15:05:18 konst Exp $
 ;
 ;simple init
 ;
@@ -27,14 +27,15 @@ START:
 			test	eax, eax
 			jnz	.skip
 			sys_execve [arguments_rc], arguments_rc, environment
-			sys_exit 0
+			mov	ebx,eax
+			jmp	do_exit
 .skip:
-			sys_wait4  0xffffffff, NULL, WNOHANG, NULL
+			sys_wait4  eax, NULL, 0, NULL
 			;---------------
 			;initialize ttys
 			;---------------
 			xor	dword ebp, ebp
-.init_loop		inc	dword ebp
+.init_loop:		inc	dword ebp
 			call	tty_initialize
 			cmp	dword ebp, MAX_TTYS
 			jb	.init_loop
@@ -113,12 +114,17 @@ tty_initialize:
 			jns	.terminate
 			sys_write  STDERR, shell_not_found, shell_path_length
 			sys_select  0, NULL, NULL, NULL, select_timeval
-			sys_exit  1
+			_mov	ebx,1
+			jmps	do_exit
+
 .error:			xor	dword eax, eax
 			dec	dword eax
 .exit:			mov	dword [pids + 4 * ebp - 4], eax
 			ret
-.terminate:		sys_exit  0
+.terminate:		
+			_mov	ebx,0
+do_exit:
+			sys_exit
 
 
 shell_not_found:	db	"can't find "
