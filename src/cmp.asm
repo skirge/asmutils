@@ -1,6 +1,6 @@
 ; Copyright (C) 2002 Thomas M. Ogrisegg
 ;
-; $Id: cmp.asm,v 1.1 2002/02/14 17:46:22 konst Exp $
+; $Id: cmp.asm,v 1.2 2002/03/15 06:17:22 konst Exp $
 ;
 ; cmp - compare two files
 ;
@@ -12,20 +12,24 @@
 ; License           :       GNU General Public License
 ; Author            :       Thomas Ogrisegg
 ; E-Mail            :       tom@rhadamanthys.org
-; Version           :       0.9
+; Version           :       0.91
 ; Release-Date      :       02/12/02
-; Last updated      :       02/12/02
+; Last updated      :       03/15/02
 ; SuSV2-Compliant   :       not yet
 ; GNU-compatible    :       not yet
 ;
+; 0.91:	15-Mar-2001	bugfixes and size improvements (KB)
+;
+; TODO: modify compare algorithm - do not read entire file into memory,
+;	use static buffer and compare chunk after chunk.
 
 %include "system.inc"
 
 CODESEG
 
 ltostr:
-		mov ebx, 0x0a
-		mov ecx, 0x10
+		_mov ebx, 0x0a
+		_mov ecx, 0x10
 		mov edi, esi
 		add esi, ecx
 .Ldiv:
@@ -38,7 +42,7 @@ ltostr:
 		jnz .Ldiv
 
 		add esi, ecx
-		sub ecx, 0x10
+		sub ecx, byte 0x10
 		neg ecx
 		inc esi
 		repnz movsb
@@ -57,13 +61,10 @@ lstrcpy:
 
 START:
 		pop ecx
-		cmp ecx, 0x2
-		jng near syntax_error
+		cmp ecx, byte 0x2
+		jng near .Lsyntax_error
 		pop esi
 		xor ebp, ebp
-
-		sys_brk 0x0
-		mov [cbrk], eax
 
 .Larg_loop:
 		pop esi
@@ -78,71 +79,72 @@ START:
 		cmp al, 's'
 		jz .Lset_s
 		cmp al, 'l'
-		jnz near syntax_error
+		jnz near .Lsyntax_error
 		or long [opts], 0x10
-		jmp .Larg_loop
+		jmps .Larg_loop
 .Lset_s:
 		or long [opts], 0x8
-		jmp .Larg_loop
+		jmps .Larg_loop
+
 .Lopen_term:
-		sub esi, 2
-		mov long [fname1+ebp*4], esi
+		dec esi
+		dec esi
+		mov [fname1+ebp*4], esi
 		or ebp, ebp
 		jnz .Lcommit
 		inc ebp
-		jmp .Larg_loop
+		jmps .Larg_loop
 .Lopen_file:
 		dec esi
-		mov long [fname1+ebp*4], esi
+		mov [fname1+ebp*4], esi
 		sys_open esi, O_RDONLY
 		or eax, eax
-		js near syntax_error
+		js near .Lsyntax_error
 		mov [ffd1+ebp*4], eax
 		or ebp, ebp
 		jnz .Lcommit
 		inc ebp
 		jmp .Larg_loop
-.Lread_to_mem:
-		xor ecx, ecx
-		push long [cbrk]
-.Lalloc:
-		mov eax, [cbrk]
-		mov edx, 0x10000
-		add eax, edx
-		sys_brk eax
-		mov [cbrk], eax
-.Lread:
-		sys_read STDIN, eax, 0x10000
-		add ecx, eax
-		sub edx, eax
-		or edx, edx
-		jz .Lalloc
-		or eax, eax
-		jnz .Lread
-		pop ecx
-		ret
 
 .Lcommit:
+		mov dword [cbrk],_end
 		xor ebp, ebp
 		dec ebp
 .Lloop2:
 		inc ebp
 		sys_lseek [ffd1+ebp*4], 0, SEEK_END
 		or eax, eax
-		jns .Lmmap
-		call .Lread_to_mem
-		mov [map1+ebp*4], ecx
+		jz .Lread_to_mem	;could be non-regular file
 .Lmmap:
-		mov [len1+ebp*4], eax
-		push	ebp
-		mov	edi,[ffd1+ebp*4]
-		xor	ebp,ebp
-		sys_mmap NULL, eax, PROT_READ, MAP_PRIVATE
-		pop	ebp
-		or eax, eax
-		js .Lnext
-		mov [map1+ebp*4], eax
+		mov edi,[ffd1+ebp*4]
+		push ebp
+		sys_mmap NULL, eax, PROT_READ, MAP_PRIVATE, EMPTY, 0
+		pop ebp
+		xchg eax,ecx
+		or ecx, ecx
+		jns .Lnext		;file mmaped ok
+
+.Lread_to_mem:
+		mov esi, [cbrk]
+		push esi
+.Lalloc:
+		mov ecx, esi
+		mov edx, 0x1000
+		add esi, edx
+		sys_brk esi
+.Lread:
+		sys_read [ffd1+ebp*4]
+		cmp edx, eax
+		jz  .Lalloc
+.Lread_done:
+		mov [cbrk],esi
+		add eax, ecx
+		pop ecx
+		sub eax, ecx
+
 .Lnext:
+		mov [map1+ebp*4], ecx
+		mov [len1+ebp*4], eax
 		or ebp, ebp
 		jz .Lloop2
 		
@@ -157,18 +159,41 @@ START:
 		mov ecx, [len2]
 .Lnext2:
 		repz cmpsb
+		pop edi
 		mov edx, ecx
 		or ecx, ecx
 		jnz .Lnope
 
 		mov ecx, [len1]
 		cmp ecx, [len2]
-		jz near .Lexit_ok
-		jmp .Lcheck_next
+		jz .Lexit_ok
+
+.Lcheck_next:
+		sys_write STDOUT, EOF, eoflen
+
+		mov edi, [edi-0x10]
+		mov esi, edi
+.n0:
+		lodsb
+		or al, al
+		jnz .n0
+		
+		mov byte [esi-1], __n
+		sub esi, edi
+		sys_write EMPTY, edi, esi
+
+.Lexit_err:
+		_mov ebx, 1
+.Lexit:
+		sys_exit
+.Lexit_ok:
+		_mov ebx, 0
+		jmps .Lexit
+.Lsyntax_error:
+		_mov ebx, 2
+		jmps .Lexit
 
 .Lnope:
-		pop edi
-
 		mov ecx, [edi+8]
 		sub ecx, edx
 		push ecx
@@ -203,30 +228,6 @@ START:
 		sub edi, buffer
 		sys_write STDOUT, buffer, edi
 		jmp .Lexit_err
-
-.Lcheck_next:
-		mov edi, [edi-0x10]
-		push edi
-		xor eax, eax
-		xor ecx, ecx
-		dec ecx
-		repnz scasb
-		neg ecx
-		mov al, __n
-		stosb
-		push ecx
-		sys_write STDOUT, EOF, eoflen
-		pop ecx
-		pop edi
-		sys_write STDOUT, edi, ecx
-.Lexit_err:
-		sys_exit 0x1
-
-.Lexit_ok:
-		sys_exit 0x0
-
-syntax_error:
-		sys_exit 0x2
 
 EOF	db	"cmp: EOF on "
 eoflen	equ $ - EOF
