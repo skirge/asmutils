@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.13 2002/02/02 08:49:25 konst Exp $
+;$Id: httpd.asm,v 1.14 2002/03/03 11:08:20 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -45,6 +45,7 @@
 ;			added extension-content type table,
 ;			fixed infinite loop if err404file is missing,
 ;			size improvements (KB)
+;0.11  03-Mar-2002      added initial cgi support (Scott Lanning <slanning@theworld.com>)
 
 %include "system.inc"
 
@@ -58,9 +59,23 @@
 ;So, you must know compile-time configuration, but eventually
 ;this will be rewritten in a more suitable manner.
 
+;There is a %define variable "CGI" to enable httpd to execve CGI scripts.
+;There are some assumptions. Currently, it assumes the file is named ".cgi"
+;and in the HTML document root with the other HTML files.
+;Probably there should be a separate cgi-bin directory.
+;The stdin/stdout of the script will be the socket fd.
+;I put an empty environment list. There is no POST method yet;
+;in case it is developed, then the data from POST body is passed
+;to environment variables perhaps. There are several other environment
+;variables for CGI as well, such as HTTP_REFERER, etc..
+;Another assumption so far is the server assumes the output is HTML.
+;I let the header be sent by the server, but usually the CGI script
+;sends its own headers. I think this is easy enough to fix.
+
 ;%define	SENDHEADER
 ;%define	LOG
 ;%define	ERR404
+;%define	CGI
 
 %ifdef	LOG
 %define	LOG_HEADER
@@ -242,7 +257,7 @@ acceptloop:
 
 ;now append the demanded
 
-	mov	ecx,filebuf+4
+	mov	ecx,filebuf+4	;past "GET "
 .loopme:
 	mov	al,[ecx]
 	mov	[ebx],al
@@ -284,6 +299,27 @@ index:
 %ifdef SENDHEADER
 	call	sendheader
 %endif
+
+%ifdef CGI
+	;; If filename ends ".cgi", sys_execve it
+	push	edi
+	push	eax
+	_mov	edi,finalpath
+	_mov	ecx,0xfff	;0xfff is max filename size
+	_mov	eax,0
+	repne	scasb		;find '\0' after URI
+	sub	edi,byte 5	;".cgi\0"
+	mov	ebx,edi
+	pop	eax
+	pop	edi
+
+	cmp	dword [ebx],".cgi"
+	jnz	.sendnoncgi
+	call	execcgi
+	jmp	endrequest	;should log error instead
+.sendnoncgi:
+%endif
+
 	mov	ebx,eax
 	mov	esi,eax
 	mov	ecx,filebuf
@@ -403,6 +439,9 @@ extension_tab:
 	dd	"jpg",	c_jpeg
 	dd	"png",	c_png
 	dd	"gif",	c_gif
+%ifdef	CGI
+	dd	"cgi",	c_html
+%endif
 	dd	0
 
 sendheader:
@@ -455,6 +494,24 @@ sendheader:
 
 %endif
 
+%ifdef CGI
+execcgi:
+	pusha
+	;; Make the socket stdin/stdout for the CGI program
+	sys_dup2 edi,STDIN
+	sys_dup2 EMPTY,STDOUT
+	sys_close
+	;; Execute the CGI program.
+	;; argv[0] is finalpath and env is NULL. (?)
+	mov	eax,finalpath
+	mov	ecx,execve_argv
+	mov	[ecx],eax
+	sys_execve [ecx],ecx,0
+	;; Hopefully we don't get here
+	popa
+	ret
+%endif
+
 UDATASEG
 
 %ifdef	ERR404
@@ -471,6 +528,8 @@ arg2	resb	0xff
 root	resd	1
 
 bindsockstruct	resd	4
+
+execve_argv	resd	2	;two ptrs, argv[0] and NULL
 
 finalpath	resb	0x1010	;10 is for safety
 filebuf		resb	0x1010
