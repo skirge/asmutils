@@ -2,7 +2,7 @@
 			       asmutils
 			       ********
 
-			    (version 0.11)
+			    (version 0.12)
 
 			http://linuxassembly.org
 
@@ -95,15 +95,8 @@ How to install
  not as you expected. Syntax can be obtained from appropriate source from
  src directory (do not expect any answer from program on --help switch).
  
- Asmutils include few sets of precompiled binaries.
- Rule is simple -- use the one which suits your kernel.
-
- Installation itself is simple too: take precompiled binaries from
- [bin] directory for your kernel and copy them where you need.
-
- If you want to compile the source, do examine Asmutils-HOWTO
- for details on compilation process, then edit MCONFIG,
- run make and hopefully all will be done.
+ For details on compilation process examine doc/Asmutils-HOWTO,
+ then edit MCONFIG, run 'make' and hopefully all will be done.
 
 
 Other stuff
@@ -114,4 +107,4 @@ Other stuff
 
  Do not forget to send feedback & bugreports to project maintainer.
 
- $Id: README,v 1.8 2000/12/10 08:20:36 konst Exp $
+ $Id: README,v 1.9 2001/01/21 15:18:46 konst Exp $

@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.4 2000/12/10 08:20:36 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.5 2001/01/21 15:18:46 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -22,8 +22,8 @@
     </affiliation>
 </author>
 
-<releaseinfo>Version 0.4</releaseinfo>
-<pubdate role="cvs">$Date: 2000/12/10 08:20:36 $</pubdate>
+<releaseinfo>Version 0.5</releaseinfo>
+<pubdate role="cvs">$Date: 2001/01/21 15:18:46 $</pubdate>
 
 <copyright>
 <year>1999-2000</year><holder>Konstantin Boldyshev</holder>
@@ -544,6 +544,10 @@ memory, and thus can be used within an ELF_DATA section.
 <section id="s-debug">
 <title>Debugging your code</title>
 
+First, you must enable debugging information by setting
+<function>DEBUG = y</function> in <filename>MCONFIG</filename>.
+Then rebuild your code, and try one of the available debuggers:
+
 <section><title>ald</title>
 
 <para>
@@ -564,7 +568,10 @@ it can be used to debug pure assembly code
 (the simplest way is to place <function>int 3</function>
 instructions as breakpoints over your code).
 And with some trickery you can force
-<command>gdb</command> to do what you need:
+<command>gdb</command> to do what you need
+(unfortunately, nasm '-g' switch does not generate
+proper debug info for gdb; this is nasm bug, I think):
+
 </para>
 
 <para><screen>
@@ -913,7 +920,7 @@ Here are some assembly examples you can use instead of
 	jz	is_minus_one
 
 
-;if -255 < value < 255, you can use
+;if -128 < value < 128, you can use
 
 	cmp	eax,byte value ;or -value
 
@@ -934,6 +941,11 @@ Seek, and you may find more..
 <title>History</title>
 
 <para><revhistory>
+
+<revision>
+<revnumber>0.5</revnumber><date>17 Jan 2001</date><authorinitials>konst</authorinitials>
+<revremark>additions to "Debugging" section</revremark>
+</revision>
 
 <revision>
 <revnumber>0.4</revnumber><date>08 Dec 2000</date><authorinitials>konst</authorinitials>
@@ -989,7 +1001,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.4 2000/12/10 08:20:36 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.5 2001/01/21 15:18:46 konst Exp $
 </literal></para>
 </appendix>
 

@@ -1,8 +1,8 @@
 long-term:
 
 - write new utils and improve existing
-- libc: PIC, fastcall/cdecl for usual functions
-- make a multicall binary
+- develop libc
+- develop multicall binary
 - port more code to *BSD & ELKS (?)
 - merge basename, dirname, extname (?)
 

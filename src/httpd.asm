@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.6 2000/12/10 08:20:36 konst Exp $
+;$Id: httpd.asm,v 1.7 2001/01/21 15:18:46 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -36,20 +36,66 @@
 ;0.05: 25-Feb-2000	heavy rewrite of network code, size improvements,
 ;			portability fixes (KB)
 ;0.06: 05-Apr-2000	finally works on FreeBSD! (KB)
-;0.07: 30-Jun-2000	Added support for custom 404 error message
-;			(by default in /etc/httpd/404.html)
+;0.07: 30-Jun-2000	added support for custom 404 error message
+;			(by default in /etc/httpd/404.html),
+;			enabled by %define ERR404 (KB)
 ;			thanks to Mooneer Salem <mooneer@earthlink.net>
 ;0.08: 10-Sep-2000	squeezed few more bytes (KB)
+;0.09: 16-Jan-2001	added support for "Content-Type: text/plain"
+;			for .text, .txt, .log and no-extension files,
+;			enabled by %define SENDHEADER (KB)
+
+;WARNING:
+;NN6 is awful - it doesnot show images.
+;I guess it wants "Content-Type" for them.
 
 %include "system.inc"
 
 ;%define	ERR404
+;%define	SENDHEADER
 
 CODESEG
 
 %ifdef	ERR404
 msg404	db	"/etc/httpd/404.html",EOL
-len404	equ	$ - msg404
+_len404	equ	$ - msg404
+%assign len404	_len404
+%endif
+
+%ifdef	SENDHEADER
+
+h1	db	"HTTP/1.1 200 OK",__n
+h2	db	"Server: asmutils httpd",__n
+h3	db	"Content-Type: text/plain",__n,__n
+_lenh1	equ	$ - h1
+%assign	lenh1 _lenh1
+
+sendheader:
+	pusha
+	mov	esi,finalpath
+	mov	ebx,esi
+.cc1:
+	lodsb
+	or	al,al
+	jnz	.cc1
+.cc2:
+	cmp	esi,ebx
+	jz	.cc3
+	dec	esi
+	cmp	byte [esi],'.'
+	jnz	.cc2
+	mov	eax,[esi + 1]
+	cmp	eax,"text"	;.text
+	jz	.cc3
+	cmp	eax,"txt"	;.txt
+	jz	.cc3
+	cmp	eax,"log"	;.log
+	jnz	.cc4
+.cc3:
+	sys_write edi,h1,lenh1
+.cc4:
+	popa
+	ret
 %endif
 
 nl	db	0xa
@@ -65,7 +111,6 @@ START:
 	pop	dword [document]
 	pop	esi		;port number
 
-; this code was written by Konstantin Boldyshev
 ;<ESI -string
 ;>EAX - result
 
@@ -209,6 +254,10 @@ index:
 %else
 	js	endrequest
 %endif
+
+%ifdef SENDHEADER
+	call	sendheader
+%endif
 	mov	ebx,eax
 	mov	esi,eax
 	mov	ecx,filebuf
@@ -216,6 +265,7 @@ index:
 	sys_read EMPTY,EMPTY,0xfff
 	test	eax,eax
 	js	.endread
+
 	sys_write edi,EMPTY,eax
 	mov	ebx,esi
 	test	eax,eax
@@ -227,7 +277,7 @@ index:
 ;due the stupidity of netscape we need to send another packet newline \n,
 ;so it can handle one line data but I'm afraid it might break something,
 ;so watch this code carefully in the future
-	sys_write edi,nl,1
+;	sys_write edi,nl,1
 
 endrequest:
 ;	sys_read ebp,filebuf,0xff

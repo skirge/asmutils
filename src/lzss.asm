@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Cecchinel Stephan <interzone@pacwan.fr>
 ;
-;$Id: lzss.asm,v 1.3 2000/12/10 08:20:36 konst Exp $
+;$Id: lzss.asm,v 1.4 2001/01/21 15:18:46 konst Exp $
 ;
 ;hackers' lzss
 ;
@@ -15,6 +15,7 @@
 ;
 ;0.01: 19-Dec-1999	inital release (CS)
 ;0.02: 12-Sep-2000	cleanup and size improvements (KB)
+;0.03: 11-Jan-2001	outfile fix (KB)
 
 %include "system.inc"
 
@@ -36,10 +37,9 @@ text2	db	"Can't open input file",__n
 _len2	equ	($-text2)
 %assign	len2	_len2
 
-outfile	dd	STDOUT		;for now
-
 START:
 	_mov	ebp,STDIN
+	_mov	[outfile],byte STDOUT
 
 	pop	eax
 	dec	eax
@@ -417,7 +417,7 @@ UDATASEG
 	
 ;------------------------ file in/out descriptors
 infile	resd	1
-
+outfile	resd	1
 inbuff	resd	(FBUFFSIZE/4)
 outbuff	resd	(FBUFFSIZE/4)
 ;------------------------ bits i/o vars

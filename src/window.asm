@@ -1,6 +1,6 @@
-;Copyright (C) 1995-2000 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1995-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: window.asm,v 1.5 2000/09/03 16:13:54 konst Exp $
+;$Id: window.asm,v 1.6 2001/01/21 15:18:46 konst Exp $
 ;
 ;text window example
 
@@ -56,8 +56,12 @@ sText2:
 	s_xy	wX+(wXlen-lText2)/2, (wYlen)/2 + 1
 	s_attr	0x0A
 .t2:
-	db	'kick enter to crash keyboard'
-lText2	equ	$ - .t2
+	db	'kick '
+	s_attr	0x70
+	db	'Enter'
+	s_attr	0x0A
+	db	' to crash keyboard'
+lText2	equ	$ - .t2 - 3
 	s_end
 
 
@@ -216,13 +220,13 @@ open_screen:
 ;set non-blocking mode and one-char-at-a-time mode for STDIN
 ;
 	sys_fcntl STDIN,F_SETFL,(O_RDONLY|O_NONBLOCK)
-	sys_ioctl STDIN,TCGETS,sattr				; saved until restore
-	sys_ioctl EMPTY,EMPTY,tattr				; will be modified
-	and dword [tattr+termios.c_lflag],~(ICANON|ECHO|ISIG)	;disable erase/fill processing, echo, signals
-	or  dword [tattr+termios.c_oflag],OPOST|ONLCR		;enable output processg, NL<-CR/NL
-	and dword [tattr+termios.c_iflag],~(INPCK|ISTRIP|IXON|ICRNL);disable parity chk, 8th bit strip,start/stop prot.
-	mov byte [tattr+termios.c_cc+VTIME],0			; timo * 1/10 s (if ~ICANON)
-	mov byte [tattr+termios.c_cc+VMIN],1			; min no. of chars for a single read opr
+	sys_ioctl STDIN,TCGETS,sattr				;saved until restore
+	sys_ioctl EMPTY,EMPTY,tattr				;will be modified
+	and	dword [tattr+termios.c_lflag],~(ICANON|ECHO|ISIG)	;disable erase/fill processing, echo, signals
+	or	dword [tattr+termios.c_oflag],OPOST|ONLCR		;enable output processg, NL<-CR/NL
+	and	dword [tattr+termios.c_iflag],~(INPCK|ISTRIP|IXON|ICRNL);disable parity chk, 8th bit strip,start/stop prot.
+	mov	byte [tattr+termios.c_cc+VTIME],0			;timo * 1/10 s (if ~ICANON)
+	mov	byte [tattr+termios.c_cc+VMIN],1			;min no. of chars for a single read opr
 	sys_ioctl STDIN,TCSETS,tattr
 
 ;
@@ -335,7 +339,7 @@ write:
 ;<cl	Y
 ;
 gotoXY:
-	pushad
+	pusha
 
 calcXY:
 
@@ -355,7 +359,7 @@ _ycoef		equ	0xa0
 	mov	ecx,ebx
 
 	sys_lseek [sHandle], EMPTY, SEEK_SET
-	popad
+	popa
 	ret
 
 ;
@@ -380,7 +384,7 @@ getXY:
 ;
 vread:
 	pusha
-	call gotoXY
+	call	gotoXY
 	mov	ecx,ebx
 	mov	edx,eax
 	sys_read [sHandle]
@@ -388,12 +392,12 @@ vread:
 	ret
 
 vwrite:
-	pushad
-	call gotoXY
+	pusha
+	call	gotoXY
 	mov	ecx,ebx
 	mov	edx,eax
 	sys_write [sHandle]
-	popad
+	popa
 	ret
 
 

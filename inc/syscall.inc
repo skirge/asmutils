@@ -1,11 +1,11 @@
-; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.2 2000/12/10 08:20:36 konst Exp $
+; $Id: syscall.inc,v 1.3 2001/01/21 15:18:46 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 09-Dec-2000
-; version	: 0.11
+; modified	: 16-Jan-2000
+; version	: 0.12
 ; assembler	: nasm 0.98
 ; description	: system call macros
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -85,10 +85,10 @@
    %if P>3
     %if P>4
      %if P>5
-      %if P>6
+      %if P>6 && %3>6
 	push	dword %10
       %endif
-	push	dword %9
+	push	ebp
      %endif
 	push	edi
     %endif
@@ -128,6 +128,22 @@ extern %{1}
 ;--------------------------------------------------------------------------
 ;				System Calls
 ;--------------------------------------------------------------------------
+
+;%macro __SYSCALL 2
+;%macro sys_%1 0-%2
+;__syscall %1, %2, %0, %1, %2
+;%endmacro
+;%endmacro
+
+;
+;Fake "generic" syscall
+;
+
+%define SYS_eax	eax
+
+%macro sys_generic 0-6
+	__syscall eax, 6, %0, %1, %2, %3, %4, %5, %6
+%endmacro
 
 ;Source references are made conforming to Linux Kernel,
 ;so they will be different on other kernels
@@ -337,6 +353,22 @@ extern %{1}
 	__syscall chdir, 1, %0, %1
 %endmacro
 
+%macro sys_utime 0-2
+	__syscall utime, 2, %0, %1, %2
+%endmacro
+
+;
+;fs/select.c
+;
+
+%macro sys_select 0-5
+	__syscall select, 5, %0, %1, %2, %3, %4, %5
+%endmacro
+
+%macro sys_poll 0-3
+	__syscall poll, 3, %0, %1, %2, %3
+%endmacro
+
 ;
 ;fs/super.c
 ;
@@ -466,6 +498,17 @@ extern %{1}
 	__syscall getgid, 0
 %endmacro
 
+%macro sys_nice 0-1
+	__syscall nice, 1, %0, %1
+%endmacro
+
+%macro sys_getpriority 0-2
+	__syscall getpriority, 2, %0, %1, %2
+%endmacro
+
+%macro sys_setpriority 0-3
+	__syscall setpriority, 3, %0, %1, %2, %3
+%endmacro
 
 ;
 ;kernel/signal.c

@@ -1,11 +1,11 @@
-; Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_atheos.inc,v 1.1 2000/12/10 08:20:36 konst Exp $
+; $Id: os_atheos.inc,v 1.2 2001/01/21 15:18:46 konst Exp $
 ;
 ; file          : os_atheos.inc
 ; created       : 23-Oct-2000
-; modified      : 24-Oct-2000
-; version       : 0.11
+; modified      : 09-Jan-2001
+; version       : 0.12
 ; assembler     : nasm 0.98
 ; description   : atheos kernel constants
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -208,7 +208,7 @@
 ;
 ;
 
-%assign SYS_nanosleep		SYS_idle	;??
+%assign SYS_nanosleep		SYS_snooze	;?? or SYS_idle?
 %assign SYS_lseek		SYS_Seek
 %assign SYS_fork		SYS_Fork
 %assign SYS_link		SYS_symlink

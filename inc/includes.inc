@@ -1,11 +1,11 @@
-; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.2 2000/12/10 08:20:36 konst Exp $
+; $Id: includes.inc,v 1.3 2001/01/21 15:18:46 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 15-Nov-2000
-; version       : 0.11
+; modified      : 05-Jan-2001
+; version       : 0.12
 ; assembler     : nasm 0.98
 ; description   : generic constants and structures from header files (libc)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -444,6 +444,14 @@ struc __old_kernel_stat
 .st_mtime	ULONG	1
 .st_ctime	ULONG	1
 endstruc
+
+;
+;sys/resource.h
+;
+
+%assign PRIO_PROCESS	0
+%assign PRIO_PGRP	1
+%assign	PRIO_USER	2
 
 ;
 ;socket.h

@@ -1,30 +1,20 @@
-# Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
+# Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.7 2000/12/10 08:20:36 konst Exp $
+# $Id: Makefile,v 1.8 2001/01/21 15:18:46 konst Exp $
 
-#---------------------------------------------------------------------------#
-
-#			CONFIGURATION PARAMETERS
-
-#---------------------------------------------------------------------------#
+#DEBUG = y
 
 BUILD_SRC = y
 
 include ../MCONFIG
 
-#---------------------------------------------------------------------------#
-
-#			DO NOT EDIT BELOW
-
-#---------------------------------------------------------------------------#
-
-FILES = basename cat chmod chroot cp cpuinfo dirname echo env extname factor\
-	grep head hostname httpd id kill ln lzss mkdir more mv nc pwd rm\
-	sh sleep strings sync tee true uname wc yes\
+FILES = basename cat chmod chroot chown cp cpuinfo dirname echo env extname \
+	factor grep head hostname httpd id kill ln lzss mkdir more mv nc pwd \
+	renice rm sh sleep strings sync tee true uname wc yes\
 	md5sum rmdsum rc6crypt\
-	execve report
+	execve report asmutils
 
 LINKS = arch cpuspeed domainname false rmdir regs sln
 

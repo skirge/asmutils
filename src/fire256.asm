@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Paul Furber <m@verick.co.za>
 ;
-;$Id: fire256.asm,v 1.1 2000/09/03 16:13:54 konst Exp $
+;$Id: fire256.asm,v 1.2 2001/01/21 15:18:46 konst Exp $
 
 ;;  This program is free software; you can redistribute it and/or modify
 ;;  it under the terms of the GNU General Public License as published by
@@ -172,23 +172,22 @@ mainloop:
 ;	do the fire
 ;-------------------------------------------------------------------------
 	pop	esi
-	mov	edi,	[fix.mmio_start]
-	mov	ecx,	SIZE_X*(SIZE_Y-2)/8
 	movq	mm7,	[shr1mask]
+	mov	edi,	[fix.mmio_start]
 	movq	mm6,	[sub_value]
+	mov	ecx,	SIZE_X*(SIZE_Y-2)/8
 .fireloop:
 	movq	mm0,	[esi+(SIZE_X*2)-1]
 	paddusb	mm0,	[esi+(SIZE_X*2)+1]
 	psrlw	mm0,	1
 	pand	mm0,	mm7
 	psubusb	mm0,	mm6
-	
-	movq	[edi],	mm0
-	movq	[esi],	mm0
-	
-	add	esi,	8
-	add	edi,	8
 
+	movq	[esi],	mm0
+	add	esi,	byte 8
+	movq	[edi],	mm0
+	add	edi,	byte 8
+	
 	dec	ecx
 	jnz	.fireloop
 

@@ -1,11 +1,11 @@
-; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.2 2000/12/10 08:20:36 konst Exp $
+; $Id: system.inc,v 1.3 2001/01/21 15:18:46 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 02-Nov-2000
-; version	: 0.11
+; modified	: 09-Jan-2001
+; version	: 0.12
 ; assembler	: nasm 0.98
 ; description	: generic (not OS specific) macros, sections, headers, etc.
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -28,7 +28,7 @@
 ;0.10: 21-Aug-2000	started stub for BeOS, _mov improved,
 ;			NetBSD and OpenBSD stuff
 ;0.11: 24-Oct-2000	AtheOS stuff
-
+;0.12: 19-Jan-2001	_xchg (PR), _jmp (KB)
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
@@ -322,12 +322,34 @@ iend
 ; General purpose macros
 ;------------------------------------------------------------------
 
-;short jump
+;
+;explicit short jump
+;
 
 %define	jmps jmp short
 
+;
+;auto short/long jump
+;currently works only backwards :(
+;
+
+%macro _jmp 1
+%%__offset_%1 equ $-%1
+%assign __offset__ %%__offset_%1
+
+%if (__offset__<0) && (__offset__>0xFFFFFF80)
+	jmp	short %1
+%elif (__offset__>0) && (__offset__<0x80)
+	jmp	short %1
+%else
+	jmp	%1
+%endif
+%endmacro
+
+;
 ;intellectual register assignment, generates smaller code.. long weird macro.
 ;warning: macro may touch flags!
+;
 
 %macro _mov 2-3
 %ifnidn	%2,EMPTY
@@ -345,7 +367,9 @@ iend
     %endif
  %else			;%if __OPTIMIZE__=__O_SIZE__
     %ifid %2
+     %ifnidni %1,%2
 	mov	%1,%2
+     %endif
     %elifstr %2
 	mov	%1,%2
     %elifnum %2
@@ -453,14 +477,17 @@ iend
     %elif %2=2
 	inc	%1
 	inc	%1
-    %elif %2<0x100 && %2>0
-	add	%1,byte %2
+    %elif %2=0xFFFFFFFF || %2=-1
+	dec	%1
     %elif %2=0xFFFFFFFE || %2=-2
 	dec	%1
 	dec	%1
-    %elif %2=0xFFFFFFFF || %2=-1
-	dec	%1
-    %elif %2>-0x100 && %2<0
+    %elif %2=0x80
+	add	%1,byte 0x7F
+	inc	%1
+    %elif %2>0 && %2<0x80
+	add	%1,byte %2
+    %elif %2<0 && %2>-0x80
 	sub	%1, byte  -(%2)
     %else
 	add	%1,%2
@@ -488,14 +515,17 @@ iend
     %elif %2=2
 	dec	%1
 	dec	%1
-    %elif %2>0 && %2<0x100
+    %elif %2=0x80
+	sub	%1,byte 0x7F
+	dec	%1
+    %elif %2>0 && %2<0x80
 	sub	%1,byte %2
     %elif %2=-2 || %2=0xfffffffe
 	inc	%1
 	inc	%1
     %elif %2=-1 || %2=0xffffffff
 	inc	%1
-    %elif %2>-0x100 && %2<0
+    %elif %2>-0x80 && %2<0
 	add	%1, byte  -(%2)
     %else
 	sub	%1,%2
@@ -507,11 +537,11 @@ iend
 %endmacro
 
 %macro _cmp 2
-%if %2=0
+%ifid	%2
+	cmp	%1,%2
+%elif %2=0
 	or	%1,%1
-%elif %2<0x100 && %2>0
-	cmp	%1,byte %2
-%elif %2>-0x100 && %2<0
+%elif (%2>0 && %2<0x80) || (%2<0 && %2>-0x80)
 	cmp	%1,byte %2
 %else
 	cmp	%1,%2
@@ -519,11 +549,11 @@ iend
 %endmacro
 
 %macro _and 2
-%if %2=0
+%ifid	%2
+	and	%1,%2
+%elif %2=0
 	xor	%1,%1
-%elif %2<0x100 && %2>0
-	and	%1,byte %2
-%elif %2>-0x100 && %2<0
+%elif (%2>0 && %2<0x80) || (%2<0 && %2>-0x80)
 	and	%1,byte %2
 %else
 	and	%1,%2
@@ -531,9 +561,9 @@ iend
 %endmacro
 
 %macro _or 2
-%if %2<0x100 && %2>0
-	or	%1,byte %2
-%elif %2>-0x100 && %2<0
+%ifid	%2
+	or	%1,%2
+%elif (%2>0 && %2<0x80) || (%2<0 && %2>-0x80)
 	or	%1,byte %2
 %else
 	or	%1,%2
@@ -541,9 +571,9 @@ iend
 %endmacro
 
 %macro _xor 2
-%if %2<0x100 && %2>0
-	xor	%1,byte %2
-%elif %2>-0x100 && %2<0
+%ifid	%2
+	xor	%1,%2
+%elif (%2>0 && %2<0x80) || (%2<0 && %2>-0x80)
 	xor	%1,byte %2
 %else
 	xor	%1,%2
@@ -554,15 +584,47 @@ iend
 %ifid %1
 	push	dword %1
 %elifstr %1
-	push	%1
-%elifnum %1
- %if %1=0 || (%1>0 && %1<0x80)
-	push	byte %1
- %else
 	push	dword %1
- %endif
+%elif %1=0 || (%1>0 && %1<0x80) || (%1<0 && %1>-0x80)
+	push	byte %1
 %else
 	push	dword %1
+%endif
+%endmacro
+
+;PR: <xchg> is very slow, reg/mem takes 33 clocks.
+;this macro for nasm helps speeding up regardless of what addressing mode used
+
+%macro _xchg 2
+%if __OPTIMIZE__=__O_SIZE__
+%assign ea 4
+%else
+%assign ea 0
+%ifid %{2}
+%assign ea ea|2
+%endif
+%ifid %{1}
+%assign ea ea|1
+%endif
+%endif
+;handles reg,mem and mem,reg differently, because:
+;	9 clocks if last, negated opd is in memory
+;	5 clocks if that one is a register
+%if ea=2
+    add %{1},%{2}
+    sub %{2},%{1}
+    add %{1},%{2}
+    neg dword %{2}
+%elif ea=1
+    add %{2},%{1}
+    sub %{1},%{2}
+    add %{2},%{1}
+    neg dword %{1}
+%else
+;  2 clocks w. reg,reg
+;	(lea variant wasn't faster, may be cpu dependent?)
+; 33 clocks w. reg,mem or mem,reg - either case
+    xchg %{1},%{3}
 %endif
 %endmacro
 

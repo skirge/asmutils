@@ -1,33 +1,40 @@
-;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-;$Id: libc.asm,v 1.6 2000/09/03 16:13:54 konst Exp $
+;$Id: libc.asm,v 1.7 2001/01/21 15:18:46 konst Exp $
 ;
 ;hackers' libc
 ;
-;main feature: cdecl and fastcall can be configured AT RUNTIME.
+;Yes, this is the most advanced libc ever seen. It uses many
+;wizard technologies which are possible only with assembly.
+;Two main features that make this libc outstanding:
+;1) calling convention can be configured AT RUNTIME (cdecl is default)
+;2) THE smallest size
+;
+;It uses mixed code-data database approach for syscalls,
+;resulting in extremely small size.
+;
+;Well, there's still a lot of work to be done.
 ;
 ;0.01: 10-Sep-1999	initial alpha pre beta 0 non-release
 ;0.02: 24-Dec-1999	first working version
 ;0.03: 21-Feb-2000	fastcall support
 ;0.04: 20-Jul-2000	fixed stupid bug/misprint, merged clib.asm & string.asm
 ;			printf()
-;
-;WARNING!!! THIS IS THE VERY ALPHA VERSION OF LIBC.
-;THIS SOURCE IS PROVIDED ONLY FOR CRAZY HACKERS.
-;EVERYTHING HERE IS SUBJECT TO CHANGE WITHOUT NOTICE.
-;
-;Do not ask me to explain what is written here.
+;0.05: 16-Jan-2001	usual functions now work with both cdecl and fastcall,
+;			added PIC support (and __GET_GOT macro),
+;			added __ADJUST_CDECL3 macro,
+;			syscall mechanism rewritten (size improved),
+;			separated and optimized sprintf(),
+;			printf() implemented via sprintf(),
+;			lots of other various fixes (KB)
+;			finally ready for additions and active development.
 
 %undef __ELF_MACROS__
 
 %include "system.inc"
 
-;
-;configuration defines
-;
-
-%define C_CALL
+%define __PIC__
 
 ;
 ; macro used for function declaration
@@ -41,119 +48,203 @@
 %endmacro
 
 ;
+; macro used for syscall declaration
+;
 ;%1	syscall name
 ;%2	number of parameters
+;
+;Ok, what is written below?
+;Yes - a really dirty trick, but it really saves size.
+;This is the thing I like assembly for,
+;and this why this libc is the most advanced :)
+;
+;This macro generates the following code:
+;six bytes	-	call instruction
+;one byte	-	number of syscall parameters (<0 means always cdecl)
+;one byte	-	syscall number (two bytes on BSD systems)
+;
+;So, each syscall will take only 8 bytes (9 bytes on BSD systems)
+;in executable image. We use call instruction to push return address,
+;and then find out syscall number and number of parameters using
+;this address in __system_call function. ret instructions is also
+;missing, because we will handle correct return in __system_call too.
 
 %macro _DECLARE_SYSCALL 2
     global %1:function
-
-    db	%2	;dirty trick
-%1:
-    call __enter
-    sys_%{1}
-    jmp __sysret
+%1: call	__system_call
+    db	%2	;number of parameters
+%ifndef	__BSD__
+    db	SYS_%{1};syscall number
+%else
+    dw	SYS_%{1}
+%endif
 %endmacro
 
 ;
-; entering usual call
+;PIC handling
 ;
 
-%macro _enter 0
+%macro __GET_GOT 0
+	call	%%get_GOT
+%%get_GOT:
+	pop	ebx
+;%define	var %{1} wrt ..got
+%define gotpc %%get_GOT wrt ..gotpc
+	add	ebx,_GLOBAL_OFFSET_TABLE_ + $$ - gotpc
+%undef gotpc
+;%undef var
+%endmacro
+
+;adjust cdecl call (1 - 3 parameters)
+;
+;%1		stack frame to add
+;%2 - %4	registers
+
+%macro	__ADJUST_CDECL3	2-4
+
+;	_mov	%2,eax
+;%if %0>2
+;	_mov	%3,edx
+;%if %0>3
+;	_mov	%4,ecx
+;%endif
+;%endif
+
+%ifdef __PIC__
+	push	ebx
+	__GET_GOT
+	cmp	byte [ebx + __cc wrt ..got],0
+	pop	ebx
+%else
+	cmp	byte [__cc],0
+%endif
+	jnz	%%fc
+
+	mov	%2,[esp + %1 + 4 ]
+%if %0>2
+	mov	%3,[esp + %1 + 8 ]
+%if %0>3
+	mov	%4,[esp + %1 + 12]
+%endif
+%endif
+%%fc:
+
 %endmacro
 
 ;
-; leaving usual call
+;for accessing registers after pusha
 ;
-
-%macro _leave 0
-    ret
-%endmacro
-
+%define	__ret	esp+4*8
+%define	__eax	esp+4*7
+%define	__ecx	esp+4*6
+%define	__edx	esp+4*5
+%define	__ebx	esp+4*4
+%define	__esp	esp+4*3
+%define	__ebp	esp+4*2
+%define	__esi	esp+4*1
+%define	__edi	esp+4*0
 
 CODESEG
+
+extern _GLOBAL_OFFSET_TABLE_
 
 ;**************************************************
 ;*             INTERNAL FUNCTIONS                 *
 ;**************************************************
 
 ;
-; entering system call
+;perform a system call (up to 6 arguments)
 ;
 
-__enter:
-	mov	[__eax],eax
-	mov	[__ebx],ebx
-	mov	[__ecx],ecx
-	mov	[__edx],edx
-	mov	[__esi],esi
-	mov	[__edi],edi
+__system_call:
+	pusha
 
-	mov	eax,[esp]		;load number of parameters into eax:
-	movzx	eax,byte [eax - 6]	;return address - sizeof(call)
-
-	or	al,al
-	jz	.return
+	mov	eax,[__esp]		;load number of parameters into eax
+	mov	eax,[eax]
+	movzx	eax,byte [eax]
 	test	al,al
-	jns	.sk1
-	neg	al
-	jmp	short .cdecl
+	jz	.ssn
+	js	.cdecl
 .sk1:
-	cmp	[__cc],byte 0
+%ifdef __PIC__
+	__GET_GOT
+	cmp	byte [ebx + __cc wrt ..got],0
+%else
+	cmp	byte [__cc],0
+%endif
 	jnz	.fc
 
-%define _STACK_ADD 8
+%define _STACK_ADD 8 + 4*8
+
 .cdecl:
+	neg	al
 	mov	ebx,[esp + _STACK_ADD]
 	dec	eax
-	jz	.return
+	jz	.ssn
 	mov	ecx,[esp + _STACK_ADD + 4]
 	dec	eax
-	jz	.return
+	jz	.ssn
 	mov	edx,[esp + _STACK_ADD + 8]
 	dec	eax
-	jz	.return
+	jz	.ssn
 	mov	esi,[esp + _STACK_ADD + 12]
 	dec	eax
-	jz	.return
+	jz	.ssn
 	mov	edi,[esp + _STACK_ADD + 16]
+	dec	eax
+	jz	.ssn
+	mov	ebp,[esp + _STACK_ADD + 20]
+	jmps	.ssn
 
-.return:
-	ret
 .fc:
 	mov	ebx,[__eax]
 	dec	eax
-	jz	.return
+	jz	.ssn
 	xchg	ecx,edx
 	dec	eax
-	jz	.return
+	jz	.ssn
 	dec	eax
-	jz	.return
+	jz	.ssn
 	mov	esi,[esp + _STACK_ADD]
 	dec	eax
-	jz	.return
+	jz	.ssn
 	mov	edi,[esp + _STACK_ADD + 4]
+	dec	eax
+	jz	.ssn
+	mov	ebp,[esp + _STACK_ADD + 8]
+
 %undef _STACK_ADD
-	ret	
 
-;
-; leaving system call
-;
+.ssn:
+	mov	eax,[__esp]		;set syscall number
+	mov	eax,[eax]
+%ifndef	__BSD__
+	movzx	eax,byte [eax + 1]	;return address + 1
+%else
+	movzx	eax,word [eax + 1]	;return address + 1
+%endif
+	sys_generic
 
-__sysret:
 	test	eax,eax
-	jns	__leave
+	jns	.leave
 	neg	eax
+%ifdef __PIC__
+	__GET_GOT
+	mov	[ebx + errno wrt ..got],eax
+%else
 	mov	[errno],eax
+%endif
 	xor	eax,eax
 	dec	eax
+.leave:
+	mov	[__eax + 4],eax		;replace return address with eax
+	popa
+	pop	eax			;now get it back
+	ret				;and return to previous caller
 
-__leave:
-	mov	ebx,[__ebx]
-	mov	ecx,[__ecx]
-	mov	edx,[__edx]
-	mov	esi,[__esi]
-	mov	edi,[__edi]
-	ret
+;
+;
+;
 
 _DECLARE_SYSCALL	open,	-3	;<0 means always cdecl
 _DECLARE_SYSCALL	close,	1
@@ -170,7 +261,6 @@ _DECLARE_SYSCALL	mkdir,	1
 _DECLARE_SYSCALL	rmdir,	1
 
 _DECLARE_SYSCALL	exit,	1
-;_DECLARE_SYSCALL	idle,	0	;not posix
 _DECLARE_SYSCALL	fork,	0
 _DECLARE_SYSCALL	execve,	3
 _DECLARE_SYSCALL	uname,	1
@@ -191,384 +281,156 @@ _DECLARE_SYSCALL	getgid,	0
 
 _DECLARE_FUNCTION	_fastcall
 
-_DECLARE_FUNCTION	memset, memcpy, memcpyl
-_DECLARE_FUNCTION	printf
+_DECLARE_FUNCTION	memcpy, memset
 _DECLARE_FUNCTION	strlen
+_DECLARE_FUNCTION	strtol
 _DECLARE_FUNCTION	itoa
+_DECLARE_FUNCTION	printf, sprintf
+
 
 
 ;**************************************************
 ;*          GLOBAL LIBRARY FUNCTIONS              *
 ;**************************************************
 
+;void fastcall(int regnum)
 ;
 ;set fastcall/cdecl calling convention
+;note: always uses fasctall convention
 ;
+;<EAX	regnum
 
 _fastcall:
-	cmp	[__cc],byte 0
-	jnz	.ret
-	mov	eax,[esp + 4]
-.ret:
-	mov	[__cc],al
-	ret
-
-
-;strlen:
-
-	_enter
-%if  __OPTIMIZE__=__O_SIZE__
-	push	edi
-	mov	edi,[esp + 8]
-	mov	eax,edi
-	dec	edi
-.l1:
-	inc	edi
-	cmp	[edi],byte 0
-	jnz	.l1
-	xchg	eax,edi
-	sub	eax,edi
-	pop	edi
+%ifdef	__PIC__
+	push	ebx
+	__GET_GOT
+	mov	[ebx + __cc wrt ..got],al
+	pop	ebx
 %else
-; (Nick Kurshev)
-; note: below is classic variant of strlen
-; if not needed to save ecx register then size of classic code
-; will be same as above 
-; remark: fastcall version of strlen will on 2 bytes less than cdecl
-	push	esi
-	push	ecx
-	mov	esi,[esp + 12]
-	xor	eax,eax
-        or	ecx,byte -1
-	repne	scasb
-	not	ecx
-	mov	eax,ecx
-	dec	eax
-	pop	ecx
-	pop	esi
-%endif
-	_leave
-
-
-;-------------------------------------------------------------------------------------------
-; --  itoa -->     print a 32 bit number as binary,octal,decimal,or hexadecimal value ------------ 
-;
-; C syntax:		itoa (unsigned long value, char *string, int radix)
-;
-; Assembly syntax:
-; 			EAX=32 bit value
-; 			ECX=base    (2, 8, 10, 16, or another one)
-; 			store ascii string in [EDI]
-%ifdef C_CALL
-PROC itoa, value, itoa_string, radix
-	pusha
-	mov eax,value
-	mov edi,itoa_string
-	mov ecx,radix
-%endif
-
-%ifdef ASM_CALL
-itoa:
-	pusha
-%endif
-
-	call .printB
-	mov byte[edi],0				; zero terminate the string 
-	jmp short .enditoa
-.printB:
-	sub edx,edx 
-	div ecx 
-	test eax,eax 
-	jz short .print0
-	push edx
-	call .printB
-	pop edx 
-.print0:
-	add dl,'0'
-	cmp dl,'9'
-	jle short .print1
-	add dl,0x27
-.print1:
-	mov [edi],dl
- 	inc edi
- 	ret
-.enditoa:
-	popa
-%ifdef C_CALL
-	pop ebp
+	mov	[__cc],al
 %endif
 	ret
 
-;---------------------------------------------------------------------
-PROC printf,ipf_string
-	pusha
-	cld
-	lea	edi,[printb]
-	push	edi
-	mov	esi,ipf_string
-	lea	edx,[ebp+12]
-.boucle:
-	lodsb
-	test	al,al
-	jz	.out_pf
-	cmp	al,'%'
-	jz	.gest_spec
-	cmp	al,'\'
-	jz	.gest_spec2
-	stosb
-	jmps	.boucle
-.gest_spec:
-	mov	ebx,[edx]
-	lodsb
-	cmp	al,'d'
-	jnz	.gest2
-	_mov	ecx,10
-	jmps	.gestf
-.gest2:	cmp	al,'x'
-	jnz	.gest3
-	_mov	ecx,16
-	jmps	.gestf
-.gest3:	cmp	al,'o'
-	jnz	.gest4
-	_mov	ecx,8
-	jmps	.gestf
-.gest4:	cmp	al,'b'
-	jnz	.gest5
-	_mov	ecx,2
-	jmp	.gestf
-.gest5:	cmp	al,'s'
-	jnz	.boucle
-.copyit:			; copy the string in args , to output buffer
-	mov	al,[ebx]
-	test	al,al		; the string is null terminated
-	jz	.allok
-	stosb
-	inc	ebx
-	jmps	.copyit
-
-.gestf:
-%ifdef C_CALL
-	invoke itoa,ebx,edi,ecx
-%endif
-
-%ifdef ASM_CALL
-	mov	eax,ebx
-	call	itoa
-%endif
-
-.stl:	cmp	byte[edi],1
-	inc	edi
-	jnc	.stl
-
-.allok:	add	edx,byte 4
-	jmps	.boucle
-
-.gest_spec2:
-	lodsb
-	cmp	al,'n'
-	jnz	.boucle
-	mov	al,0x0a
-	stosb
-	jmps	.boucle
-
-.out_pf:
-	xor	al,al
-	stosb
-	pop	edx
-	sub	edi,edx
-	sys_write STDOUT,printb,edi
-	popa
-	ENDP
-
-
-
-;-------------------------------------------------------------------
-;--------- memset -> fille an array of memory ----------------------	
+;void memset(void *s, int c, size_t n)
 ;
-; C syntax:	memset(addr,value,size)
+;fill an array of memory
 ;
-; ASM syntax:
-; 	EDX=pointer on memory to fill
-; 	AL=byte value to fill with
-; 	ECX=number of bytes to fill
-;
-%ifdef C_CALL
-PROC memset, addrs, fillv, sizev
-	push edx
-	push ecx
-	push eax
-	mov edx,addrs
-	mov ecx,sizev
-	mov eax,fillv
-%endif
-%ifdef ASM_CALL
+;<EDX	*s
+;<AL	c
+;<ECX	n
+
 memset:
-	push edx
-	push ecx
-	push eax
-%endif
+	push	edx
+	push	ecx
+	push	eax
 
+	xchg	eax,edx
+
+	__ADJUST_CDECL3 4*3,edx,eax,ecx
 
 %if __OPTIMIZE__=__O_SPEED__
-	cmp ecx,byte 20					; if length is below 20 , better use byte fill
-	jl short .below20
-	mov ah,al		; expand al to eax like alalalal
-	push ax
-	shl eax,16
-	pop ax
+	cmp	ecx,byte 20	;if length is below 20 , better use byte fill
+	jl	.below20
+	mov	ah,al		;expand al to eax like alalalal
+	push	ax
+	shl	eax,16
+	pop	ax
 .lalign:
-	test dl,3					; align edx on a 4 multiple
-	jz short .align1
-	mov [edx],al
-	inc edx
-	dec ecx
-	jnz short .lalign
-	jmp short .memfin
+	test	dl,3		;align edx on a 4 multiple
+	jz	.align1
+	mov	[edx],al
+	inc	edx
+	dec	ecx
+	jnz	.lalign
+	jmps	.memfin
 .align1:
-	push ecx
-        shr ecx,3					; divide ecx by 8
+	push	ecx
+        shr	ecx,3		;divide ecx by 8
 	pushf
 .boucle:
-	mov [edx],eax				; then fill by 2 dword each times
-	mov [edx+4],eax				; it is faster than stosd (on PII)
-	add edx,byte 8
-	dec ecx
-	jnz short .boucle
+	mov	[edx],eax	;then fill by 2 dword each times
+	mov	[edx+4],eax	;it is faster than stosd (on PII)
+	add	edx,byte 8
+	dec	ecx
+	jnz	.boucle
 	popf
-	jnc short .boucle2
-	mov [edx],eax
-	add edx,byte 4
+	jnc	.boucle2
+	mov	[edx],eax
+	add	edx,byte 4
 .boucle2:
-	pop ecx
-        and ecx,byte 3
-        jz short .memfin
+	pop	ecx
+        and	ecx,byte 3
+        jz	.memfin
 .below20:
-	mov [edx+ecx-1],al
-	dec ecx
-	jnz short .below20
+	mov	[edx+ecx-1],al
+	dec	ecx
+	jnz	.below20
 .memfin:
-	pop eax
-	pop ecx
-	pop edx
 
-%else		;__O_SIZE
+%else		;__O_SIZE__
 
-	push edi
+	push	edi
 	cld
-	mov edi,edx
-	rep stosb
-	pop edi
+	mov	edi,edx
+	rep	stosb
+	pop	edi
 
-%endif
+%endif		;__OPTIMIZE__
 
-%ifdef C_CALL
-	pop ebp
-%endif
+	pop	eax
+	pop	ecx
+	pop	edx
 	ret
 
-
-;-------------------------------------------------------------------
-;------------ memcpy -> copy an array of memory
-; C syntax:	memset(dest, source , length)
-; ASM syntax:
-;	EDI=dest
-;	ESI=source
-;	ECX=length in bytes
+;void *memcpy(void *dest,const void *src, size_t n)
 ;
-%ifdef C_CALL
-PROC memcpy, dest, source, length
-%endif
-%ifdef ASM_CALL
+;<EDI	*dest
+;<ESI	*src
+;<ECX	n
+
 memcpy:
-%endif
+
 %if __OPTIMIZE__=__O_SPEED__
-	push ecx
-	push edi
-	push esi
+%define	_STACK_ADD 4*3
+	push	ecx
+	push	edi
+	push	esi
 %else
+%define	_STACK_ADD 4*8
 	pusha
 %endif
-%ifdef C_CALL
-	mov edi,dest
-	mov esi,source
-	mov ecx,length
-%endif
+
+	mov	edi,eax
+	mov	esi,edx
+	__ADJUST_CDECL3 _STACK_ADD,edi,esi,ecx
+
 	cld
-	rep movsb
+	rep	movsb
+
 %if __OPTIMIZE__=__O_SPEED__
-	pop esi
-	pop edi
-	pop ecx
+	pop	esi
+	pop	edi
+	pop	ecx
 %else
 	popa
 %endif
-%ifdef C_CALL
-	pop ebp
-%endif
+%undef	_STACK_ADD
+
 	ret
 
-;-------------------------------------------------------------------
-;------------ memcpyl -> copy an array of memory of dword ---------
-; source & dest must be dword aligned
-; C syntax:	memcpyl(dest, source , length)
-; ASM syntax:
-;	EDI=dest
-;	ESI=source
-;	ECX=length in dword (for example, for 1024 bytes -> ECX=256)
+;size_t strlen(const char *s)
 ;
-%ifdef C_CALL
-PROC memcpyl, dest2, source2, length2
-%endif
-%ifdef ASM_CALL
-memcpyl:
-%endif
-%if __OPTIMIZE__=__O_SPEED__
-	push ecx
-	push edi
-	push esi
-%else
-	pusha
-%endif
-%ifdef C_CALL
-	mov edi,dest2
-	mov esi,source2
-	mov ecx,length2
-%endif
-	cld
-	rep movsd
-%if __OPTIMIZE__=__O_SPEED__
-	pop esi
-	pop edi
-	pop ecx
-%else
-	popa
-%endif
-%ifdef C_CALL
-	pop ebp
-%endif
-	ret
-
-;----------------------------------------------------------------------
-;---------------- strlen -> return length of a null-terminated string
-; C syntax:
-;			unsigned long strlen(*string)
-;			return length in eax
+;<EDX	*s
 ;
-; assembly syntax:
-; 			EDX=pointer on string
-;			return length in eax
-%ifdef	C_CALL
-	PROC strlen, strlen_string
-	mov	edx,strlen_string
-%endif
+;>EAX
 
-%ifdef ASM_CALL
 strlen:
-%endif
+	__ADJUST_CDECL3 0,eax
+
+	mov	edx,eax
 
 %if __OPTIMIZE__=__O_SPEED__
 	push	ecx
-	mov	eax,edx
 	test	dl,3
 	jz	.boucle
 	cmp	byte[eax],0
@@ -625,25 +487,183 @@ strlen:
 	jnc	.boucle
 	dec	eax
 
-%endif
+%endif		;__OPTIMIZE__
 
-%ifdef C_CALL
-	ENDP
-%endif
-
-%ifdef ASM_CALL
 	ret
-%endif
 
-;---------------------------------------------------------------------------
-; inet_aton:   convert IP adress ascii string, to 32 bit network oriented
+;itoa (unsigned long value, char *string, int radix)
+;
+;print 32 bit number as binary,octal,decimal,or hexadecimal value
+;
+;<EAX	unsigned long value
+;<EDI	char *string
+;<ECX	base    (2, 8, 10, 16, or another one)
 
-PROC inet_aton, char_cp, in_addr
-
+itoa:
 	pusha
+
+	mov	edi,edx
+
+	__ADJUST_CDECL3 4*8,eax,edi,ecx
+.now:
+	call	.printB
+	mov	byte [edi],0	;zero terminate the string 
+	popa
+	ret
+
+.printB:
+	sub	edx,edx 
+	div	ecx 
+	test	eax,eax 
+	jz	.print0
+	push	edx
+	call	.printB
+	pop	edx
+.print0:
+	add	dl,'0'
+	cmp	dl,'9'
+	jle	.print1
+	add	dl,0x27
+.print1:
+	mov	[edi],dl
+ 	inc	edi
+ 	ret
+
+;int sprintf(char *str, const char *format, ...)
+;
+;
+
+sprintf:
+	pusha
+	
+	lea	edx,[esp + 4*8 + 12]	;preload argument (dangerous?)
+	mov	esi,[esp + 4*8 + 8]	;*format
+	mov	edi,[esp + 4*8 + 4]	;*str
+
+	push	edi
+
 	cld
-	mov	esi,char_cp
-	mov	edi,in_addr
+.boucle:
+	lodsb
+	test	al,al
+	jz	.out_pf
+	cmp	al,'%'
+	jz	.gest_spec
+;	cmp	al,'\'		;is it really needed?
+;	jz	.gest_spec2	;or compiler expands these characters?
+.store:
+	stosb
+	jmps	.boucle
+.gest_spec:
+	mov	ebx,[edx]
+	lodsb
+
+	_mov	ecx,10
+	cmp	al,'d'
+	jz	.gestf
+	_mov	ecx,16
+	cmp	al,'x'
+	jz	.gestf
+	_mov	ecx,8
+	cmp	al,'o'
+	jz	.gestf
+	_mov	ecx,2
+	cmp	al,'b'
+	jz	.gestf
+	cmp	al,'c'
+	jz	.store
+	cmp	al,'s'
+	jnz	.boucle
+.copyit:			;copy string in args to output buffer
+	mov	al,[ebx]
+	test	al,al		;string is null terminated
+	jz	.allok
+	stosb
+	inc	ebx
+	jmps	.copyit
+
+.gestf:
+	pusha
+	mov	eax,ebx
+	call	itoa.printB
+	mov	byte [edi],0	;zero terminate the string 
+	popa
+
+.stl:	cmp	byte [edi],1
+	inc	edi
+	jnc	.stl
+	dec	edi
+
+.allok:	add	edx,byte 4
+	jmps	.boucle
+
+;.gest_spec2:
+;	lodsb
+;	mov	ah,__n
+;	cmp	al,'n'
+;	jz	.s2
+;	mov	ah,__t
+;	cmp	al,'t'
+;	jnz	.boucle
+;.s2:
+;	mov	al,ah
+;	stosb
+;	jmps	.boucle
+
+.out_pf:
+	xor	al,al
+	stosb
+	pop	edx
+	sub	edi,edx
+	dec	edi		;do not write trailing 0
+	mov	[__eax],edi
+	popa
+	ret
+
+;int printf(const char *format, ...)
+;
+;uses rather dangerous approach
+
+printf:
+%define _sf	0x1000
+	sub	esp,_sf			;create buffer (dangerous!!)
+    	pusha
+	mov	ebp,[esp + 4 * 8 + _sf]	;save return address
+	lea	esi,[esp + 4 * 8]	;here will our buffer begin
+	add	esp,4 * 8 + _sf		;rewind stack back
+	mov	[esp],esi		;replace return address with buffer
+	call	sprintf
+	mov	[esp],ebp		;restore return address
+	sub	esp,4 * 8 + _sf		;substitute stack
+
+	sys_write STDOUT,esi,eax
+
+	mov	[__eax + _sf],eax
+	popa
+	add	esp,_sf
+	ret
+%undef	_sf
+
+;int inet_aton(const char *cp, struct in_addr *inp)
+;
+;convert IP address ascii string to 32 bit network oriented
+;
+;<ESI	*cp
+;<EDI	*inp
+;
+;>EAX
+
+inet_aton:
+	push	esi
+	push	edi
+	push	edx
+
+	mov	esi,eax
+	mov	edi,edx
+
+	__ADJUST_CDECL3	4*3,esi,edi
+
+	cld
 	_mov	ecx,4
 ; convert xx.xx.xx.xx  to  network notation
 .conv:	xor	edx,edx
@@ -657,88 +677,79 @@ PROC inet_aton, char_cp, in_addr
 .loop1:	mov	al,dl
 	stosb
 	loop	.next
-	popa
-	ENDP
 
+	xor	eax,eax		;assume address was valid
 
-
-;---------------------------------------------------------------------
-; --  Strtol -->    convert string in npt to a long integer value
-;		    according to given base (between 2 and 36)
-;		    if enptr if not 0 , it is the end of the string
-;		   else the string is null-terminated
-;
-; C syntax:  long int Strtol(const char *nptr, char **endptr, int base)
-;
-; Assembly syntax:
-; 			EDI point on string
-; 			ECX=base    (2, 8, 10, 16, or another one max=36)
-; 			ESI=0 if string is null-terminated
-;			    else ESI=address of end of string
-;	       Return: EAX=32 bit value
-
-%ifdef C_CALL
-PROC Strtol, nptr, endptr,  base
-	push edi
-        push esi
-        push ebx
-        push ecx
-	mov edi,nptr
-	mov esi,endptr
-	mov ecx,base
-%endif
-%ifdef ASM_CALL
-Strtol:
-	push edi
-        push ebx
-%endif
-	test ecx,ecx
-        cmovz ecx,[b_default]
-        xor eax,eax
-	xor ebx,ebx
-.parse1:
-	cmp byte[edi],32
-	jnz short .parse2
-        inc edi
-        jmp short .parse1
-.parse2:
-	cmp word[edi],'0x'
-        jnz short .next
-        _mov ecx,16
-	add edi,byte 2
-.next:	mov bl,[edi]
-	sub bl,'0'
-        jb short .done
-        cmp bl,9
-        jbe short .ok
-        sub bl,7
-        cmp bl,35
-        jbe short .ok
-        sub bl,32
-.ok:	imul ecx
-	add eax,ebx
-        inc edi
-        cmp edi,esi
-        jz short .done
-        jmp short .next
-.done:
-%ifdef C_CALL
-	pop ecx
-        pop ebx
-        pop esi
-        pop edi
-        pop ebp
-%endif
-%ifdef ASM_CALL
-	pop ebx
-        pop edi
-%endif
+	pop	edx
+	pop	edi
+	pop	esi
 	ret
-b_default:	dd 10		; default base to use
+
+;long strtol(const char *nptr, char **endptr, int base)
+;
+;convert string in npt to a long integer value
+;according to given base (between 2 and 36)
+;if enptr if not 0, it is the end of the string
+;else the string is null-terminated
+;
+;<EDI	const char *nptr
+;<ESI	char **endptr, or 0 if string is null-terminated
+;<ECX	int base (2, 8, 10, 16, or another one max=36)
+;
+;>EAX
+
+strtol:
+	push	edi
+        push	esi
+        push	ebx
+        push	ecx
+
+	mov	edi,eax
+	mov	esi,edx
+	__ADJUST_CDECL3 4*4,edi,esi,ecx
+
+	test	ecx,ecx
+	jnz	.base_ok
+	_mov	ecx,10		;default base to use
+.base_ok:
+        xor	eax,eax
+	xor	ebx,ebx
+.parse1:
+	cmp	byte [edi],32
+	jnz	.parse2
+        inc	edi
+        jmps	.parse1
+.parse2:
+	cmp	word[edi],'0x'
+        jnz	.next
+        _mov	ecx,16
+	add	edi,byte 2
+.next:	mov	bl,[edi]
+	sub	bl,'0'
+        jb	.done
+        cmp	bl,9
+        jbe	.ok
+        sub	bl,7
+        cmp	bl,35
+        jbe	.ok
+        sub	bl,32
+.ok:	imul	ecx
+	add	eax,ebx
+        inc	edi
+        cmp	edi,esi
+	jnz	.next
+.done:
+	pop	ecx
+        pop	ebx
+        pop	esi
+        pop	edi
+	ret
 
 ;
+;unused functions
 ;
-;
+
+%macro _UNUSED_ 0
 
 ;
 ;convert 32 bit number to hex string
@@ -764,10 +775,10 @@ LongToStr:
 	mov	eax,[ebp]
 	div	ecx
 	mov	[ebp],eax
-        mov     al,dl
+	mov     al,dl
 
 ;dec convertion
-;	add	al,'0'
+	add	al,'0'
 ;hex convertion
 	add	al,0x90
 	daa
@@ -828,22 +839,54 @@ StrToLong:
 	pop	ebx
 	ret
 
+Oldstrlen:
+	_enter
+%if  __OPTIMIZE__=__O_SIZE__
+	push	edi
+	mov	edi,[esp + 8]
+	mov	eax,edi
+	dec	edi
+.l1:
+	inc	edi
+	cmp	[edi],byte 0
+	jnz	.l1
+	xchg	eax,edi
+	sub	eax,edi
+	pop	edi
+%else
+; (NK)
+; note: below is classic variant of strlen
+; if not needed to save ecx register then size of classic code
+; will be same as above 
+; remark: fastcall version of strlen will on 2 bytes less than cdecl
+	push	esi
+	push	ecx
+	mov	esi,[esp + 12]
+	xor	eax,eax
+        or	ecx,byte -1
+	repne	scasb
+	not	ecx
+	mov	eax,ecx
+	dec	eax
+	pop	ecx
+	pop	esi
+%endif
+	_leave
+
+
+%endmacro ;_UNUSED_
+
 UDATASEG
 
-global errno
+;
+;store them within caller's image
+;
+
+global errno:data 4
+global	__cc:data 4
+
 errno	resd	1
-
-__eax	resd	1
-__ebx	resd	1
-__ecx	resd	1
-__edx	resd	1
-__esi	resd	1
-__edi	resd	1
-__ebp	resd	1
-
-__cc	resb	1	;calling convention (how many registers for fastcall)
+__cc	resd	1	;calling convention (how many registers for fastcall)
 			;0 = cdecl
-
-printb	resd	0x2000	;buffer for fprintf temporary formatted string
 
 END

@@ -1,23 +1,22 @@
-;Copyright (C) 1996-2000 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1996-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: leaves.asm,v 1.5 2000/09/03 16:13:54 konst Exp $
+;$Id: leaves.asm,v 1.6 2001/01/21 15:18:46 konst Exp $
 ;
 ;leaves		-	Linux fbcon intro in 396 bytes
 ;
 ;Once I've took one of my old DOS intros made in tasm, and rewrote it
-;for nasm and Linux/fbcon.. He-he.. I've got 396 bytes.
-;(DOS 16-bit version was 381 byte long)
+;for nasm and Linux/fbcon.. Uhm.. I've got 396 bytes.
+;(DOS 16-bit version was 381 bytes long)
 ;
 ;This intro is the smallest implementation
 ;of linear transformation with recursion (AFAIK).
 ;
-;This intro was presented on a few parties and produced
-;an explosion of interest :) (however it wasn't nominated,
-;because it doesn't fit into rules [yet])
+;This intro was showed on few parties and produced an explosion of interest :)
+;(however it wasn't nominated, because it doesn't fit into rules [yet])
 ;
 ;Intro MUST be run only in 640x480x256 mode (vga=0x301 in lilo.conf).
 ;You will see garbage or incorrect colors in other modes.
-;
+;(of course you must have framebuffer support enabled in your kernel)
 ;Warning! Intro assumes that everything is ok with the system (/dev/fb0 exists,
 ;can be opened and mmap()ed, correct video mode is set, and so on). So, if you
 ;ain't root, check permissions on /dev/fb0 first, or you will not see anything.
@@ -32,8 +31,8 @@
 ;Well, actually source is badly optimized for size, contains
 ;some Linux specific tricks, and can be hard to understand.
 ;
-;Source is quite portable, you only need to implement
-;putpixel() and initialization part for your OS.
+;Source is quite portable, your OS must support 32bit flat memory model,
+;and you need to implement putpixel() and initialization part for your OS.
 ;
 ;Ah, /if haven't guessed yet/ license is GPL, so enjoy! :)
 
@@ -79,18 +78,15 @@ leaves:
         test	cl,cl
 	jz	_return
 
+	fld	dword [ebp+16]	;[f]
         mov	[esp-13],cl
-
         mov	eax,[edi]
 
+	fld	st0
         push	ecx
-
         sub	esp,byte 8
+	fld	st0
 	mov	edx,esp
-
-	fld	dword [ebp+16]	;[f]
-	fld	st0
-	fld	st0
 	fmul	dword [edx+16]
 	fadd	dword [ebp+24]	;[y1coef]
 	fistp	dword [edx]

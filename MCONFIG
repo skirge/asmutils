@@ -1,8 +1,8 @@
-# Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
+# Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 #
 # MCONFIG -- Configuration stuff for asmutils
 #
-# $Id: MCONFIG,v 1.2 2000/12/10 08:20:36 konst Exp $
+# $Id: MCONFIG,v 1.3 2001/01/21 15:18:46 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -28,7 +28,7 @@ OPTIMIZE = SIZE
 
 # Include version stamp into binaries
 
-#STAMP = y
+STAMP = y
 
 # Use custom startup code
 # (currently works only with C style main() stack and BeOS)
@@ -45,28 +45,38 @@ ELF_MACROS = y
 
 #---------------------------------------------------------------------------#
 
+VERSION = 0.12
+
 ${OS} = y
 
-AS = nasm
-LD = ld
-CC = gcc
-MAKE = gmake
-LN = ln -s
-RM = rm -f
-CP = cp -Rp
-MKDIR = mkdir -p
+AS := nasm
+LD := ld
+CC := gcc
+MAKE := gmake
 
-ASFLAGS = -w+orphan-labels -w+macro-params -i../inc/
-CFLAGS = -Wall -O2 -fomit-frame-pointer -nostartfiles -nostdlib -Wl,-e,main
-DEFINES = -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__
+#
+# avoid using asmutils in the build if PATH has '.'
+#
+
+MKDIR := $(shell which mkdir) -p
+CHMOD := $(shell which chmod) +x
+LN := $(shell which ln) -s
+RM := $(shell which rm) -f
+CP := $(shell which cp)
+ifdef LINUX
+CP += -a
+else
+CP += -Rp
+endif
+
+LDFLAGS :=
+ASFLAGS := -w+orphan-labels -w+macro-params -i../inc/
+DEFINES := -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__
 
 ifdef DEBUG
-LDFLAGS =
 ASFLAGS += -g
 ELF_MACROS =
 DEFINES += -DDEBUG
-else
-LDFLAGS =
 endif
 
 ifdef BUILD_LIB
@@ -101,7 +111,7 @@ ifdef KERNEL
 DEFINES += -D__KERNEL__=$(KERNEL) 
 endif
 ifdef STAMP
-DEFINES += -DSTAMP_VERSION="'asmutils 0.10'" -DSTAMP_DATE="'$(shell date "+%d-%b-%Y %H:%M")'"
+DEFINES += -DSTAMP_VERSION="'asmutils $(VERSION)'" -DSTAMP_DATE="'$(shell date "+%d-%b-%Y %H:%M")'"
 endif
 
 ifdef ELF_MACROS
@@ -111,7 +121,7 @@ DEFINES += -D__ELF_MACROS__
 
 %:	%.asm
 	$(AS) $(ASFLAGS) $(DEFINES) $<
-	chmod +x $*
+	$(CHMOD) $*
 
 else
 
@@ -124,7 +134,9 @@ endif
 DEFINES += -D__AOUT__
 else
 ASFLAGS += -f elf
+ifndef DEBUG
 LDFLAGS += -s
+endif
 STRIP = strip -x -R .note -R .comment
 #STRIP = sstrip
 endif
@@ -137,9 +149,5 @@ endif
 ifndef DEBUG
 	$(STRIP) $*
 endif
-
-%:	%.c
-	$(CC) $(CFLAGS) -o $@ $< $(LIBSO)
-	$(CC) $(CFLAGS) -mregparm=3 -D__FASTCALL__ -o $@.fc $< $(LIBSO)
 
 endif
