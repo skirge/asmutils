@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@fel.cvut.cz>, <ruik@atlas.cz>
 ;
-;$Id: tar.asm,v 1.4 2002/09/09 15:53:34 konst Exp $
+;$Id: tar.asm,v 1.5 2002/11/04 11:38:26 konst Exp $
 ;
 ;hackers' tar
 ;
@@ -17,6 +17,8 @@
 ;			selection of only certain filenames for "tar -x" (JH)
 ;0.3	02-Sep-2002	fixed bugs in TAR_CHOWN, octal_to_int, empty file
 ;			initial archive creation code: only self compat for now
+;0.4			???
+;0.5	04-Oct-2002	Fixed pipe bug in 2.0, TAR_SUID (JH)
 
 
 %include "system.inc"
@@ -27,6 +29,7 @@
 %define TAR_CHOWN
 %define TAR_MATCH
 %define TAR_CREATE
+%define TAR_SUID
 
 ;A tar archive consists of 512-byte blocks.
 ;  Each file in the archive has a header block followed by 0+ data blocks.
@@ -218,6 +221,7 @@ convert_numbers:
 	mov 	esi, tar.mode
 	lea	edi, [esi + 8]
 	call 	octal_to_int
+	;and	eax, 07777q
 	mov 	dword [esi],eax
 	;lea 	esi,[tar.uid]
 	mov	esi, edi
@@ -305,10 +309,22 @@ tar_archive_close:
 	ret
 
 tar_archive_extract:
+%ifndef TAR_SUID
 	xor	ebx, ebx
 	sys_umask
+%endif
 .read_next:
-	sys_read [tar_handle],tar,0512
+	xor	edx, edx
+	mov	dh, 2
+	mov	ecx, tar
+	mov	ebx, [tar_handle]
+.read_next2:
+	sys_read [tar_handle]
+	or	eax, eax
+	jna	near	.error_read
+	add	ecx, eax
+	sub	edx, eax
+	ja	.read_next2
 	;sys_write STDOUT, tar.name, 0100
 	xor 	eax,eax
 	cmp 	byte [tar.version],' '
@@ -361,6 +377,9 @@ tar_archive_extract:
 	js   	.error
 %ifdef TAR_CHOWN
 	sys_lchown FILENAME,[tar.uid],[tar.gid]
+%endif
+%ifdef TAR_SUID
+	sys_chmod	FILENAME, [tar.mode]
 %endif
 	jmp	.read_next	
 .error_magic:
@@ -429,43 +448,44 @@ tar_archive_extract:
 	ret
 .create_file:
 	call convert_size
-	sys_open FILENAME, O_CREAT|O_WRONLY|O_TRUNC,[tar.mode]  ;todo: other flags
+	sys_open FILENAME, O_CREAT|O_WRONLY|O_TRUNC, [tar.mode]   ;todo: other flags
 .crc	test 	eax,eax
 	js 	near .error_open
 	mov 	[file_handle],eax
-	xchg 	ebx,eax
-	mov 	edi,[tar.size]
-	mov 	edx,edi
-	add	edx, 511
-	xor 	dl,dl
-	and 	dh,11111110b
-	cmp 	edx,BUFF_SIZE
-	jb	.empty_file
-	je 	.fit_whole
-	mov 	ecx,edx
-	shr 	ecx,BUFF_DIV
-	dec	ecx
-.copy_loop:
-	push 	ecx
-	sys_read [tar_handle],buffer,BUFF_SIZE
-	sys_write [file_handle],EMPTY,EMPTY
-	pop 	ecx
-	loop 	.copy_loop
-	mov 	edx,edi
-	shr 	edx,BUFF_DIV
-	shl 	edx,BUFF_DIV
-	sub 	edi,edx
-	mov 	edx,edi
-	xor 	dl,dl
-	and 	dh,11111110b
-	add 	edx,0x200
-.fit_whole:
-	sys_read [tar_handle],buffer,EMPTY
-	sys_write [file_handle],EMPTY,edi
-.empty_file:
+	xchg	eax, ebx
+	mov	esi, [tar.size]
+	mov	ecx, buffer
+.read_block:
+	xor	edx, edx
+	mov	dh, 2
+.read_next_block:
+	or	esi, esi
+	jz	.empty
+.reread_block:
+	sys_read	[tar_handle]
+	or	eax, eax
+	jna	.error_read
+	add	ecx, eax
+	sub	edx, eax
+	ja	.reread_block
+	xor	edx, edx
+	mov	dh, 2
+	sub	esi, edx
+	js	.lastblock
+	sys_write	[file_handle], buffer
+	jmps	.read_next_block
+.lastblock:
+	add	edx, esi
+	sys_write	[file_handle], buffer
+.empty:
 	sys_close EMPTY
 .error_open:
 	ret
+
+.error_read:
+	sys_write	STDERR, .error_read_msg, .lookup_table - .error_read_msg
+	sys_exit
+.error_read_msg	db	'IO Error', 10
 
 .lookup_table dd .create_file,.create_hardlink,.create_symlink,.create_char
               dd .create_block,.create_dir,.create_fifo,.create_contigous
