@@ -1,7 +1,7 @@
 ;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Yuri Ivliev <yuru@black.cat.kazan.su>
 ;
-;$Id: pwd.asm,v 1.4 2000/09/03 16:13:54 konst Exp $
+;$Id: pwd.asm,v 1.5 2000/09/03 16:34:57 konst Exp $
 ;
 ;hackers' pwd
 ;
@@ -106,7 +106,7 @@ START:
 ;;;;	lea	ebx,[esi+dirent.d_name]
 	mov	ebx,ebp
 	xor	ecx,ecx
-.next.d_name.1
+.next.d_name.1:
 ;;;;	mov	al,[ebx]
 ;;;;	inc	ebx
 	mov	al,[esi+ecx+dirent.d_name]
