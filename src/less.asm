@@ -1,6 +1,6 @@
 ; Copyright (C) 2001, Tiago Gasiba (ee97034@fe.up.pt)
 ;
-; $Id: less.asm,v 1.1 2001/08/24 09:47:28 konst Exp $
+; $Id: less.asm,v 1.2 2001/09/10 06:18:41 konst Exp $
 ;
 ; hacker's less
 ;
@@ -15,8 +15,12 @@
 ;	- optimize source code
 ;
 ; known bugs:
-;	- there are some problems with TAB's
+;	- lines numbers reported may not correspond to true line numbers
 ; 
+;
+; 0.01    24/08/01     initial release
+; 0.02    08/09/01     some bug fixes
+;
 
 %include "system.inc"
 
@@ -25,12 +29,17 @@ NumLines		equ	24
 
 KEY_DOWN		equ	0x00425b1b
 KEY_UP			equ	0x00415b1b
-KEY_Q			equ	0x00000071
+KEY_Q			equ	0x00000051
+KEY_q			equ	0x00000071
 KEY_PGDOWN		equ	0x7e365b1b
 KEY_PGUP		equ	0x7e355b1b
+KEY_HOME		equ	0x7e315b1b
+KEY_END			equ	0x7e345b1b
 
 BUFF_IN_LEN		equ	8192
 MEM_RESERV		equ	1024
+
+TAB			equ	9
 
 CODESEG
 
@@ -81,20 +90,29 @@ main:
 		sys_read	STDERR,key_pressed,4
 		mov	eax,[key_pressed]
 
+		cmp	eax,KEY_q		; KEY_q event
+		je	.terminar
+
 		cmp	eax,KEY_Q		; KEY_Q event
 		je	.terminar
 
-		cmp	eax,KEY_DOWN
-		je	event_key_down
-						; KEY_DOWN event
-		cmp	eax,KEY_UP
+		cmp	eax,KEY_UP		; KEY_UP event
 		je	event_key_up
 
-		cmp	eax,KEY_PGDOWN
+		cmp	eax,KEY_PGDOWN		; KEY_PGDOWN event
 		je	near event_key_pgdown
 
-		cmp	eax,KEY_PGUP
+		cmp	eax,KEY_PGUP		; KEY_PGUP event
 		je	near	event_key_pgup
+
+		cmp	eax,KEY_END		; KEY_END event
+		je	near	event_key_end
+
+		cmp	eax,KEY_HOME		; KEY_HOME event
+		je	near	event_key_home
+
+		cmp	eax,KEY_DOWN		; KEY_DOWN event
+		je	event_key_down
 
 		jmp	short	.outra_vez
 .terminar:
@@ -108,7 +126,7 @@ main:
 ;=====================================================
 event_key_up:
 	cmp	dword [pos],0
-	je	near	bell
+	je	near bell
 	cmp	dword [nlines],NumLines
 	jl	near	bell
 	dec	dword [pos]
@@ -119,11 +137,11 @@ event_key_up:
 ;=====================================================
 event_key_down:
 	cmp	dword [nlines],NumLines
-	jl	near	bell
+	jl	near bell
 	mov	eax,dword [nlines]
 	sub	eax,NumLines
 	cmp	dword [pos],eax
-	je	bell
+	je	near bell
 	inc	dword [pos]
 	jmp	near main.reescreve
 
@@ -161,6 +179,24 @@ event_key_pgup:
 	mov	dword [pos],eax
 	jmp	near main.reescreve
 
+;=====================================================
+;                  event_key_end
+;=====================================================
+event_key_end:
+	mov	eax,dword [nlines]
+	cmp	eax,NumLines
+	jl	bell
+	sub	eax,NumLines
+	push	eax
+	pop	dword [pos]
+	jmp	short bell
+
+;=====================================================
+;                  event_key_home
+;=====================================================
+event_key_home:
+	push	byte	0
+	pop	dword	[pos]
 bell:
 	sys_write	STDOUT,bell_str,bell_str_len
 	jmp	near main.reescreve
@@ -212,26 +248,32 @@ init_lines:
 	mov	ebp,dword [lines]
 	mov	ecx,ebp
 	sub	ecx,esi
-	mov	edx,LineWidth
+	_mov	edx,0
 	mov	edi,ebp
 .lbl1:
 	lodsb
-	dec	edx
 	cmp	al,0xa
-	je	.lbl2
-	test	edx,edx
-	jnz	.lbl4
+	je	.lbl3
+	cmp	al,TAB
+	jne	.lbl2
+	or	edx,0x7
 .lbl2:
+;	inc	edx
+;	cmp	edx,LineWidth
+	inc	dx			; hope this can do
+	cmp     dx,LineWidth		; this one too
+	jl	.lbl5
+.lbl3:
 	add	ebp,4
 	cmp	edi,ebp
-	jg	.lbl3
+	jg	.lbl4
 	add	edi,MEM_RESERV
 	sys_brk	edi
-.lbl3:
+.lbl4:
 	mov	dword [ebp],esi
 	inc	dword [nlines]
-	mov	edx,LineWidth
-.lbl4:
+	mov	edx,0
+.lbl5:
 	loop	.lbl1
 .fim:
 	popa
@@ -261,8 +303,15 @@ write_lines:
 	push	edx
 	mov	ecx,dword [ebp]
 	mov	edx,dword [ebp+4]
+	push	edx
 	sub	edx,ecx
 	sys_write	STDOUT
+	pop	edx
+	dec	edx
+	cmp	byte	[edx],0xa
+	je	.lbl2
+	sys_write	STDOUT,NL,1
+.lbl2:
 	add	ebp,4
 	pop	edx
 	pop	ecx
@@ -282,7 +331,7 @@ write_lines:
 itoa:
 	_mov	ebx,10
 	_mov	ecx,0
-	cmp	eax,0
+	test	eax,eax
 	jne	.lbl1
 	push	byte 0x30
 	inc	ecx
