@@ -2,13 +2,17 @@
 #
 # MCONFIG -- Configuration stuff for asmutils
 #
-# $Id: MCONFIG,v 1.5 2001/03/18 07:08:25 konst Exp $
+# $Id: MCONFIG,v 1.6 2001/07/20 07:06:06 konst Exp $
 
 #---------------------------------------------------------------------------#
 
 #			CONFIGURATION PARAMETERS
 
 #---------------------------------------------------------------------------#
+
+# Target CPU (386,486,586,686)
+
+CPU = 386
 
 # Target Operating System (LINUX/FREEBSD/NETBSD/OPENBSD/BEOS/ATHEOS/LIBC)
 
@@ -45,7 +49,7 @@ ELF_MACROS = y
 
 #---------------------------------------------------------------------------#
 
-VERSION = 0.14
+VERSION = 0.15
 
 ${OS} = y
 
@@ -71,7 +75,7 @@ endif
 
 LDFLAGS :=
 ASFLAGS := -w+orphan-labels -w+macro-params -i../inc/
-DEFINES := -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__
+DEFINES := -D__CPU__=$(CPU) -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__
 
 ifdef DEBUG
 ASFLAGS += -g

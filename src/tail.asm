@@ -1,6 +1,6 @@
-;Copyright (C) 2001 Jani Monoses <jani@vitrualro.ic.ro>
+;Copyright (C) 2001 Jani Monoses <jani@astechnix.ro>
 ;
-;$Id: tail.asm,v 1.1 2001/05/16 09:47:01 konst Exp $
+;$Id: tail.asm,v 1.2 2001/07/20 07:04:18 konst Exp $
 ;
 ;hackers' tail
 ;

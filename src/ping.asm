@@ -1,6 +1,6 @@
-;Copyright (C) 2001 Jani Monoses <jani@vitrualro.ic.ro>
+;Copyright (C) 2001 Jani Monoses <jani@astechnix.ro>
 ;
-;$Id: ping.asm,v 1.1 2001/03/18 07:08:25 konst Exp $
+;$Id: ping.asm,v 1.2 2001/07/20 07:04:18 konst Exp $
 ;
 ;hackers' ping
 ;
@@ -43,6 +43,7 @@ repl db ' is alive!', 10
 
 %assign	icmp_packet_len	8
 %assign	repl_len	11
+%assign TIMEOUT		5					;default timeout for select()
 
 START:
 	pop		ebx					;get argument count
@@ -50,12 +51,17 @@ START:
 	jz		near .exit				;if no args bail out	
 	pop		ebx					;arg 0 - program name
 	pop		esi					;arg 1 - IP number
-	push		esi					;save for printing	
+	
+	push		byte repl_len				;push args for sys_writev
+	push		dword repl				;(reply message)
+
 
 	mov		edi, sockaddr_in
 	call		.ip2int					;fill in sin_addr.s_addr 
 	mov		dword[edi], AF_INET | (IPPROTO_IP << 16);fill in sin_family and sin_port
-	push		edx					;length of arg 1 
+
+	push		edx					;more args for sys_writev
+	push		esi					;(IP number)	
 
 	sys_socket	AF_INET, SOCK_RAW, IPPROTO_ICMP		;create raw socket
 	test		eax,eax									
@@ -68,7 +74,7 @@ START:
 	js		.exit
 	
 	
-	mov		byte[timeout], 5			;timeout of 5 seconds for select
+	mov		byte[timeout], TIMEOUT			;timeout in seconds for select
 
 .recvloop:	
 
@@ -84,11 +90,9 @@ START:
 	cmp		byte[edi+20], 0				;is it an ECHO_REPLY?
 	jne		.recvloop				
 
-	pop		edx					;lenght of arg 1 - IP number
-	pop		esi					;address of arg 1	
+;	arguments are already on the stack for sys_writev
 
-	sys_write	STDOUT, esi, edx	 		;write IP
-	sys_write	STDOUT, repl, repl_len			;write alive!
+	sys_writev	STDOUT, esp, 2
 .exit:
 	sys_exit	eax					
 
@@ -101,7 +105,7 @@ START:
 .cc:	
 	xor		ebx,ebx
 .c:	
-	lodsb
+	mov		al,[esi+edx]
 	inc		edx
 	sub		al,'0'
 	jb		.next

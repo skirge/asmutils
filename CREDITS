@@ -8,7 +8,7 @@ beautification by scripts.  The fields are: name (N), email (E),
 web-address (W), PGP key ID and fingerprint (P), description (D),
 and snail-mail address (S).
 
-$Id: CREDITS,v 1.9 2001/03/18 07:08:25 konst Exp $
+$Id: CREDITS,v 1.10 2001/07/20 07:06:06 konst Exp $
 
 ----------
 
@@ -36,6 +36,10 @@ N: Tani Hosokawa (TH)
 E: unknown@riverstyx.net
 D: OpenBSD port
 
+N: Joshua Hudson (JH)
+E: joshudson@hotmail.com
+D: paste.asm
+
 N: Yuri Ivliev (YI)
 E: yuru@black.cat.kazan.su
 D: pwd.asm (stat based part)
@@ -55,11 +59,11 @@ D: httpd.asm rmmod.asm true.asm yes.asm
 
 N: Rudolf Marek (RM)
 E: marekr2@feld.cvut.cz
-D: dd.asm
+D: dd.asm heap.asm
 
 N: Jani Monoses (JM)
-E: jani@vitrualro.ic.ro
-D: ping.asm
+E: jani@astechnix.ro
+D: ping.asm tail.asm
 
 N: Edward Popkov (EP)
 E: evpopkov@carry.neonet.lv
@@ -67,13 +71,21 @@ D: env.asm
 
 N: Brian Raiter (BR)
 E: breadbox@muppetlabs.com
-D: date.asm factor.asm hexdump.asm ls.asm
+D: date.asm factor.asm hexdump.asm ls.asm snake.asm
 D: elf.inc
 
 N: H-Peter Recktenwald (PR)
 E: phpr@snafu.de
 D: cpuinfo.asm extname.asm eject.asm (ccd extension)
 D: report.asm errno.inc
+
+N: Radu Bogdan Rusu (RR)
+E: veedee@asmania.com
+D: readelf.asm elfheader.inc
+
+N: Stanislav Ryabenkiy (SR)
+E: stani@ryabenkiy.com
+D: mknod.asm
 
 N: Karsten Scheibler (KS)
 E: karsten.scheibler@bigfoot.de
