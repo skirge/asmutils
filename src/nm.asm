@@ -1,6 +1,6 @@
 ; Copyright (C) 2002 Thomas M. Ogrisegg
 ;
-; $Id: nm.asm,v 1.1 2002/02/14 17:46:22 konst Exp $
+; $Id: nm.asm,v 1.2 2002/02/15 18:46:05 konst Exp $
 ;
 ; nm - list symbols from ELF binary
 ;
@@ -111,6 +111,7 @@ open:
 		sys_mmap NULL, eax, PROT_READ | PROT_WRITE, MAP_PRIVATE, [fd], 0
 		mov [ptr], eax
 		mov esi, eax
+		xor ecx,ecx
 		mov cx, [eax+elf_hdr.e_shnum]
 		add eax, [eax+elf_hdr.e_shoff]
 		sub eax, 40
