@@ -1,6 +1,6 @@
 ;Copyright (C) 2002 Attila Monoses <ata@email.ro>
 ;
-;$Id: ftpd.asm,v 1.2 2002/06/11 08:45:10 konst Exp $
+;$Id: ftpd.asm,v 1.3 2002/06/24 16:57:06 konst Exp $
 ;
 ;hackers' ftpd
 ;
@@ -502,6 +502,7 @@ START:
 ;               USER command
 ;-------------------------------------------------------------------------------------------
 .user:
+    sys_chdir [root]
     sys_chroot [root]
     mov ecx,rep_230
     jmps .misc_reply_get_command
