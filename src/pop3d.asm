@@ -1,10 +1,10 @@
 ;Copyright (C) 2002 Michal Medvecky <m.medvecky@sh.cvut.cz>
 ;
-;$Id: pop3.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
+;$Id: pop3d.asm,v 1.1 2002/08/14 16:56:29 konst Exp $
 ;
 ;pop3 server
 ;
-;syntax: pop3 /spool/dir/ port
+;syntax: pop3d /spool/dir/ port
 ;
 ;basic net operations taken from httpd.asm
 ;
