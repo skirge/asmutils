@@ -2,29 +2,29 @@
 			       asmutils
 			       ********
 
-			    (version 0.15)
+			    (version 0.16)
 
 			http://linuxassembly.org
 
 
-; BIG FAT WARNING:
+; THICK BOLDFACED WARNING:
 ;
-; THESE UTILITIES WORK WITH KERNEL DIRECTLY (UNLESS "LIBC" VERSION IS USED).
+; THESE UTILITIES COMMUNICATE WITH KERNEL DIRECTLY (except "LIBC" version).
 ; AUTHORS ARE NOT RESPONSIBLE FOR ANY DAMAGE THEY CAN DO TO YOUR SYSTEM.
-; THOUGH THEY WORKED ON MY BOX, BUT THEY CAN CRASH YOURS.
+; THOUGH THEY WORKED ON MY BOX, THEY CAN CRASH AND RUIN YOURS.
 ; NO WARRANTY. THIS IS DEVELOPMENT VERSION, USE SOLELY AT YOUR OWN RISK.
 
 
 Copyright information
 =====================
 
-All programs in this package are COPYRIGHTED by their authors,
-as shown in the source code and in CREDITS file.
+All programs in this package are *copyrighted* by their authors,
+as stated in the source code and in the CREDITS file.
 
 These programs are free software; you can redistribute them and/or modify
-them under the terms of the version 2 of the GNU General Public License
-as published by the Free Software Foundation.
-  
+them under the terms of the version 2 (and only version 2) of the GNU
+General Public License as published by the Free Software Foundation.
+
 These programs are distributed in the hope that they will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty
 of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
@@ -36,23 +36,25 @@ Description
 ===========
 
 asmutils is a set of miscellaneous utilities written in assembly language,
-targeted on embedded systems and small distributions (like rescue or
-installation disks); also it contains small libc and crypto library.
+targeted on embedded systems and small distributions (e.g. installation
+or rescue disks); also it contains a small libc and a crypto library.
 It features the smallest possible size and memory requirements,
-the fastest speed and good functionality. Currently project supports
-Linux and BSD family (FreeBSD, NetBSD, OpenBSD), BeOS and AtheOS support
-is in the works, and it is possible to port it to any i386 OS. 
+the fastest speed, and offers fairly good functionality.
+Now project supports Linux and BSD family (FreeBSD, OpenBSD, NetBSD);
+Unixware, Solaris, and AtheOS support is in beta stage (also there's
+no more supported BeOS port), and it is /theoretically/ possible to
+port it to any i386 OS. 
 
-Another goal of this package is to provide PORTABLE source code library,
+Another goal of this package is to provide *portable* source code library,
 and to encourage assembly programmers to write for Linux/UNIX.
 Usually UNIX is associated with C, and no one wants to deal with assembly..
 Browse the source, look -- it is simple. Read the docs, start to write,
 and you will like it; assembly programming is a lot of fun, especially
-when you deal with UNIX-like operating systems.
+when you deal with a UNIX-like operating systems.
 
-These utilities also may be useful for system administrators,
-there were several reports that they have rescued when libc crashed
-(when it was not possible to terminate some program with usual kill).
+These utilities also may be useful for system administrators;
+there were several reports that they have rescued when libc
+crashed and it was not possible to use usual system utilities.
 
 So, in one word, this package provides:
 
@@ -96,15 +98,19 @@ How to install
  src directory (do not expect any answer from program on --help switch).
  
  For details on compilation process examine doc/Asmutils-HOWTO,
- then edit MCONFIG, run 'make' and hopefully all will be done.
+ then edit MCONFIG, run '[g]make' and hopefully all will be done.
+
+ '[g]make install' creates bin directory in the source tree and stores
+ compiled files there (do not be afraid, it doesn't copy files elsewhere,
+ neither to /bin or /usr/bin, nor to /usr/local/bin).
 
 
 Other stuff
 ===========
 
  Contributions are welcome! If you wish to contribute
- please read Asmutils-HOWTO in doc directory!
+ please read the Asmutils-HOWTO in the doc directory!
 
- Do not forget to send feedback & bugreports to project maintainer.
+ Do not forget to send feedback and bugreports.
 
- $Id: README,v 1.12 2001/08/19 12:49:39 konst Exp $
+ $Id: README,v 1.13 2002/01/05 08:39:39 konst Exp $

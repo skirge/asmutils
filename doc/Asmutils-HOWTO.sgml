@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.11 2002/01/04 08:29:24 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.12 2002/01/05 08:38:18 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -22,8 +22,8 @@
     </affiliation>
 </author>
 
-<releaseinfo>Version 0.7</releaseinfo>
-<pubdate role="cvs">$Date: 2002/01/04 08:29:24 $</pubdate>
+<releaseinfo>Version 0.8</releaseinfo>
+<pubdate role="cvs">$Date: 2002/01/05 08:38:18 $</pubdate>
 
 <copyright>
 <year>1999-2002</year><holder>Konstantin Boldyshev</holder>
@@ -75,7 +75,7 @@ with no Invariant Sections, with no Front-Cover Texts, and no Back-Cover texts.
 <section><title>Before you begin</title>
 
 <para>
-I assume you are familiar with Unix and assembly language to an extent
+I assume you are familiar with UNIX and assembly language to an extent
 when you are able to understand what is written here.
 If you are unable to comprehend most of it,
 then probably this manuscript is not for you, sorry.
@@ -161,7 +161,7 @@ Well, to be sincere, do not expect LIBC port to work out-of-the-box.
 Instead, prepare to hack <filename>MCONFIG</filename> (hint:
 <function>STARTUP=y</function> may help if startup stack differs from usual),
 <filename>.inc</filename> files and source code to animate this malformation.
-After a couple of sleepless nigths you may understand that it is impossible
+After a couple of sleepless nights you may understand that it is impossible
 to get things right -- you are bypassing libc headers, and on various libc
 versions miscellaneous functions can be implemented as macros,
 or can be just missing (e.g. getdents on glibc 2.2.x).
@@ -209,23 +209,23 @@ There are three macros that make section definition as simple as possible:
 </para>
 
 <para>
-Program must have at least <function>CODESEG</function> (.text) section,
-other sections are optional.
+A program should have at least <function>CODESEG</function> (.text) section
+and <function>END</function> macro, other sections are optional.
 <function>CODESEG</function> is read-only,
 <function>DATASEG</function> and <function>UDATASEG</function> are read-write;
 i.e. you can place data in <function>CODESEG</function>
 as long as you will not change it.
 You can also define your own sections if you want, but there's very rare need
-of doing so. Each section (even if it is empty) will enlarge your file.
+to do so. Each section (even if it is empty) will enlarge your executable.
 </para>
 
 <para>
 <function>START</function> macro tells linker the entry point,
-and MUST be present.
+and MUST be present (if you are not making a library).
 </para>
 
 <para>
-So, program skeleton should look like:
+Thus, a program's skeleton should look like:
 </para>
 
 <para><programlisting>
@@ -235,15 +235,15 @@ CODESEG
 
 START:			;entry point
 
-    your_code_here
+			;code
 
 DATASEG
 
-    your_data_here
+			;data
 
 UDATASEG
 
-    your_bss_here
+			;bss
 
 END
 </programlisting></para>
@@ -305,7 +305,7 @@ you do need to include them manually.
 
 <para>
 This file stores generic constant definitions and structures
-(from libc headers), that are OS independent.
+(from libc headers) that are (as a rule) OS independent.
 If you add some defined constant,
 please do not forget to mention header file it was taken from.
 </para>
@@ -328,7 +328,7 @@ there can be up to <link linkend="six-arg">6</link> parameters
 (depends on syscall) on Linux, more on *BSD
 </para>
 
-<note id="six-arg"><para>
+<note id="six-arg"><para>
 Passing sixth parameter in <literal>ebp</literal>
 is valid only for Linux 2.4, previous Linux versions understand
 only 5 parameters in registers.
@@ -478,7 +478,7 @@ As a result, these tools create executables with unnecessary overhead.
 Some of this overhead can be removed afterwards using strip and/or
 sstrip, but not all of it.
 
-Therefore, as of version 0.05, the <application>asmutils</application> programs avoid using
+Therefore, as of version 0.05, the asmutils programs avoid using
 object files entirely, and instead define the ELF executable file
 images directly, byte for byte, using Nasm's "bin" output file format
 and the macros defined in elf.inc. These macros are defined here.
@@ -599,11 +599,11 @@ It is already functional and should be the right choice, check it out!
 Although <command>gdb</command> is source-level debugger,
 it can be used to debug pure assembly code
 (the simplest way is to place <function>int 3</function>
-instructions as breakpoints over your code).
+instructions as breakpoints across your code).
 And with some trickery you can force
 <command>gdb</command> to do what you need
-(unfortunately, nasm '-g' switch does not generate
-proper debug info for gdb; this is nasm bug, I think):
+(unfortunately nasm '-g' switch does not generate
+proper debug info for gdb yet):
 
 </para>
 
@@ -695,17 +695,15 @@ contribution practice; if you are the one, read with double attention.
 
 <para>
 <emphasis>Before you begin</emphasis> make sure you are using
-<emphasis>the latest</emphasis> version of <application>asmutils</application>,
-I can reject contributions based on old versions.
+<emphasis>the latest</emphasis> release of <application>asmutils</application>
+(available from the website),
+contributions based on old versions are (usually) rejected.
 </para>
 
 <para>
-So, get the latest version of <application>asmutils</application>
-and look what is already done.
-Even if the program you want to contribute is not there, look at the
-<ulink url="http://linuxassembly.org/asmutils.html">ChangeLog</ulink>,
-or CVS <filename>cvs.linuxassembly.org:/cvsroot/asm</filename>
-using ssh, module name is "asmutils":
+Usually, a good idea is to get current code from the CVS repository
+(<filename>cvs.linuxassembly.org:/cvsroot/asm</filename>,
+module name is "asmutils"):
 <screen>
 $ export CVS_RSH=ssh
 $ cvs -d:pserver:anonymous@cvs.linuxassembly.org:/cvsroot/asm login
@@ -715,9 +713,19 @@ $ cvs -d:pserver:anonymous@cvs.linuxassembly.org:/cvsroot/asm login
 $ cvs -z9 -d:pserver:anonymous@cvs.linuxassembly.org:/cvsroot/asm co asmutils
 </screen>
 
-or contact maintainer first, may be somebody is already doing (or has done)
-what you're only going to do (ditto if you want to improve existing utils).
-This is very important! Asmutils are growing rapidly,
+Thus you get <emphasis>the latest</emphasis> code for sure,
+as it may differ from the latest release.
+If you do not know how to deal with CVS, use the latest release.
+</para>
+
+<para>
+So, get the latest <application>asmutils</application> code
+and look what is already done. 
+Even if a program you want to contribute is not there, look at the
+<ulink url="http://linuxassembly.org/asmutils.html">ChangeLog</ulink>,
+or contact maintainer first; it could happen that somebody is already doing
+(or has already done) what you're only going to do (ditto if you want to
+improve existing utils). This is very important! Asmutils are growing rapidly,
 do not duplicate effort of other hackers.
 </para>
 
@@ -730,13 +738,13 @@ Here are few obvious requirements for the source code:
 
 <itemizedlist>
 <listitem><para>
-you must use <command>nasm</command> assembler
+you should use <command>nasm</command> assembler
 </para></listitem>
 <listitem><para>
-you must use supplied macro set
+you should use supplied macro set
 </para></listitem>
 <listitem><para>
-you must not use libc or any other external library
+you should not use libc or any other external library
 </para></listitem>
 </itemizedlist>
 </para>
@@ -786,7 +794,7 @@ at least try to make it readable.
 </para>
 
 <warning><para>
-I reject submissions eliminating these simple rules.
+Submissions that eliminate these simple rules are rejected.
 </para></warning>
 
 <para>
@@ -796,7 +804,7 @@ but you can also contribute your very own program.
 Keep in mind that <application>asmutils</application> are not just fun.
 They are used in (and targeted on) small distributions and embedded systems.
 Thus, they should be as small as possible, use very few memory,
-and be fast as kernel. Neither more, nor less :)
+and be as fast as kernel. Neither more, nor less :)
 </para>
 
 </section>
@@ -827,7 +835,7 @@ cleans out most (but not necessary all) issues.
 
 <para>
 Try to include some documentation in the source.
-If your code uses 486+ instructions, please specify CPU reqiurements
+If your code uses 486+ instructions, please specify CPU requirements
 (especially if MMX, 3DNOW, SSE, etc are used).
 Include comments along your code, especially around somewhat
 cryptic parts that are hard (as you feel) to understand initially.
@@ -856,7 +864,7 @@ Simple, huh? :)
 
 <para>
 With any additional questions refer to the <application>asmutils</application>
-webpage or contact <application>asmutils</application> maintainer.
+website or contact <application>asmutils</application> maintainer.
 </para>
 
 </section>
@@ -1003,7 +1011,7 @@ Seek, and you may find more..
 <para><revhistory>
 
 <revision>
-<revnumber>0.8</revnumber><date>04 Jan 2002</date><authorinitials>konst</authorinitials>
+<revnumber>0.8</revnumber><date>05 Jan 2002</date><authorinitials>konst</authorinitials>
 <revremark>more notes on contributions, cleanups</revremark>
 </revision>
 
@@ -1076,7 +1084,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.11 2002/01/04 08:29:24 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.12 2002/01/05 08:38:18 konst Exp $
 </literal></para>
 </appendix>
 

@@ -8,7 +8,7 @@ beautification by scripts.  The fields are: name (N), email (E),
 web-address (W), PGP key ID and fingerprint (P), description (D),
 and snail-mail address (S).
 
-$Id: CREDITS,v 1.14 2001/09/24 16:10:39 konst Exp $
+$Id: CREDITS,v 1.15 2002/01/05 08:39:39 konst Exp $
 
 ----------
 
@@ -22,7 +22,7 @@ D: original asmutils hacker
 
 N: Paul Furber (PF) 
 E: m@verick.co.za
-D: fire256.asm, framebuffer stuff
+D: fire256.asm, framebuffer includes stuff
 
 N: Tiago Gasiba (TG)
 E: ee97034@fe.up.pt
@@ -38,11 +38,12 @@ D: eject.asm kill.asm
 
 N: Tani Hosokawa (TH)
 E: unknown@riverstyx.net
-D: OpenBSD port
+D: initial OpenBSD port
 
 N: Joshua Hudson (JH)
 E: joshudson@hotmail.com
-D: dc.asm mknod.asm od.asm paste.asm readlink.asm tr.asm which.asm
+D: cut.asm dc.asm m_inetd.asm mknod.asm od.asm paste.asm readlink.asm
+D: tr.asm which.asm
 
 N: Yuri Ivliev (YI)
 E: yuru@black.cat.kazan.su
@@ -50,7 +51,7 @@ D: pwd.asm (stat based part)
 
 N: Nick Kurshev (NK)
 E: nickols_k@mail.ru
-D: libm.c
+D: libm.c testm.c
 
 N: Jonathan Leto (JL)
 E: jonathan@leto.net
@@ -63,11 +64,15 @@ D: httpd.asm rmmod.asm true.asm yes.asm
 
 N: Rudolf Marek (RM)
 E: marekr2@feld.cvut.cz
-D: dd.asm game.asm heap.asm sh.asm watch.asm
+D: dd.asm fdisk.asm game.asm heap.asm sh.asm tar.asm watch.asm
 
 N: Jani Monoses (JM)
 E: jani@astechnix.ro
 D: ifconfig.asm ping.asm tail.asm
+
+N: Thomas Ogrisegg  (TO)
+E: thomas.ogrisegg@sbg.ac.at
+D: finger.asm mesg.asm rot13.asm write.asm
 
 N: Edward Popkov (EP)
 E: evpopkov@carry.neonet.lv
@@ -89,7 +94,7 @@ D: readelf.asm elfheader.inc
 
 N: Stanislav Ryabenkiy (SR)
 E: stani@ryabenkiy.com
-D: old mknod.asm
+D: scan.asm
 
 N: Karsten Scheibler (KS)
 E: karsten.scheibler@bigfoot.de
@@ -98,5 +103,5 @@ D: init.asm sh.asm
 N: Cecchinel Stephan (CS)
 E: inter.zone@free.fr
 D: md5sum.asm rmdsum.asm lzss.asm nc.asm rc6crypt.asm
-D: rc6, md5, rmd160 algos
+D: rc6, md5, rmd160 algos (libcrypto)
 D: several libc functions
