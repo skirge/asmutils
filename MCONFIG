@@ -2,7 +2,7 @@
 #
 # MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.10 2001/11/12 15:54:43 konst Exp $
+# $Id: MCONFIG,v 1.11 2001/11/24 15:17:36 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -15,7 +15,7 @@
 
 OS = LINUX
 
-# kernel version of target OS (1.2 = 12, 2.4 = 24, 3.6 = 36, etc)
+# Kernel version of target OS (1.2 = 12, 2.4 = 24, 3.6 = 36, etc)
 
 KERNEL = 24
 
@@ -27,14 +27,14 @@ OPTIMIZE = SIZE
 
 #DEBUG = y
 
-# Include version stamp into binaries
+# Write version stamp into the binaries
 
 #STAMP = y
 
 # Use custom startup code.
 # Currently it works only with C style main() stack with OS=LIBC,
 # if you can't build with -nostartupfiles.
-# You will also need this with OS=BEOS.
+# You may also need this with OS=BEOS.
 #STARTUP = y
 
 # LINUX only
@@ -56,6 +56,9 @@ AS := nasm
 LD := ld
 CC := gcc
 MAKE := gmake
+
+ASVER := $(shell $(AS) -r | cut -d ' ' -f 3)
+LDVER := $(shell $(LD) -v | cut -d ' ' -f 4)
 
 #
 # avoid using asmutils during the build process if PATH has '.'
@@ -90,12 +93,12 @@ ifndef LINUX
 
 ELF_MACROS =
 
-ifdef NETBSD
-AOUT = y
-endif
-ifdef OPENBSD
-AOUT = y
-endif
+#ifdef NETBSD
+#AOUT = y
+#endif
+#ifdef OPENBSD
+#AOUT = y
+#endif
 
 ifdef BEOS
 STARTUP = y
@@ -157,4 +160,4 @@ ifndef DEBUG
 	$(STRIP) $*
 endif
 
-endif
+endif	# ELF_MACROS

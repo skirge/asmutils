@@ -1,6 +1,6 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.12 2001/11/24 09:45:27 konst Exp $
+; $Id: os_linux.inc,v 1.13 2001/11/24 15:18:41 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
@@ -790,6 +790,8 @@ endstruc
 %assign SYS_capset		185
 %assign SYS_sigaltstack		186
 %assign SYS_sendfile		187
+%else
+%assign SYS_chown		SYS_lchown
 %endif	;__KERNEL__ >= 22
 %assign SYS_getpmsg		188
 %assign SYS_putpmsg		189

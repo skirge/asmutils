@@ -23,7 +23,7 @@
 ;| Requires	 : asmutils package, nasm                                     |
 ;|----------------------------------------------------------------------------|
 ;
-; $Id: readelf.asm,v 1.1 2001/05/16 09:47:01 konst Exp $                                                                         
+; $Id: readelf.asm,v 1.2 2001/11/24 15:18:10 konst Exp $                                                                         
 
 BITS 32
 
@@ -371,8 +371,9 @@ readSHT:
 ; Read the Section String Table
 	sys_read EMPTY, shdr, ELF32_Shdr_size	
 ; Read (without seeking) all the names of the sections
-	sys_pread EMPTY, shstring, [shdr.sh_size], [shdr.sh_offset]
-
+;	sys_pread EMPTY, shstring, [shdr.sh_size], [shdr.sh_offset]
+	sys_lseek EMPTY, [shdr.sh_offset], SEEK_SET
+	sys_read EMPTY, shstring, [shdr.sh_size]
 ; Seek to the beginning of the SHT
 	sys_lseek [fhandle], [ehdr.e_shoff], SEEK_SET
 	xor ecx, ecx

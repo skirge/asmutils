@@ -1,6 +1,6 @@
 ;Copyright (C) 1995-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: window.asm,v 1.10 2001/11/24 09:46:18 konst Exp $
+;$Id: window.asm,v 1.11 2001/11/24 15:18:10 konst Exp $
 ;
 ;text window example
 
@@ -211,6 +211,36 @@ window:
 %assign	MAX_X	200
 %assign	MAX_Y	100
 
+;
+;emulate pread/pwrite on earlier kernels
+;
+
+%macro	PREAD 0
+%if __KERNEL__ >=22
+	sys_pread
+%else
+	pusha
+	sys_lseek EMPTY,esi,SEEK_SET
+	popa
+	sys_read
+%endif
+%endmacro
+
+%macro	PWRITE 0
+%if __KERNEL__ >=22
+	sys_pwrite
+%else
+	pusha
+	sys_lseek EMPTY,esi,SEEK_SET
+	popa
+	sys_write
+%endif
+%endmacro
+
+;
+;
+;
+
 cScreenDevice	db	"/dev/vcsa",EOL
 
 open_screen:
@@ -331,14 +361,14 @@ gotoXY:
 vread:
 	pusha
 	call	vprepare
-	sys_pread
+	PREAD
 	popa
 	ret
 
 vwrite:
 	pusha
 	call	vprepare
-	sys_pwrite
+	PWRITE
 	popa
 	ret
 

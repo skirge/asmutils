@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.27 2001/11/20 15:31:52 konst Exp $
+# $Id: Makefile,v 1.28 2001/11/24 15:18:10 konst Exp $
 
 #DEBUG = y
 
@@ -31,7 +31,7 @@ BONUS += window leaves fire256 snake game
 LINKS += ccd deallocvt halt poweroff swapoff umount rmmod route
 endif
 
-all:	$(FILES) $(BONUS) links
+all:	check $(FILES) $(BONUS) links
 
 links:	$(FILES)
 	-@( mkln() { [ ! -e $$2 ] && [ -x $$1 ] && $(LN) $$1 $$2; };\
@@ -60,3 +60,11 @@ install:$(FILES)
 
 clean:
 	$(RM) *.o $(FILES) $(BONUS) $(LINKS)
+
+check:
+ifneq ("$(ASVER)", "0.98")
+	@echo
+	@echo "$(AS) $(ASVER) may miscompile asmutils, please use only clean nasm 0.98!"
+	@echo
+	@false
+endif
