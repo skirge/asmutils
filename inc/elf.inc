@@ -1,6 +1,6 @@
 ; Copyright (C) 1999 Brian Raiter <breadbox@muppetlabs.com>
 ;
-; $Id: elf.inc,v 1.2 2002/01/28 08:36:44 konst Exp $
+; $Id: elf.inc,v 1.3 2002/02/02 12:33:38 konst Exp $
 ;
 ; file		: elf.inc
 ; created	: 20-Aug-1999
@@ -11,7 +11,7 @@
 ;		  file image. These macros must be used with files
 ;		  assembled with the "bin" output format.
 ; author	: Brian Raiter <breadbox@muppetlabs.com>
-; comment	: can be used separately or included internally from system.inc
+; comment	: can be used separately or included from system.inc
 
 
 %ifndef __ELF_INC
@@ -48,8 +48,6 @@ BITS 32
 %assign ELFOSABI_TRU64		10	;TRU64 UNIX
 %assign ELFOSABI_MODESTO	11	;Novell Modesto
 %assign ELFOSABI_OPENBSD	12	;OpenBSD
-%assign ELFOSABI_ARM		97	;ARM
-%assign ELFOSABI_STANDALONE	255	;Standalone (embedded) application
 
 %ifdef		__LINUX__
 %assign %$osabi	ELFOSABI_LINUX

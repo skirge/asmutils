@@ -1,19 +1,19 @@
-; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 2000-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ; Copyright (C) 2000 Tani Hosokawa <unknown@riverstyx.net>
 ;
-; $Id: os_openbsd.inc,v 1.6 2001/12/03 19:20:49 konst Exp $
+; $Id: os_openbsd.inc,v 1.7 2002/02/02 12:33:39 konst Exp $
 ;
 ; file          : os_openbsd.inc
 ; created       : 18-Aug-2000
-; modified      : 03-Dec-2001
+; modified      : 02-Feb-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
-; description   : OpenBSD kernel (2.7+) defined constants and structures
+; description   : OpenBSD kernel (2.7+) constants and structures
 ; author        : Tani Hosokawa <unknown@riverstyx.net>
-; comment       : included internally from system.inc
+; comment       : included from system.inc
 
 %ifndef __SYSTEM_INC
-%error "this file must be included internally from system.inc !"
+%error "this file must be included from system.inc !"
 %endif
 
 %ifndef __OPENBSD_INC

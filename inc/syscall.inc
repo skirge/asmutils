@@ -1,6 +1,6 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.14 2002/02/02 08:49:25 konst Exp $
+; $Id: syscall.inc,v 1.15 2002/02/02 12:33:39 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
@@ -9,19 +9,19 @@
 ; assembler	: nasm 0.98
 ; description	: system call macros
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
-; comment	: included internally from system.inc
+; comment	: included from system.inc
 ;		  if you're looking for a list of system calls,
-;		  better examine http://linuxassembly.org/syscall.html
+;		  better examine http://linuxassembly.org/resources.html
 
 %ifndef	__SYSTEM_INC
-%error "this file must be included internally from system.inc !"
+%error "this file must be included from system.inc !"
 %endif
 
 %ifndef __SYSCALL_INC
 %define __SYSCALL_INC
 
 ;
-;internal system call macros
+;__syscall helpers
 ;
 
 %macro	__push_syscall_args 1
@@ -339,6 +339,10 @@ extern %{1}
 
 %macro sys_getdomainname 0-2
 	__syscall getdomainname, 2, %0, %1, %2
+%endmacro
+
+%macro sys_getpid 0
+	__syscall getpid, 0
 %endmacro
 
 %macro sys_setuid 0-1

@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@fel.cvut.cz>
 ;
-;$Id: game.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
+;$Id: game.asm,v 1.3 2002/02/02 12:33:38 konst Exp $
 ;
 ;0.01: 26-Jul-2001	initial release  (RM)
 ;
@@ -46,10 +46,8 @@ START:
     mov 	edi,play_ground
     mov 	ecx,PLAYGROUND_SIZE/4
     mov 	eax,FOUR_NOPS
-    rep
-    stosd			;fill playground with NOPs
-    mov 	eax,020         ;sys_getpid does not work ???
-    int 	0x80		;get procs PID - used for pseudogen
+    rep		stosd		;fill playground with NOPs
+    sys_getpid			;get procs PID - used for pseudogen
 				;PID in EAX 
 				;a little pseudo random...
 				;

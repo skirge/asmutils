@@ -1,18 +1,18 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.13 2002/01/28 18:53:26 konst Exp $
+; $Id: includes.inc,v 1.14 2002/02/02 12:33:38 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
 ; modified      : 28-Jan-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
-; description   : generic constants and structures from header files (libc)
+; description   : generic constants and structures from (libc) header files
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
-; comment       : included internally from system.inc
+; comment       : included from system.inc
 
 %ifndef	__SYSTEM_INC
-%error "this file must be included internally from system.inc !"
+%error "this file must be included from system.inc !"
 %endif
 
 %ifndef __INCLUDES_INC

@@ -1,18 +1,18 @@
 ; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_atheos.inc,v 1.3 2001/03/18 07:08:25 konst Exp $
+; $Id: os_atheos.inc,v 1.4 2002/02/02 12:33:38 konst Exp $
 ;
 ; file          : os_atheos.inc
 ; created       : 23-Oct-2000
 ; modified      : 01-Mar-2001
-; version       : 0.14
+; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : atheos kernel constants
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
-; comment       : included internally from system.inc
+; comment       : included from system.inc
 
 %ifndef __SYSTEM_INC
-%error "this file must be included internally from system.inc !"
+%error "this file must be included from system.inc !"
 %endif
 
 %ifndef __ATHEOS_INC

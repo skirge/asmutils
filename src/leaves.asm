@@ -1,6 +1,6 @@
 ;Copyright (C) 1996-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: leaves.asm,v 1.8 2002/02/02 08:49:25 konst Exp $
+;$Id: leaves.asm,v 1.9 2002/02/02 12:33:38 konst Exp $
 ;
 ;leaves		-	Linux fbcon intro in 396 bytes
 ;
@@ -53,7 +53,7 @@
 ;%define ymin0 xmin0
 ;%define ymax0 -ymin0
 
-%define	OFFSET(x) ebp + ((x) - parameters)
+%define	OFFSET(x) byte ebp + ((x) - parameters)
 
 CODESEG
 
@@ -175,23 +175,33 @@ leaves:
 ;
 
 START:
+	_mov	ebp,parameters
+	_mov	edi,VMEM_SIZE
 
-;init fb
-
-	sys_open fb, O_RDWR
+	lea	ebx,[OFFSET(fb)]
+	sys_open EMPTY, O_RDWR
 
 ;	test	eax,eax			;have we opened file?
 ;	js	do_exit
 
-	mov	edi,VMEM_SIZE
-
+%if	__SYSCALL__=__S_KERNEL__
+;prepare structure for mmap on the stack
+	_push	0			;.offset
+	_push	eax			;.fd
+	_push	MAP_SHARED		;.flags
+	_push	PROT_READ|PROT_WRITE	;.prot
+	_push	edi			;.len
+	_push	0			;.addr
+	sys_oldmmap esp
+%else
+	push	ebp
 	sys_mmap 0,eax,MAP_SHARED,PROT_READ|PROT_WRITE,edi,0
-
+	pop	ebp
+%endif
 ;	test	eax,eax		;have we mmaped file?
 ;	js	do_exit
 
 	mov	esi,eax
-	mov	ebp,parameters
 
 ;clear screen
 	mov	ecx,edi

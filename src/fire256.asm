@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Paul Furber <m@verick.co.za>
 ;
-;$Id: fire256.asm,v 1.4 2002/02/02 08:49:25 konst Exp $
+;$Id: fire256.asm,v 1.5 2002/02/02 12:33:38 konst Exp $
 
 ;;  This program is free software; you can redistribute it and/or modify
 ;;  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ CODESEG
 
 ALIGN 16
 START:
-	mov	edi,	VMEM_SIZE
 	mov	ebp,	Params
 
 	lea	ebx,	[ebp]		;fb-Params

@@ -1,18 +1,18 @@
-; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 2000-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_freebsd.inc,v 1.7 2001/12/08 16:25:50 konst Exp $
+; $Id: os_freebsd.inc,v 1.8 2002/02/02 12:33:38 konst Exp $
 ;
 ; file          : os_freebsd.inc
 ; created       : 08-Feb-2000
-; modified      : 03-Dec-2001
+; modified      : 02-Feb-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : FreeBSD kernel (3.2+) defined constants and structures
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
-; comment       : included internally from system.inc
+; comment       : included from system.inc
 
 %ifndef __SYSTEM_INC
-%error "this file must be included internally from system.inc !"
+%error "this file must be included from system.inc !"
 %endif
 
 %ifndef __FREEBSD_INC

@@ -1,18 +1,18 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.19 2002/02/02 08:49:25 konst Exp $
+; $Id: os_linux.inc,v 1.20 2002/02/02 12:33:39 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
 ; modified      : 02-Feb-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
-; description   : linux kernel constants and structures (from headers)
+; description   : Linux kernel (2.0+) constants and structures
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
-; comment       : included internally from system.inc
+; comment       : included from system.inc
 
 %ifndef __SYSTEM_INC
-%error "this file must be included internally from system.inc !"
+%error "this file must be included from system.inc !"
 %endif
 
 %ifndef __LINUX_INC

@@ -1,15 +1,15 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.14 2002/02/02 08:49:25 konst Exp $
+; $Id: system.inc,v 1.15 2002/02/02 12:33:39 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
 ; modified	: 02-Feb-2002
 ; version	: 0.16
 ; assembler	: nasm 0.98
-; description	: generic (not OS specific) macros, sections, headers, etc.
+; description	: framework and generic stuff (macros, sections, etc)
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
-; comment	: you must include this file to do anything else
+; comment	: main include file
 ;
 ;0.01: 05-Jun-1999	initial release
 ;0.02: 17-Jun-1999	total rewrite, new macros & syscalls.
@@ -33,14 +33,14 @@
 ;0.14: 11-Feb-2001	added B_STRUC macro (aka ELF_BSTRUC from elf.inc) (BR),
 ;			moved __syscall_gate to os_xxx.inc files (KB)
 ;0.15: 24-Sep-2001	fixed LIBC stuff, added __LONG_JUMPS__ (KB)
-;0.16: 27-Jan-2002	added SOLARIS, UNIXWARE, improved BeOS stub,
-;			_push with 2 args (KB)
+;0.16: 02-Feb-2002	added SOLARIS, UNIXWARE, improved BeOS stub,
+;			rewritten libc port, _push with 2 args (KB)
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
 
 ;--------------------------------------------------------------------------
-; default configuration parameters (used if not specified at compile time)
+; default configuration parameters (if not specified at compile time)
 ;--------------------------------------------------------------------------
 
 ;
@@ -80,7 +80,7 @@
 ;
 
 %ifndef __KERNEL__
-%assign	__KERNEL__	24
+%assign	__KERNEL__	10
 %endif
 
 ;
@@ -114,7 +114,7 @@
 %endif
 
 ;--------------------------------------------------------------------------
-;
+; include them all
 ;--------------------------------------------------------------------------
 
 %include "includes.inc"
@@ -144,7 +144,7 @@
 %endif
 
 ;--------------------------------------------------------------------------
-;
+; section macros
 ;--------------------------------------------------------------------------
 
 %ifdef __STARTUP__
@@ -396,7 +396,7 @@ resb %{$strucname}_size - ($ - %%top_%$strucname)
 %endif
 
 ;------------------------------------------------------------------
-; General purpose macros
+; general purpose optimizing macros
 ;------------------------------------------------------------------
 
 ;
@@ -406,8 +406,9 @@ resb %{$strucname}_size - ($ - %%top_%$strucname)
 %define	jmps jmp short
 
 ;
-;auto short/long jump
+;auto short/long jump (I hate nasm)
 ;currently works only backwards :(
+;do not use
 ;
 
 %macro _jmp 1

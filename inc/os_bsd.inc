@@ -1,6 +1,6 @@
 ; Copyright (C) 2001-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_bsd.inc,v 1.8 2002/02/02 08:49:25 konst Exp $
+; $Id: os_bsd.inc,v 1.9 2002/02/02 12:33:38 konst Exp $
 ;
 ; file          : os_bsd.inc
 ; created       : 12-Nov-2001
@@ -9,10 +9,10 @@
 ; assembler     : nasm 0.98
 ; description   : common BSD defines
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
-; comment       : included internally from os_xxxbsd.inc
+; comment       : included from system.inc (os_*bsd.inc)
 
 %ifndef __SYSTEM_INC
-%error "this file must be included internally from system.inc !"
+%error "this file must be included from system.inc !"
 %endif
 
 %ifndef __BSD_INC

@@ -1,6 +1,6 @@
 ; Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_v2os.inc,v 1.1 2000/12/10 08:20:36 konst Exp $
+; $Id: os_v2os.inc,v 1.2 2002/02/02 12:33:39 konst Exp $
 ;
 ; file          : os_v2os.inc
 ; created       : 13-Oct-2000
@@ -9,10 +9,10 @@
 ; assembler     : nasm 0.98
 ; description   : v2os kernel constants
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
-; comment       : included internally from system.inc
+; comment       : included from system.inc
 
 %ifndef __SYSTEM_INC
-%error "this file must be included internally from system.inc !"
+%error "this file must be included from system.inc !"
 %endif
 
 %ifndef __V2OS_INC

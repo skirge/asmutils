@@ -1,6 +1,6 @@
 ; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_beos.inc,v 1.5 2001/12/10 17:10:16 konst Exp $
+; $Id: os_beos.inc,v 1.6 2002/02/02 12:33:38 konst Exp $
 ;
 ; file          : os_beos.inc
 ; created       : 21-Feb-2000
@@ -9,7 +9,7 @@
 ; assembler     : nasm 0.98
 ; description   : BeOS kernel constants (R4.5+)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
-; comment       : included internally from system.inc
+; comment       : included from system.inc
 ;
 ;IMPORTANT NOTES:
 ;
@@ -18,8 +18,8 @@
 ;shows something like "Mon Aug 7 2541 10:23", you may read on
 ;and marvel at what those ancient crazy humans did.
 ;
-;BeOS port is eternally in alpha stage (yes, it works sometimes),
-;mostly because of weird BeOS kernel bugs.
+;BeOS port is no longer unsupported and is eternally in alpha stage
+;(though it works sometimes) mostly because of weird BeOS kernel bugs.
 ;
 ;Be kernel developers did not want to share any information on syscalls,
 ;so I had to figure out these constants and system call convention
@@ -57,7 +57,7 @@
 ;BeOS kernel hackers, do you hear me?!
 
 %ifndef __SYSTEM_INC
-%error "this file must be included internally from system.inc !"
+%error "this file must be included from system.inc !"
 %endif
 
 %ifndef __BEOS_INC

@@ -1,6 +1,6 @@
 ; Copyright (C) 2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_qnxrtp.inc,v 1.1 2001/08/21 13:01:51 konst Exp $
+; $Id: os_qnxrtp.inc,v 1.2 2002/02/02 12:33:39 konst Exp $
 ;
 ; file          : os_qnxrtp.inc
 ; created       : 16-Aug-2001
@@ -9,10 +9,10 @@
 ; assembler     : nasm 0.98
 ; description   : QNX RTP 6.1.0 kernel constants
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
-; comment       : included internally from system.inc
+; comment       : included from system.inc
 
 %ifndef __SYSTEM_INC
-%error "this file must be included internally from system.inc !"
+%error "this file must be included from system.inc !"
 %endif
 
 %ifndef __QNXRTP_INC
