@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: reboot.asm,v 1.3 2001/12/24 07:22:05 konst Exp $
+;$Id: reboot.asm,v 1.4 2002/01/28 18:53:26 konst Exp $
 ;
 ;hackers' reboot/halt/poweroff
 ;
@@ -29,6 +29,13 @@
 
 CODESEG
 
+%ifdef	__LINUX__
+%if	__SYSCALL__=__S_KERNEL__
+%define	__ALT_REBOOT__
+%endif
+%endif
+
+
 START:
 	xor	edi,edi
 	pop	ebp		;argc
@@ -40,11 +47,11 @@ START:
 	jnz	.n1
 
 ;default action is reboot
-%ifdef	__LINUX__
+%ifdef	__ALT_REBOOT__
 	_mov	ebx,LINUX_REBOOT_MAGIC1
 	_mov	ecx,LINUX_REBOOT_MAGIC2
 	_mov	edx,LINUX_REBOOT_CMD_RESTART
-%elifdef __BSD__
+%else
 	_mov	ebx,RB_AUTOBOOT
 %else
 %endif
@@ -67,9 +74,9 @@ START:
 	cmp	dword [esi-5],'halt'		;halt
 	jnz	.n3
 
-%ifdef	__LINUX__
+%ifdef	__ALT_REBOOT__
 	_mov	edx,LINUX_REBOOT_CMD_HALT
-%elifdef __BSD__
+%else
 	_mov	ebx,RB_HALT
 %else
 %endif
@@ -80,16 +87,16 @@ START:
 	jnz	.n4
 
 .poweroff:
-%ifdef	__LINUX__
+%ifdef	__ALT_REBOOT__
 	_mov	edx,LINUX_REBOOT_CMD_POWER_OFF
-%elifdef __BSD__
+%else
 	_mov	ebx,RB_HALT|RB_POWEROFF
 %else
 %endif
 
 .halt:
 
-%ifdef	__LINUX__	;make sure that CTRL+ALT+DEL is enabled
+%ifdef	__ALT_REBOOT__	;make sure that CTRL+ALT+DEL is enabled
 	push	edx
 	sys_reboot EMPTY,EMPTY,LINUX_REBOOT_CMD_CAD_ON
 	pop	edx
@@ -102,7 +109,7 @@ START:
 	sys_exit eax
 
 .n4:
-%ifdef	__LINUX__
+%ifdef	__ALT_REBOOT__
 	or	edi,edi		;check for -f
 	jnz	.reboot		;let the show begin
 

@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.13 2002/01/28 08:34:14 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.14 2002/01/28 18:53:26 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -23,7 +23,7 @@
 </author>
 
 <releaseinfo>Version 0.8</releaseinfo>
-<pubdate role="cvs">$Date: 2002/01/28 08:34:14 $</pubdate>
+<pubdate role="cvs">$Date: 2002/01/28 18:53:26 $</pubdate>
 
 <copyright>
 <year>1999-2002</year><holder>Konstantin Boldyshev</holder>
@@ -151,13 +151,14 @@ All compile-time configuration is in the <filename>MCONFIG</filename> file,
 which has enough comments to figure out what you can do.
 You can try to fallback to libc functions
 instead of using direct system calls by defining
-<literal>OS=LIBC</literal> in <filename>MCONFIG</filename>
+<literal>SYSCALL=LIBC</literal> in <filename>MCONFIG</filename>
 if your really want to do so; then you will also need
 <command>gcc</command> and libc headers.
 </para>
 
 <note><para>
-Well, to be sincere, do not expect LIBC port to work out-of-the-box.
+Well, to be sincere, if you set <function>SYSCALL=LIBC</function>
+do not expect it to work out-of-the-box.
 Instead, prepare to hack <filename>MCONFIG</filename> (hint:
 <function>STARTUP=y</function> may help if startup stack differs from usual),
 <filename>.inc</filename> files and source code to animate this malformation.
@@ -168,7 +169,7 @@ or can be just missing (e.g. getdents on glibc 2.2.x).
 Also, expect any other kind of disaster and affliction
 when trying to run what you have built after all,
 especially on weird systems like BeOS or QNX
-(hint: check constants in <filename>os_libc.inc</filename>).
+(hint: check constants in <filename>os_yourOS.inc</filename>).
 Finally, find yourself on the brink of suicide,
 screaming and pulling out your hair,
 and devising your all to developers of your libc.
@@ -1014,7 +1015,7 @@ Seek, and you may find more..
 
 <revision>
 <revnumber>0.8</revnumber><date>28 Jan 2002</date><authorinitials>konst</authorinitials>
-<revremark>more notes on contributions, cleanups</revremark>
+<revremark>more notes on contributions, updates and cleanups</revremark>
 </revision>
 
 <revision>
@@ -1086,7 +1087,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.13 2002/01/28 08:34:14 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.14 2002/01/28 18:53:26 konst Exp $
 </literal></para>
 </appendix>
 

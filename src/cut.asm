@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 by Joshua Hudson
 ;
-;$Id: cut.asm,v 1.1 2001/10/09 18:35:42 konst Exp $
+;$Id: cut.asm,v 1.2 2002/01/28 18:53:26 konst Exp $
 ;
 ;hacker's cut
 ;
@@ -124,7 +124,7 @@ newline:
 	jz	noskip
 	mov	[wrotefield], byte 0
 skip:
-	call	read		; Skip next char until [firstchar] skipped
+	call	_read		; Skip next char until [firstchar] skipped
 	cmp	al, __n
 	je	newline
 	dec	esi
@@ -137,7 +137,7 @@ noskip:
 	inc	esi		; Current field
 	mov	edi, [lastchar] ; Characters to count
 nextchar:
-	call	read
+	call	_read
 	cmp	al, __n
 	je	gotnewline
 	cmp	[usefieldmode], byte 0
@@ -152,11 +152,11 @@ nextchar:
 	jne	accept
 	push	eax
 	mov	al, [delimionator]
-	call	write
+	call	_write
 	pop	eax
 accept:
 	mov	[wrotefield], byte 2
-	call	write
+	call	_write
 reject:	
 	dec	edi
 	jnz	nextchar	; Reached char limit?
@@ -173,27 +173,27 @@ endfield:
 
 ;*** Phase 3: wait for a newline
 waitend:
-	call	read
+	call	_read
 	cmp	al, __n
 	jne	waitend
 gotnewline:
-	call	write
+	call	_write
 	jmp	newline
 
 ;Flush the buffer and terminate:
-done	mov	edx, ebp
+done:	mov	edx, ebp
 	sub	edx, outbuf
 	jz	empty
 	sys_write	STDOUT, outbuf
-empty	mov	ebx, [filehandle]
+empty:	mov	ebx, [filehandle]
 	xor	bl, bl
-exit	sys_exit
-fail	mov	bl, 1
-	jmps	exit
+_exit:	sys_exit
+fail:	mov	bl, 1
+	jmps	_exit
 
 ; This routine reads from the input file.
 ; Caller will preserve ebx, edx for us.
-read:
+_read:
 	cmp	ebx, edx
 	jl	getfrombuf
 fillbuf:
@@ -212,7 +212,7 @@ getfrombuf:
 	inc	ebx
 	ret
 
-write:
+_write:
 	mov	[ebp], al
 	inc	ebp
 	cmp	ebp, outbuf + bufsize

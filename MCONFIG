@@ -2,7 +2,7 @@
 #
 # MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.15 2002/01/28 08:36:44 konst Exp $
+# $Id: MCONFIG,v 1.16 2002/01/28 18:53:26 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -11,7 +11,7 @@
 #---------------------------------------------------------------------------#
 
 # Target operating system. Valid values are:
-# LINUX FREEBSD OPENBSD NETBSD SOLARIS UNIXWARE BEOS ATHEOS LIBC
+# LINUX FREEBSD OPENBSD NETBSD SOLARIS UNIXWARE BEOS ATHEOS
 
 OS = LINUX
 
@@ -22,6 +22,10 @@ KERNEL = 24
 # Optimization method (SIZE/SPEED)
 
 OPTIMIZE = SIZE
+
+# System call convention. Valid values are: KERNEL, LIBC
+
+SYSCALL = KERNEL
 
 # ELF hack for smaller binaries (when possible).
 # Disable it if you have trouble running resulting executables.
@@ -36,10 +40,12 @@ ELF_MACROS = y
 
 #STAMP = y
 
-# Use custom startup code.
-# Currently it works only with C style main() stack with OS=LIBC,
-# if you can't build with -nostartupfiles.
+# Use custom startup code
+# Define with SYSCALL=LIBC if gcc fails with -nostartfiles.
 # You may also need this with OS=BEOS.
+
+#STARTUP = y
+
 #STARTUP = y
 
 #---------------------------------------------------------------#
@@ -80,7 +86,16 @@ INSTALLDIR=../bin/$(OS)-$(KERNEL)
 
 LDFLAGS :=
 ASFLAGS := -w+orphan-labels -w+macro-params -i../inc/
-DEFINES := -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__
+DEFINES := -D__$(OS)__ -D__KERNEL__=$(KERNEL) -D__SYSCALL__=__S_$(SYSCALL)__\
+	    -D__OPTIMIZE__=__O_$(OPTIMIZE)__ 
+
+ifeq ($(SYSCALL),LIBC)
+LD = gcc
+ELF_MACROS =
+ifndef STARTUP
+LDFLAGS = -nostartfiles
+endif
+endif
 
 ifdef DEBUG
 ASFLAGS += -g
@@ -109,20 +124,10 @@ STARTUP = y
 ELF_MACROS =
 endif
 
-ifdef LIBC
-LD = gcc
-DEFINES += -D__LIBC__
-ifndef STARTUP
-LDFLAGS = -nostartfiles
-endif
-endif
-
 ifdef STARTUP
 DEFINES += -D__STARTUP__
 endif
-ifdef KERNEL
-DEFINES += -D__KERNEL__=$(KERNEL) 
-endif
+
 ifdef STAMP
 DEFINES += -DSTAMP_VERSION="'asmutils $(VERSION)'" -DSTAMP_DATE="'$(shell date "+%d-%b-%Y %H:%M")'"
 endif

@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.12 2002/01/28 08:36:44 konst Exp $
+; $Id: system.inc,v 1.13 2002/01/28 18:53:26 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 27-Jan-2002
+; modified	: 28-Jan-2002
 ; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: generic (not OS specific) macros, sections, headers, etc.
@@ -63,9 +63,7 @@
 %ifndef __NETBSD__
 %ifndef __OPENBSD__
 
-%define __LIBC__
-%define	__LONG_JUMPS__
-%undef	__BSD__
+%error	"Invalid OS"
 
 %endif
 %endif
@@ -100,6 +98,30 @@
 %define	__LONG_JUMPS__
 %endif
 
+;
+;syscall convention
+;
+
+%assign	__S_KERNEL__	0
+%assign	__S_LIBC__	1
+
+%ifndef __SYSCALL__
+%assign	__SYSCALL__ __S_KERNEL__
+%endif
+
+%if __SYSCALL__=__S_LIBC__
+%define	__LONG_JUMPS__
+%endif
+
+;
+;
+;
+
+%ifdef	__LINUX__
+%if __SYSCALL__=__S_KERNEL__
+%define	__ALT_SYSCALLS__
+%endif
+%endif
 
 ;--------------------------------------------------------------------------
 ;
@@ -123,8 +145,6 @@
 %include "os_solaris.inc"
 %elifdef __UNIXWARE__
 %include "os_unixware.inc"
-%elifdef __LIBC__
-%include "os_libc.inc"
 %endif
 
 %include "syscall.inc"
@@ -132,6 +152,11 @@
 %ifdef __ELF_MACROS__
 %include "elf.inc"
 %endif
+
+%ifdef __LIBC__
+%include "os_libc.inc"
+%endif
+
 
 ;--------------------------------------------------------------------------
 ;
@@ -181,16 +206,11 @@ __date	db	STAMP_DATE, EOL, __n
 
 SYSCALL_GATE
 
-;Here's startup code plugin. It should prepare the stack
-;in a [ argc | argv[0]... | envp[0].. ] way for your OS.
-;
-;for now there's only support for C style stack: main(argc,**argv,**envp)
+%if	__SYSCALL__=__S_LIBC__
+;C style stack: main(argc,**argv,**envp)
 
-%ifdef __STARTUP__
+%assign	__S	4
 
-__S	equ	4
-
-%ifdef __LIBC__
 	global	main
 main:
 	mov	ebp,esp
@@ -240,7 +260,13 @@ main:
 	xor	ecx,ecx
 	xor	ebp,ebp
 	jmp	START
-%else
+%endif	;__SYSCALL__=__S_LIBC__
+
+;Startup plugin should prepare the stack
+;in a [ argc | argv[0]... | envp[0].. ] way.
+
+%ifdef __STARTUP__
+
 	global	_start
 _start:
 
@@ -297,8 +323,6 @@ _start:
 
 	jmp	START
 %endif	;__BEOS__
-
-%endif	;__LIBC__
 
 %endif	;__STARTUP__
 %endmacro

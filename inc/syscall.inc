@@ -1,10 +1,10 @@
-; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.12 2001/12/30 17:18:47 konst Exp $
+; $Id: syscall.inc,v 1.13 2002/01/28 18:53:26 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 23-Dec-2001
+; modified	: 28-Jan-2002
 ; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: system call macros
@@ -19,6 +19,32 @@
 
 %ifndef __SYSCALL_INC
 %define __SYSCALL_INC
+
+;
+;
+;
+
+%macro	__PUSH_ARGS 1
+%assign	P %1
+%if P>0
+ %if P>1
+  %if P>2
+   %if P>3
+    %if P>4
+     %if P>5
+	push	ebp
+     %endif
+	push	edi
+    %endif
+	push	esi
+  %endif
+	push	edx
+  %endif
+	push	ecx
+ %endif
+	push	ebx
+%endif
+%endmacro
 
 ;
 ;internal system call macros
@@ -55,9 +81,10 @@
 	_mov	ebx,%4
 %endif
 %endif
-%ifndef	__LIBC__
+
+%if	__SYSCALL__=__S_KERNEL__
+
 	_mov	eax,SYS_%{1}
-%endif
 
 %ifdef __LINUX__
 	int	0x80
@@ -65,74 +92,46 @@
 	int	0x80
 %elifdef __V2OS__
 	int	0x20
-%else
-
-%if %0>2
-
-%if %3 < %2
-%assign P %2
-%else
-%assign P %3
-%endif
-
-%ifdef	__LIBC__
-%define	PUSH_ARGS
-%elif	__OPTIMIZE__=__O_SPEED__
-%define	PUSH_ARGS
-%endif
-
+%else		;__BSD__ & other
 ;Note:
-;This BSD related part is optimized for size by moving all 'push'es
+;BSD related part is optimized for size by moving all 'push'es
 ;and add 'esp,x' to __syscall_gate. However this will cause problems
 ;with syscalls with more than 6 args, fortunately there are no such
 ;monsters yet :)
-
-%ifdef	PUSH_ARGS
-%if P>0
- %if P>1
-  %if P>2
-   %if P>3
-    %if P>4
-     %if P>5
-      %if P>6 && %3>6
-	push	dword %10
-      %endif
-	push	ebp
-     %endif
-	push	edi
-    %endif
-	push	esi
-  %endif
-	push	edx
-  %endif
-	push	ecx
- %endif
-	push	ebx
-%endif
-%endif	;PUSH_ARGS
-
-%endif
-
-%ifdef __LIBC__
-
-extern %{1}
-	call	%{1}
-
-%else		;__BSD__ & __BEOS__
 
 	call	__syscall_gate	;defined in os_osname.inc
 
 ;	push	eax		;we are not using a.out
 ;	call	7:0		;
 ;	add	esp,byte (%{2} + 1) * 4
-
 %endif
 
-%ifdef	PUSH_ARGS
-	add	esp,byte (%{2}) * 4
+%elif	__SYSCALL__=__S_LIBC__
+
+%if %0 > 2		;anything to prepare?
+%if %3 < %2
+%assign __ARGS %2
+%else
+%assign __ARGS %3
+%endif
+%else
+%assign __ARGS %2
 %endif
 
+	__PUSH_ARGS __ARGS
+
+extern %{1}
+	call	%{1}
+
+%if __ARGS > 0
+	add	esp,byte (__ARGS) * 4
 %endif
+
+%else	; unknown syscall convention
+
+	hlt
+
+%endif	;__SYSCALL__
 
 %endmacro
 
@@ -538,7 +537,7 @@ extern %{1}
 ;OS specific syscalls
 ;--------------------------------------------------------------------------
 
-%ifndef __LINUX__	;linux has its own implementation in os_linux.inc
+%ifndef __ALT_SYSCALLS__	;alternative implementation in os_*.inc
 
 ;
 ;sys/reboot.h
@@ -600,8 +599,7 @@ extern %{1}
 	__syscall mmap, 6, %0, %1, %2, %3, %4, %5, %6
 %endmacro
 
-%endif	;__LINUX__
-
+%endif	;__ALT_SYSCALLS__
 ;--------------------------------------------------------------------------
 
 %endif

@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.17 2002/01/20 18:19:38 konst Exp $
+; $Id: os_linux.inc,v 1.18 2002/01/28 18:53:26 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 07-Jan-2002
+; modified      : 28-Jan-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : linux kernel constants and structures (from headers)
@@ -36,6 +36,16 @@ struc fd_set
 endstruc
 
 ;
+;
+;
+
+%assign MAP_GROWSDOWN	0x0100
+%assign MAP_DENYWRITE	0x0800
+%assign MAP_EXECUTABLE	0x1000
+%assign MAP_LOCKED	0x2000
+%assign MAP_NORESERVE	0x4000
+
+;
 ;linux/reboot.h
 ;
 
@@ -51,11 +61,11 @@ endstruc
 %assign	LINUX_REBOOT_CMD_POWER_OFF	0x4321FEDC	;Stop OS and remove all power from system, if possible.
 %assign	LINUX_REBOOT_CMD_RESTART2	0xA1B2C3D4	;Restart system using given command string.
 
-%assign MAP_GROWSDOWN	0x0100
-%assign MAP_DENYWRITE	0x0800
-%assign MAP_EXECUTABLE	0x1000
-%assign MAP_LOCKED	0x2000
-%assign MAP_NORESERVE	0x4000
+%assign RB_AUTOBOOT	LINUX_REBOOT_CMD_RESTART
+%assign RB_HALT		LINUX_REBOOT_CMD_HALT
+%assign RB_ENABLE_CAD	LINUX_REBOOT_CMD_CAD_ON
+%assign RB_DISABLE_CAD	LINUX_REBOOT_CMD_CAD_OFF
+%assign RB_POWEROFF	LINUX_REBOOT_CMD_POWER_OFF
 
 ;
 ;linux/kd.h
@@ -1101,6 +1111,8 @@ endstruc
 %endif
 %endmacro
 
+%ifdef	__ALT_SYSCALLS__
+
 ;
 ;net/socket.c
 ;
@@ -1191,6 +1203,17 @@ endstruc
 %endmacro
 
 ;
+;kernel/sys.c
+;
+
+%macro sys_reboot 0-4
+	__syscall reboot, 4, %0, %1, %2, %3, %4
+%endmacro
+
+
+%endif	;__ALT_SYSCALLS__
+
+;
 ;Linux specific syscalls
 ;
 
@@ -1255,14 +1278,6 @@ endstruc
 
 %macro sys_syslog 0-3
 	__syscall syslog, 3, %0, %1, %2, %3
-%endmacro
-
-;
-;kernel/sys.c
-;
-
-%macro sys_reboot 0-4
-	__syscall reboot, 4, %0, %1, %2, %3, %4
 %endmacro
 
 ;
