@@ -2,7 +2,7 @@
 			       asmutils
 			       ********
 
-			    (version 0.14)
+			    (version 0.15)
 
 			http://linuxassembly.org
 
@@ -28,7 +28,7 @@ as published by the Free Software Foundation.
 These programs are distributed in the hope that they will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty
 of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-See the GNU General Public License for more details
+See the GNU General Public License (version 2) for more details
 <http://www.gnu.org/copyleft/gpl.html>.
 
 
@@ -107,4 +107,4 @@ Other stuff
 
  Do not forget to send feedback & bugreports to project maintainer.
 
- $Id: README,v 1.11 2001/03/18 07:08:25 konst Exp $
+ $Id: README,v 1.12 2001/08/19 12:49:39 konst Exp $

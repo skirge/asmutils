@@ -2,7 +2,7 @@
 #
 # MCONFIG -- Configuration stuff for asmutils
 #
-# $Id: MCONFIG,v 1.6 2001/07/20 07:06:06 konst Exp $
+# $Id: MCONFIG,v 1.7 2001/08/19 12:49:39 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -14,7 +14,7 @@
 
 CPU = 386
 
-# Target Operating System (LINUX/FREEBSD/NETBSD/OPENBSD/BEOS/ATHEOS/LIBC)
+# Target Operating System (LINUX/FREEBSD/NETBSD/OPENBSD/QNXRTP/BEOS/ATHEOS/LIBC)
 
 OS = LINUX
 
@@ -45,7 +45,7 @@ ELF_MACROS = y
 
 #---------------------------------------------------------------------------#
 
-#			DO NOT EDIT BELOW IF NOT SURE
+#			DO NOT EDIT BELOW WHEN IN DOUBT
 
 #---------------------------------------------------------------------------#
 
@@ -141,7 +141,7 @@ ASFLAGS += -f elf
 ifndef DEBUG
 LDFLAGS += -s
 endif
-STRIP = strip -s -R .note -R .comment
+STRIP = strip -R .note -R .comment
 #STRIP = sstrip
 endif
 
