@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@fel.cvut.cz>, <ruik@atlas.cz>
 ;
-;$Id: tar.asm,v 1.5 2002/11/04 11:38:26 konst Exp $
+;$Id: tar.asm,v 1.6 2002/12/17 15:40:06 konst Exp $
 ;
 ;hackers' tar
 ;
@@ -19,6 +19,7 @@
 ;			initial archive creation code: only self compat for now
 ;0.4			???
 ;0.5	04-Oct-2002	Fixed pipe bug in 2.0, TAR_SUID (JH)
+;0.6	05-Dec-2002	Fixed a bug involving symlinks to SUID files
 
 
 %include "system.inc"
@@ -333,7 +334,11 @@ tar_archive_extract:
 	ret
 .ver_ok:
 	cmp 	dword [tar.magic],'usta'
+%ifdef TAR_CHOWN
+	jnz	near	.error_magic
+%else
 	jnz 	.error_magic
+%endif
 %ifdef TAR_PREFIX
 	call	pref_tran
 %else
@@ -376,10 +381,13 @@ tar_archive_extract:
 	xchg 	eax,ebx
 	js   	.error
 %ifdef TAR_CHOWN
-	sys_lchown FILENAME,[tar.uid],[tar.gid]
-%endif
+	cmp	[tar.typeflag], byte '2'
+	je	.skipchmod
+	sys_chown FILENAME,[tar.uid],[tar.gid]
 %ifdef TAR_SUID
 	sys_chmod	FILENAME, [tar.mode]
+%endif
+.skipchmod:
 %endif
 	jmp	.read_next	
 .error_magic:
