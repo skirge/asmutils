@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.22 2001/09/19 07:47:29 konst Exp $
+# $Id: Makefile,v 1.23 2001/10/02 06:00:52 konst Exp $
 
 #DEBUG = y
 
@@ -13,7 +13,7 @@ include ../MCONFIG
 FILES = basename cat chmod chroot chown cpuinfo date dc dd dirname\
 	echo env extname factor fromdos grep head hexdump hostname\
 	id init kill ln lzss mkdir mknod od paste\
-	readelf readlink renice	sh sleep strings sync tail tee tr true\
+	readelf readlink renice	sh sleep strings sync tail tar tee tr true\
 	uname wc whoami yes\
 	md5sum rmdsum rc6crypt\
 
