@@ -5,7 +5,7 @@
 ;       		 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;       		 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: sh.asm,v 1.22 2002/10/09 18:06:05 konst Exp $
+;$Id: sh.asm,v 1.23 2003/02/13 18:24:51 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -68,6 +68,7 @@
 ;			cleanup, WRITE_* macros (KB)
 ;0.09  08-Mar-2002	added clear internal (KB)
 ;0.10  26-Sep-2002	Fixed tab-filling (RM)
+;0.11  11-Feb-2003	Improved Jobs, added umask (merged another tree) (JH)
 
 %include "system.inc"
 
@@ -1935,8 +1936,63 @@ cmd_bg:
 	ret
 
 ;****************************************************************************
+;* cmd_umask
+;****************************************************************************
+cmd_umask:
+	mov     esi, [cmdline.arguments + 4]
+        or      esi, esi
+        jz      .echo
+        xor     eax, eax
+        xor     ebx, ebx
+.set:
+        lodsb
+        sub     al, '0'
+        js      .doit
+        cmp     al, 8
+        ja      .ret
+        shl     ebx, 3
+        add     ebx, eax
+        jmps    .set
+.doit:
+        sys_umask
+.ret:
+        ret
+.echo:
+        sys_umask
+        xchg    eax, ebx
+        sys_umask
+        mov     edi, b_id
+        push    edi
+        xchg    eax, ebx
+        xor     ecx, ecx
+        _mov    ebx, 8
+.div:
+        xor     edx, edx
+        div     ebx
+        add     dl, '0'
+        inc     ecx
+        push    edx
+        or      eax, eax
+        jnz     .div
+        mov     dl, '0'
+        inc     ecx
+        push    edx
+.loop:
+        pop     eax
+        stosb
+        loop    .loop
+        mov     al, 10
+        stosb
+        pop     eax
+        mov     ecx, edi
+        sub     ecx, eax
+        WRITE_CHARS
+        ret
+
+;****************************************************************************
 ;* cmd_jobs *****************************************************************
 ;****************************************************************************
+%if 0
 cmd_jobs:			
 	mov 	esi,pid_array
 .find_loop:
@@ -1956,6 +2012,57 @@ cmd_jobs:
 	jmps	.find_loop
 .end:
 	ret
+%endif
+
+cmd_jobs:
+        mov     esi,pid_array
+.find_loop:
+        cmp     esi,pid_array+(4*MAX_PID)
+        ;jz     .end
+        jz      cmd_bg.ok
+        lodsd
+        or      eax,eax
+        jz      .find_loop
+.got_it:
+        push    eax
+        mov     eax,esi
+        sub     eax,pid_array+4
+        shr     eax,2
+        add     eax,'0: '
+        mov     edi, b_id
+        stosd
+        dec     edi
+        xor     ecx, ecx
+        _mov    ebx, 10
+        pop     eax
+        push    edi
+.div:
+        xor     edx, edx
+        div     ebx
+        inc     ecx
+        add     dl, '0'
+        push    edx
+        or      eax, eax
+        jnz     .div
+.poploop:
+        pop     eax
+        stosb
+        loop    .poploop
+        xchg    eax, ebx        ; Add a newline
+        stosb                   ; in two bytes
+        pop     eax
+%if __OPTIMIZE__=__O_SPEED__
+        sub     eax, byte 3
+%else
+        dec     eax
+        dec     eax
+        dec     eax
+%endif
+        sub     edi, eax
+        mov     ecx, edi
+        WRITE_CHARS
+        jmps    .find_loop
+;
 
 break_hndl:
 %ifndef __LINUX__ 
@@ -2032,6 +2139,7 @@ builtin_cmds:
 		dd	.bg, cmd_bg
 		dd	.jobs, cmd_jobs
 		dd	.clear, cmd_clear
+		dd	.umask, cmd_umask
 		dd	0, 0
 
 .and		db	"&&", 0
@@ -2045,6 +2153,7 @@ builtin_cmds:
 .bg		db 	"bg", 0
 .jobs		db	"jobs", 0
 .clear		db	"clear", 0
+.umask		db	"umask", 0
 
 .paths		db	"/bin", 0
 		db	"/sbin", 0
@@ -2120,7 +2229,7 @@ file_name		resb	255
 file_equal		resb	255
 first_time		resb	1	;stupid
 
-b_id			resw	1
+b_id			resw	10
 pbackground		resb	1
 interactive		resb	1	;interactive/script
 pid			resd	1	;curr running child
