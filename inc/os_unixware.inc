@@ -1,11 +1,10 @@
+; Copyright (C) 2001 Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
 ;
-; $Id: os_unixware.inc,v 1.1 2001/11/12 15:53:18 konst Exp $
-;
-; (c) 2001 Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
+; $Id: os_unixware.inc,v 1.2 2001/11/14 16:01:42 konst Exp $
 ;
 ; file  	: os_unixware.inc
 ; created	: 08-Nov-2001
-; modified	: 12-Nov-2001
+; modified	: 14-Nov-2001
 ; version	: 0.1
 ; assembler	: nasm
 ; author	: Thomas M. Ogrisegg

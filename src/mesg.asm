@@ -1,6 +1,10 @@
-;Copyrught (c) 2001 Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
+;Copyright (C) 2001 Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
 ;
-;$Id: mesg.asm,v 1.1 2001/11/04 18:11:28 konst Exp $ 
+;$Id: mesg.asm,v 1.2 2001/11/14 16:02:44 konst Exp $
+;
+;syntax: mesg [y|n]
+;
+;control write access to your terminal
 
 %include "system.inc"
 
@@ -48,8 +52,8 @@ __do_chmod:
 	sys_chmod Buf, eax
 	jmp _exit
 
-yes db	"is y", 10
-no db  "is n", 10
+yes	db	"is y", __n
+no	db	"is n", __n
 fd0	db	"/proc/self/fd/0"
 
 UDATASEG

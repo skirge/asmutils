@@ -1,11 +1,10 @@
+; Copyright (C) 2001 Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
 ; 
-; $Id: os_solaris.inc,v 1.1 2001/11/12 15:53:18 konst Exp $
-;
-; (c) 2001 by Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
+; $Id: os_solaris.inc,v 1.2 2001/11/14 16:01:42 konst Exp $
 ;
 ; file		: os_solaris.inc
 ; created	: 04-Nov-2001
-; modified	: 08-Nov-2001
+; modified	: 14-Nov-2001
 ; version	: 0.2
 ; assembler	: nasm
 ; author	: Thomas M. Ogrisegg

@@ -1,10 +1,10 @@
 ; Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_beos.inc,v 1.3 2001/11/12 15:53:18 konst Exp $
+; $Id: os_beos.inc,v 1.4 2001/11/14 16:01:42 konst Exp $
 ;
 ; file          : os_beos.inc
 ; created       : 21-Feb-2000
-; modified      : 12-Nov-2001
+; modified      : 14-Nov-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : BeOS kernel constants (R4.5+)
@@ -14,10 +14,11 @@
 ;IMPORTANT NOTES:
 ;
 ;Now that BeOS is dead, it doesn't really matter. This stuff is kept here just
-;for history, so if your's 'date' shows something like "Mon Aug 1 2542 10:23",
+;for history, so if your's 'date' shows something like "Mon Aug 7 2541 10:23",
 ;you may read on and marvel at what ancient people did.
 ;
-;BeOS port doesnot work (mostly because of weird BeOS kernel bugs)
+;BeOS port is in alpha stage (yes, it works sometimes),
+;mostly because of weird BeOS kernel bugs.
 ;
 ;Be kernel developers did not want to share any information on syscalls,
 ;so I had to figure out these constants and system call convention
@@ -157,29 +158,29 @@ __syscall_gate:
 %assign SYS_fnctl	0x0b	;SYS_dup
 
 ;
-;loopbacks
-;
-
-%assign SYS_getcwd	SYS_exit
-%assign SYS_uname	SYS_exit
-%assign SYS_chmod	SYS_exit
-%assign SYS_chown	SYS_exit
-%assign SYS_chroot	SYS_exit
-%assign SYS_sethostname	SYS_exit
-%assign SYS_setdomainname	SYS_exit
-
-;
 ;int 0x26??
 ;
 
-%assign SYS_mknod	SYS_exit
 %assign SYS_getpid	SYS_exit
-%assign SYS_utime	SYS_exit
-%assign SYS_pipe	SYS_exit
-%assign SYS_brk		SYS_exit
-%assign SYS_signal	SYS_exit
-%assign SYS_fstat	SYS_exit
-%assign SYS_getgroups	SYS_exit
+%assign SYS_mknod	SYS_getpid
+%assign SYS_utime	SYS_getpid
+%assign SYS_pipe	SYS_getpid
+%assign SYS_brk		SYS_getpid
+%assign SYS_signal	SYS_getpid
+%assign SYS_fstat	SYS_getpid
+%assign SYS_getgroups	SYS_getpid
+
+;
+;loopbacks
+;
+
+%assign SYS_getcwd	SYS_getpid
+%assign SYS_uname	SYS_getpid
+%assign SYS_chmod	SYS_getpid
+%assign SYS_chown	SYS_getpid
+%assign SYS_chroot	SYS_getpid
+%assign SYS_sethostname	SYS_getpid
+%assign SYS_setdomainname	SYS_getpid
 
 ;BeOS has dprintf system call -- 0x68? Wow, I am impressed :)
 
