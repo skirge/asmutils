@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Jani Monoses <jani@astechnix.ro>
 ;
-;$Id: ifconfig.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
+;$Id: ifconfig.asm,v 1.4 2002/08/16 15:06:25 konst Exp $
 ;
 ;hackers' ifconfig/route
 ;
@@ -37,7 +37,7 @@ START:
 	pop		ebp					;get argument count
 	dec		ebp
 	dec		ebp
-	jle		.exit1					;if argc <= 2 bail out	
+	jle		.exit1					;if argc <= 2 bail out
 
 	sys_socket	AF_INET,SOCK_DGRAM,IPPROTO_IP		;subject to ioctls
 	mov		dword [sockfd],eax			;save sock descr
@@ -88,6 +88,7 @@ START:
 ;	jz		.ignore2	
 
 .exit1:
+	_mov		eax,1
 	jmps		.exit
 .netm:
 	cmp		byte[esi],"n"
@@ -115,7 +116,8 @@ START:
 	sys_ioctl	EMPTY,EMPTY,ifreq	
 	ret
 .exit:
-	sys_exit
+	sys_exit	eax
+
 .ipaddr:
 	mov		edi,addr
 	call		.ip2int
