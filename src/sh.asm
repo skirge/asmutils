@@ -4,7 +4,7 @@
 ;       		 Joshua Hudson <joshudson@hotmail.com>
 ;       		 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;
-;$Id: sh.asm,v 1.13 2002/02/25 06:30:25 konst Exp $
+;$Id: sh.asm,v 1.14 2002/02/25 07:42:44 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -61,17 +61,16 @@
 ;0.06  16-Feb-2002	added wildcard extending (RM),
 ;                     	added $environment variable handling
 ;                     	and some control-characters (TO)
-;0.07  23-Feb-2002	added ctrl+z handling, fg, bg, jobs 
+;0.07  25-Feb-2002	added ctrl+z handling, fg, bg, jobs 
 ;			internal commands, some bugfixes (RM)
 ;
 %include "system.inc"
 
 %ifdef __LINUX__ 
-%define HISTORY 
+%define HISTORY ;%undef HISTORY saves 192 bytes + dynamic memory for cmdlines
+%define TTYINIT
+%define SPGRP
 %endif
-
-;%undef HISTORY save 192 bytes + dynamic memory for cmdlines
-;All your base are belong to us !
 
 ;****************************************************************************
 ;****************************************************************************
@@ -97,14 +96,11 @@
 %assign DEL 		07fh
 %assign TABULATOR 	009h
 %assign ESC 		01bh
-%assign file_buff_size 	200h
 %assign CTRL_D          004h
 %assign CTRL_L          00ch
 
+%assign file_buff_size 	200h
 
-%assign TIOCGPGRP  0x0000540F  ;  pid_t *
-%assign TIOCSPGRP  0x00005410  ;  const pid_t *
-	 
 ;%define DATAOFF(addr)           byte ebp + ((addr) - score)
 
 CODESEG
@@ -423,7 +419,7 @@ string_compare:
 ;****************************************************************************
 tty_initialize:
 			cmp	[script_id], byte 0
-			jne	near .bye
+			jne	.bye
 
 ;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ;TODO: set STDIN options (blocking, echo, icanon etc ...) only on linux ?
@@ -431,12 +427,12 @@ tty_initialize:
 ;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			;db 08h,' ',08h we dont suppose to have writeble CS
 			mov  dword [backspace],0x20082008
-%ifdef __LINUX__
+%ifdef TTYINIT
 			mov	edx, termattrs
 			sys_ioctl STDIN, TCGETS
 			mov	eax,[termattrs.c_lflag]
 			push 	eax
-			and	eax, byte ~(ICANON|ECHO)
+			and	eax, ~(ICANON|ECHO)
 			mov	[termattrs.c_lflag], eax
 			sys_ioctl STDIN, TCSETS
 			pop	dword [termattrs.c_lflag]
@@ -445,7 +441,7 @@ tty_initialize:
 			and	dword eax, ~(O_NONBLOCK) ;dont work
 			sys_fcntl  STDIN, F_SETFL, eax
 %endif
-.bye			ret
+.bye:			ret
 
 
 
@@ -454,10 +450,10 @@ tty_initialize:
 ;****************************************************************************
 
 tty_restore:
-%ifdef __LINUX__
+%ifdef TTYINIT
 	cmp	[script_id], dword 0
 	jne	.bye
- 	    sys_ioctl STDIN, TCSETS,termattrs
+ 	sys_ioctl STDIN, TCSETS, termattrs
 %endif	    
 .bye:	ret
 
@@ -484,7 +480,7 @@ tty_restore:
 ; maybe.
 
 ;>AL out
-%ifdef __LINUX__
+%ifdef TTYINIT
 get_char:
 		        sys_read [script_id],getchar,1
 			cmp	[script_id], byte 0
@@ -500,7 +496,7 @@ get_char:
 ;IN EDI buffer 
 ;OUT filled with null term str with\n
 cmdline_get:
-%ifdef __LINUX__
+%ifdef TTYINIT
 			mov 	edi,cmdline.buffer1 
 			mov 	word [edi],0
 .do_nothing_loop:
@@ -810,7 +806,7 @@ clstrlen equ $ - .clstr
 			or 	al,al
 			jnz .next_char
 			;linux dep part
-			%ifdef __LINUX__
+			%ifdef TTYINIT
 			mov 	esi,edi
 			;int 3
 			std
@@ -923,14 +919,14 @@ clstrlen equ $ - .clstr
 			xchg 	edx,ecx
 			sys_write STDOUT,EMPTY,EMPTY
 			jmp short .pop_next 
- %else
+%else
  			sys_read  [script_id], cmdline.buffer1, (CMDLINE_BUFFER1_SIZE - 1)
 			test	dword eax, eax
 			jns	.end
 			xor	dword eax, eax
 .end:			mov	byte  [cmdline.buffer1 + eax], 0
 			ret
- %endif	;__LINUX__
+%endif	;TTYINIT
 
 
 ;****************************************************************************
@@ -1470,7 +1466,7 @@ execute_builtin:
 			sys_fork
 			test	dword eax, eax
 			jnz	near  .wait
-%ifdef __LINUX__ 
+%ifdef SPGRP
 			sys_getpid
 			mov 	edx,cur_pid
 			mov 	[edx],eax
@@ -1606,8 +1602,7 @@ wait_here:			;sys_exit 0
 			
 .not_stopped:
 			call tty_restore
-
-%ifdef __LINUX__
+%ifdef SPGRP
 			sys_getpid
 			mov [cur_pid],eax
 			sys_setpgid eax,0
@@ -1747,6 +1742,7 @@ cmd_or:			cmp	[rtn], dword 0
 ;* cmd_colon ****************************************************************
 ;****************************************************************************
 
+cmd_comment:
 cmd_colon:		xor	eax, eax
 			mov	[rtn], eax
 			ret
@@ -1793,7 +1789,7 @@ cmd_fg:
 			pop	ebx
 			mov	[pid],ebx
 
-%ifdef __LINUX__ 
+%ifdef SPGRP
 			;sys_getpid
 			;mov [cur_pid],ebx
 			sys_setpgid EMPTY,ebx
@@ -1817,7 +1813,7 @@ cmd_fg:
 .is_our_child:			
 			call	serve_casualties
 .terminated:
-%ifdef __LINUX__ 
+%ifdef SPGRP
 			sys_getpid
 			mov [cur_pid],eax
 			sys_setpgid eax,0
@@ -1859,7 +1855,7 @@ cmd_bg:
 			or	ebx,ebx
 			jz	bad_record
 			;call	tty_restore
-%ifdef __LINUX__ 
+%ifdef SPGRP
 			sys_setpgid EMPTY,0 ;FIXME 
 %endif
 			sys_kill EMPTY,SIGCONT	
@@ -1900,7 +1896,6 @@ cmd_jobs:
 
 break_hndl:
 %ifndef __LINUX__ 
-
 			sys_signal SIGINT,break_hndl
 %endif
 %ifdef	DEBUG
@@ -1914,8 +1909,7 @@ break_hndl:
 			sys_kill [pid],SIGTERM
 			ret
 ctrl_z:
-%ifndef __LINUX__ 
-
+%ifndef SPGRP
 			sys_signal SIGTSTP,ctrl_z
 %endif
 			cmp dword [pid],0
@@ -1940,34 +1934,34 @@ ctrl_z:
 
 
 text:
-.welcome:			db	"asmutils shell", 10
+.welcome:			db	"asmutils shell", __n
 .welcome_length:		equ	$ - .welcome
 .prompt_ptrace:			db	"+ "
 .prompt_user:			db	"$ "
 .prompt_root:			db	"# "
 .prompt_incomplete:		db	"> "
 .prompt_length			equ	2
-.cmd_not_found:			db	"command not found", 10
+.cmd_not_found:			db	"command not found", __n
 .cmd_not_found_length:		equ	$ - .cmd_not_found
 %ifdef DEBUG
-.break:				db	__n,">>SIGINT received<<,sending SIGTERM", 10
+.break:				db	__n,">>SIGINT received<<,sending SIGTERM", __n
 .break_length:			equ	$ - .break
 %endif
 .suicide:			db	__n,"Suicide is painless..."
 .suicide_length:			equ	$ - .suicide
 .stop:			db	__n,"You say STOP and I say go..."
 .stop_length:			equ	$ - .stop
-.cd_failed:			db	"couldn't change directory", 10
+.cd_failed:			db	"couldn't change directory", __n
 .cd_failed_length:		equ	$ - .cd_failed
-.logout:			db	"logout", 10
+.logout:			db	"logout", __n
 .logout_length:			equ	$ - .logout
-.scerror:			db	"couldn't open scriptfile", 10
+.scerror:			db	"can't open script", __n
 .scerror_length:		equ	$ - .scerror
 .stopped:			db 	"Stopped id: "
 .stopped_length			equ	$ - .stopped
-.nosuchjob			db	"I haven't such job",10
+.nosuchjob			db	"No such job", __n
 .nosuchjob_length:		equ	$ - .nosuchjob
-.nosuchpid			db	"Child is 0xDEAD. I'm sorry",10
+.nosuchpid			db	"Child is 0xDEAD. I'm sorry", __n
 .nosuchpid_length:		equ	$ - .nosuchpid
 
 builtin_cmds:
@@ -1977,16 +1971,22 @@ builtin_cmds:
 				dd	.cd, cmd_cd
 				dd      .export, cmd_export
 				dd	.and, cmd_and
+				dd	.and2, cmd_and
 				dd	.or, cmd_or
+				dd	.or2, cmd_or
 				dd	.colon, cmd_colon
+				dd	.comment, cmd_comment
 				dd	.fg, cmd_fg
 				dd	.bg, cmd_bg
 				dd	.jobs, cmd_jobs
 				
 				dd	0, 0
-.and:				db	"and", 0
-.or:				db	"or", 0
+.and:				db	"&&", 0
+.and2:				db	"and", 0
+.or:				db	"||", 0
+.or2:				db	"or", 0
 .colon:				db	":", 0
+.comment:			db	"#", 0
 .exit:				db	"exit", 0
 .logout:			db	"logout", 0
 .cd:				db	"cd", 0
@@ -2053,10 +2053,16 @@ pipe_pair:
 
 environ_count resd 1
 
-%ifdef __LINUX__
+%ifdef TTYINIT
 termattrs B_STRUC termios,.c_lflag
 getchar_buff: resb 3
 getchar resb 3
+%endif
+%ifdef HISTORY
+history_cur   resd 1
+history_start resd 1
+%endif
+
 file_buff resb file_buff_size
 write_after_slash resd 1 
 first_chance resb 1
@@ -2064,11 +2070,7 @@ file_name resb 255
 file_equal resb 255
 first_time  resb 1 ;stupid
 stat_buf B_STRUC Stat,.st_mode
-%endif
-%ifdef HISTORY
-history_cur   resd 1
-history_start resd 1
-%endif
+
 pbackground resb 1
 pid resd 1		;curr running child
 pid_array resd MAX_PID
