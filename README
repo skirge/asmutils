@@ -2,7 +2,7 @@
 			       asmutils
 			       ********
 
-			    (version 0.10)
+			    (version 0.11)
 
 			http://linuxassembly.org
 
@@ -11,7 +11,7 @@
 ;
 ; THESE UTILITIES WORK WITH KERNEL DIRECTLY (UNLESS "LIBC" VERSION IS USED).
 ; AUTHORS ARE NOT RESPONSIBLE FOR ANY DAMAGE THEY CAN DO TO YOUR SYSTEM.
-; THEY WORKED ON MY BOX, BUT THEY CAN CRASH YOURS.
+; THOUGH THEY WORKED ON MY BOX, BUT THEY CAN CRASH YOURS.
 ; NO WARRANTY. THIS IS DEVELOPMENT VERSION, USE SOLELY AT YOUR OWN RISK.
 
 
@@ -39,9 +39,9 @@ asmutils is a set of miscellaneous utilities written in assembly language,
 targeted on embedded systems and small distributions (like rescue or
 installation disks); also it contains small libc and crypto library.
 It features the smallest possible size and memory requirements,
-the fastest speed and good functionality.
-Currently project supports Linux and BSD family (FreeBSD, NetBSD, OpenBSD),
-BeOS support is in the works; however it is quite portable to any i386 OS. 
+the fastest speed and good functionality. Currently project supports
+Linux and BSD family (FreeBSD, NetBSD, OpenBSD), BeOS and AtheOS support
+is in the works, and it is possible to port it to any i386 OS. 
 
 Another goal of this package is to provide PORTABLE source code library,
 and to encourage assembly programmers to write for Linux/UNIX.
@@ -114,4 +114,4 @@ Other stuff
 
  Do not forget to send feedback & bugreports to project maintainer.
 
- $Id: README,v 1.7 2000/09/03 16:25:07 konst Exp $
+ $Id: README,v 1.8 2000/12/10 08:20:36 konst Exp $

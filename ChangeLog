@@ -1,3 +1,24 @@
+10-Dec-2000:	asmutils 0.11
+
+	- sh (AG, KS)
+	- head (JL)
+	- ln and sln merged (KB)
+	- lsmod and rmmod merged (KB)
+	- execve and regs merged (KB)
+	- nc: cleanup and portability fixes (KB)
+	- httpd: squeezed few more bytes (KB)
+	- cp: file creation fixed on BSD, size improvements (TH, KB)
+	- md5sum, rmdsum, rc6crypt, lzss: size improvements and cleanup (KB)
+	- uname: sysctl based version for OpenBSD (TH), size improvements (KB)
+	- cp, mv, rm: *BSD port (KB)
+	- echo: removed extra trailing zero (KB)
+	- extensive cleanup of libcrypto (KB)
+	- syscall.inc: support for syscalls with 6+ arguments (TH, KB)
+	- Asmutils-HOWTO: rewritten using DocBook DTD (KB)
+	- initial AtheOS port (KB)
+	- binaries removed from distribution package (KB)
+
+
 03-Sep-2000:	asmutils 0.10
 
 	- cp, mv, rm (DB)
@@ -42,7 +63,7 @@
 	- env (EP)
 	- network syscalls rewritten (KB)
 	- libc: fastcall support (KB)
-	- portability fixes: kill, tee, httpd (KB)
+	- kill, tee, httpd: portability fixes (KB)
 	- project ported to libc :) (KB)
 	- initial BeOS support (KB)
 	- size improvements (KB)

@@ -2,7 +2,7 @@
 #
 # MCONFIG -- Configuration stuff for asmutils
 #
-# $Id: MCONFIG,v 1.1 2000/09/03 16:13:53 konst Exp $
+# $Id: MCONFIG,v 1.2 2000/12/10 08:20:36 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -10,7 +10,7 @@
 
 #---------------------------------------------------------------------------#
 
-# Operating system (LINUX/FREEBSD/NETBSD/OPENBSD/BEOS/LIBC)
+# Target Operating System (LINUX/FREEBSD/NETBSD/OPENBSD/BEOS/ATHEOS/LIBC)
 
 OS = LINUX
 
@@ -125,7 +125,7 @@ DEFINES += -D__AOUT__
 else
 ASFLAGS += -f elf
 LDFLAGS += -s
-STRIP = strip --remove-section .note --remove-section .comment
+STRIP = strip -x -R .note -R .comment
 #STRIP = sstrip
 endif
 
@@ -137,5 +137,9 @@ endif
 ifndef DEBUG
 	$(STRIP) $*
 endif
+
+%:	%.c
+	$(CC) $(CFLAGS) -o $@ $< $(LIBSO)
+	$(CC) $(CFLAGS) -mregparm=3 -D__FASTCALL__ -o $@.fc $< $(LIBSO)
 
 endif

@@ -8,11 +8,13 @@ beautification by scripts.  The fields are: name (N), email (E),
 web-address (W), PGP key ID and fingerprint (P), description (D),
 and snail-mail address (S).
 
+$Id: CREDITS,v 1.7 2000/12/10 08:20:36 konst Exp $
+
 ----------
 
 N: Dmitry Bakhvalov (DB)
 E: dl@gazeta.ru
-D: cp.asm id.asm ls.asm ps.asm strings.asm wc.asm
+D: cp.asm id.asm ls.asm mv.asm ps.asm rm.asm strings.asm wc.asm
 
 N: Konstantin Boldyshev (KB)
 E: konst@linuxassembly.org
@@ -24,7 +26,7 @@ D: fire256.asm, framebuffer stuff
 
 N: Alexandr Gorlov (AG)
 E: winct@mail.ru
-D: df.asm dirname.asm
+D: df.asm dirname.asm sh.asm
 
 N: Bart Hanssens (BH)
 E: antares@mail.dma.be
@@ -37,6 +39,10 @@ D: OpenBSD port
 N: Yuri Ivliev (YI)
 E: yuru@black.cat.kazan.su
 D: pwd.asm (stat based part)
+
+N: Jonathan Leto (JL)
+E: jonathan@leto.net
+D: head.asm
 
 N: Indrek Mandre (IM)
 E: indrek.mandre@tallinn.ee
@@ -55,6 +61,10 @@ N: H-Peter Recktenwald (PR)
 E: phpr@snafu.de
 D: cpuinfo.asm extname.asm eject.asm (ccd extension)
 D: report.asm errno.inc
+
+N: Karsten Scheibler (KS)
+E: karsten.scheibler@bigfoot.de
+D: sh.asm
 
 N: Cecchinel Stephan (CS)
 E: inter.zone@free.fr
