@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.25 2002/06/11 08:29:34 konst Exp $
+; $Id: os_linux.inc,v 1.26 2002/08/14 16:53:29 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 10-Jun-2002
+; modified      : 14-Aug-2002
 ; version       : 0.17
 ; assembler     : nasm 0.98
 ; description   : Linux kernel (2.0+) constants and structures
@@ -1253,6 +1253,12 @@ endstruc
 	__pushargs 5, %0, %1, %2, %3, %4, %5
 	sys_socketcall SYS_SETSOCKOPT,esp
 	_add	esp,(5 * 4)
+%endmacro
+
+%macro	sys_getsockname 0-3
+	__pushargs 3, %0, %1, %2, %3
+	sys_socketcall SYS_GETSOCKNAME,esp
+	_add	esp,(3 * 4)
 %endmacro
 
 %macro	sys_shutdown 0-2
