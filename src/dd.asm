@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@feld.cvut.cz>
 ;
-;$Id: dd.asm,v 1.3 2001/08/20 15:22:03 konst Exp $
+;$Id: dd.asm,v 1.4 2002/04/16 02:53:26 konst Exp $
 ;
 ;hackers' dd
 ;
@@ -8,14 +8,15 @@
 ;
 ;number can be also 1k=1*1024 etc k=1024 b=512 w=2
 ;
-;Version 0.1 - 2001-Feb-21
+;0.1: 2001-Feb-21	initial release
+;0.2: 2002-Apr-15	added O_LARGEFILE for input file
 ;
 ;All comments/feedback welcome.
 
 %include "system.inc"
 
 %ifdef	__LINUX__
-%define BIG_FILES ;for linux only handles very big files
+%define LARGE_FILES
 %endif
 
 CODESEG
@@ -82,7 +83,7 @@ START:
 ;	ret
 
 .parse_input_file:		;I always wanted to xchange .. :)
-	_mov	ecx, O_RDONLY
+	_mov	ecx,(O_RDONLY|O_LARGEFILE)
 	xchg	edx,ebp
 	call	.open
 	xchg	edi,ebp
@@ -126,7 +127,7 @@ START:
 	pop	eax
 	mul 	dword [skip]   ;EDX:EAX seek
 
-%ifdef BIG_FILES
+%ifdef LARGE_FILES
 	push    edi
 	mov     ebx,edi
 	mov     ecx,edx
@@ -136,13 +137,13 @@ START:
 	sys_llseek
 	;pop	edi
 %else	
-	or 	edx,edx   		;file bigger than 4Gb cannot skip more use llseek insted ?
+	or 	edx,edx		;file bigger than 4Gb cannot skip more use llseek instead ?
 	jnz 	.do_error	
 	sys_lseek edi, eax, SEEK_SET
 %endif
 	mov 	eax,[bs]
 	mul 	dword [seek]
-%ifdef BIG_FILES
+%ifdef LARGE_FILES
 	mov     ebx,ebp
 	mov     ecx,edx
 	mov     edx,eax
