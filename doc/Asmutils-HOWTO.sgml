@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.8 2001/08/21 12:55:29 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.9 2001/11/12 15:54:43 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -23,7 +23,7 @@
 </author>
 
 <releaseinfo>Version 0.7</releaseinfo>
-<pubdate role="cvs">$Date: 2001/08/21 12:55:29 $</pubdate>
+<pubdate role="cvs">$Date: 2001/11/12 15:54:43 $</pubdate>
 
 <copyright>
 <year>1999-2001</year><holder>Konstantin Boldyshev</holder>
@@ -157,7 +157,7 @@ if your really want to do so; then you will also need
 </para>
 
 <note><para>
-Do not expect LIBC port to work out-of-the-box.
+Well, to be sincere, do not expect LIBC port to work out-of-the-box.
 Instead, prepare to hack <filename>MCONFIG</filename> (hint:
 <function>STARTUP=y</function> may help if startup stack differs from usual),
 <filename>.inc</filename> files and source code to animate this malformation.
@@ -169,8 +169,9 @@ Also, expect any other kind of disaster and affliction
 when trying to run what you have built after all,
 especially on weird systems like BeOS or QNX
 (hint: check constants in <filename>os_libc.inc</filename>).
-Finally, find yourself close to suicide,
-devising your all to developers of your libc.
+Finally, find yourself on the brink of suicide,
+screaming and pulling out your hair,
+and devising your all to developers of your libc.
 They say, life ain't easy.
 </para></note>
 
@@ -1050,7 +1051,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.8 2001/08/21 12:55:29 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.9 2001/11/12 15:54:43 konst Exp $
 </literal></para>
 </appendix>
 

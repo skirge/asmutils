@@ -1,25 +1,29 @@
 ; Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_beos.inc,v 1.2 2001/03/18 07:08:25 konst Exp $
+; $Id: os_beos.inc,v 1.3 2001/11/12 15:53:18 konst Exp $
 ;
 ; file          : os_beos.inc
 ; created       : 21-Feb-2000
-; modified      : 11-Mar-2001
-; version       : 0.14
+; modified      : 12-Nov-2001
+; version       : 0.16
 ; assembler     : nasm 0.98
-; description   : beos kernel constants (R4.5.2)
+; description   : BeOS kernel constants (R4.5+)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
 ; comment       : included internally from system.inc
 ;
 ;IMPORTANT NOTES:
 ;
-;BeOS port doesnot work yet (mostly because of weird BeOS kernel bugs)
+;Now that BeOS is dead, it doesn't really matter. This stuff is kept here just
+;for history, so if your's 'date' shows something like "Mon Aug 1 2542 10:23",
+;you may read on and marvel at what ancient people did.
 ;
-;Be kernel developers do not want to share any information on syscalls,
+;BeOS port doesnot work (mostly because of weird BeOS kernel bugs)
+;
+;Be kernel developers did not want to share any information on syscalls,
 ;so I had to figure out these constants and system call convention
 ;manually by disassembling libroot.so (of course BIEW helped a lot).
-;As BeOS is not Open Source, do not even think of blaming
-;me if these few numbers will destroy your hard disk data,
+;As BeOS source code is closed, do not even think of blaming me
+;if these few numbers will destroy your hard disk data,
 ;my BeOS hanged dozens times when I was playing with them.
 ;
 ;***
@@ -155,10 +159,14 @@ __syscall_gate:
 ;
 ;loopbacks
 ;
+
 %assign SYS_getcwd	SYS_exit
 %assign SYS_uname	SYS_exit
 %assign SYS_chmod	SYS_exit
+%assign SYS_chown	SYS_exit
 %assign SYS_chroot	SYS_exit
+%assign SYS_sethostname	SYS_exit
+%assign SYS_setdomainname	SYS_exit
 
 ;
 ;int 0x26??

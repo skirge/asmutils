@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.8 2001/09/24 16:49:19 konst Exp $
+; $Id: system.inc,v 1.9 2001/11/12 15:53:18 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 24-Sep-2001
-; version	: 0.15
+; modified	: 12-Nov-2001
+; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: generic (not OS specific) macros, sections, headers, etc.
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -33,6 +33,7 @@
 ;0.14: 11-Feb-2001	added B_STRUC macro (aka ELF_BSTRUC from elf.inc) (BR),
 ;			moved __syscall_gate to os_xxx.inc files (KB)
 ;0.15: 24-Sep-2001	fixed LIBC stuff, added __LONG_JUMPS__ (KB)
+;0.16: 12-Nov-2001	added SOLARIS, UNIXWARE, improved BeOS stub (KB)
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
@@ -46,17 +47,27 @@
 ;
 
 %ifndef __LINUX__
-%ifndef __QNXRTP__
 %ifndef __ATHEOS__
-%ifndef __BEOS__
-%define __BSD__
+%ifndef __QNXRTP__
+
 %define	__LONG_JUMPS__
+
+%ifndef __BEOS__
+%ifndef __SOLARIS__
+%ifndef __UNIXWARE__
+
+%define __BSD__
+
 %ifndef __FREEBSD__
 %ifndef __NETBSD__
 %ifndef __OPENBSD__
+
 %define __LIBC__
 %define	__LONG_JUMPS__
 %undef	__BSD__
+
+%endif
+%endif
 %endif
 %endif
 %endif
@@ -107,6 +118,10 @@
 %include "os_beos.inc"
 %elifdef __ATHEOS__
 %include "os_atheos.inc"
+%elifdef __SOLARIS__
+%include "os_solaris.inc"
+%elifdef __UNIXWARE__
+%include "os_unixware.inc"
 %elifdef __LIBC__
 %include "os_libc.inc"
 %endif
@@ -241,23 +256,56 @@ main:
 _start:
 
 %ifdef	__BEOS__
-	pop	eax
-	pop	eax
+;
+;convert BeOS startup stack to common ELF stack
+;
+	pop	ebx
+	pop	ebx
 	pop	esi
-;	mov	esi,[esi]
-	push	eax
+	mov	esi,[esi]
+	mov	edi,esi
+	mov	ecx,ebx
 .__next1:
-	push	esi
+	lodsb
+	or	al,al
+	jnz	.__next1
+	dec	ecx
+	jnz	.__check_end
+	mov	ebp,esi
+.__check_end:
+	cmp	[esi],byte 0
+	jnz	.__next1
+	push	byte 0		;ending	NULL
+	dec	esi
+	dec	esi
+	std
 .__next2:
+	cmp	esi,edi
+	jz	.__finish2
 	lodsb
 	or	al,al
 	jnz	.__next2
+.__finish2:
 	inc	esi
-	cmp	[esi],byte 0
-	jnz	.__next1
-
+	cmp	esi,ebp
+	jz	.__push_arg
+	push	byte 0		;push NULL before args
+.__push_arg:
+	push	esi		;push argv or envp
+.__d2:
+	dec	esi
+	cmp	esi,edi
+	jnz	.__next2
+.__done:
+	push	ebx		;push argc
+	cld
 	xor	eax,eax
-	mov	esi,eax
+	xor	ebx,ebx
+	xor	ecx,ecx
+	xor	esi,esi
+	xor	edi,edi
+	xor	ebp,ebp
+
 	jmp	START
 %endif
 

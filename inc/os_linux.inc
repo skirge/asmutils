@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.8 2001/09/24 16:10:39 konst Exp $
+; $Id: os_linux.inc,v 1.9 2001/11/12 15:53:18 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 27-Aug-2001
-; version       : 0.15
+; modified      : 12-Nov-2001
+; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -1031,6 +1031,30 @@ endstruc
 %endmacro
 
 ;
+;arch/i386/kernel/ioport.c
+;
+
+%macro sys_ioperm 0-3
+	__syscall ioperm, 3, %0, %1, %2, %3
+%endmacro
+
+%macro sys_iopl 0-1
+	__syscall iopl, 1, %0, %1
+%endmacro
+
+;
+;arch/i386/kernel/process.c
+;
+
+%macro sys_idle 0
+	__syscall idle, 0
+%endmacro
+
+%macro sys_clone 0-2
+	__syscall clone, 2, %0, %1, %2
+%endmacro
+
+;
 ;arch/i386/kernel/ldt.c
 ;
 
@@ -1047,6 +1071,101 @@ endstruc
 
 %macro sys_vm86 0-2
 	__syscall vm86, 2, %0, %1, %2
+%endmacro
+
+;
+;arch/i386/kernel/sys_i386.c
+;
+
+%macro sys_mmap 0-1
+	__syscall mmap, 1, %0, %1
+%endmacro
+
+;
+;kernel/info.c
+;
+
+%macro sys_sysinfo 0-1
+	__syscall sysinfo, 1, %0, %1
+%endmacro
+
+;
+;kernel/printk.c
+;
+
+%macro sys_syslog 0-3
+	__syscall syslog, 3, %0, %1, %2, %3
+%endmacro
+
+;
+;kernel/sys.c
+;
+
+%macro sys_reboot 0-4
+	__syscall reboot, 4, %0, %1, %2, %3, %4
+%endmacro
+
+;
+;fs/buffer.c
+;
+
+%macro sys_bdflush 0-2
+	__syscall bdflush, 2, %0, %1, %2
+%endmacro
+
+;
+;mm/swapfile.c
+;
+
+%macro sys_swapon 0-2
+	__syscall swapon, 2, %0, %1, %2
+%endmacro
+
+%macro sys_swapoff 0-1
+	__syscall swapoff, 1, %0, %1
+%endmacro
+
+;
+%macro sys_sysctl 0-6
+	__syscall sysctl, 6, %0, %1, %2, %3, %4, %5, %6
+%endmacro
+
+;
+%macro sys_rt_sigreturn 0-1
+	__syscall rt_sigreturn, 1, %0, %1
+%endmacro
+
+%macro sys_rt_sigsuspend 0-2
+	__syscall rt_sigsuspend, 2, %0, %1, %2
+%endmacro
+
+;
+;kernel/module.c
+;
+
+%macro sys_delete_module 0-1
+	__syscall delete_module, 1, %0, %1
+%endmacro
+
+%macro sys_init_module 0-2
+	__syscall init_module, 2, %0, %1, %2
+%endmacro
+
+%macro sys_create_module 0-2
+	__syscall create_module, 2, %0, %1, %2
+%endmacro
+
+%macro sys_query_module 0-5
+	__syscall query_module, 5, %0, %1, %2, %3, %4, %5
+%endmacro
+
+%macro sys_get_kernel_syms 0-1
+	__syscall get_kernel_syms, 1, %0, %1
+%endmacro
+
+;
+%macro sys_umount2 0-2
+	__syscall umount2, 2, %0, %1, %2
 %endmacro
 
 %endif	;__LINUX_INC

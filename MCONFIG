@@ -2,7 +2,7 @@
 #
 # MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.9 2001/08/20 18:37:41 konst Exp $
+# $Id: MCONFIG,v 1.10 2001/11/12 15:54:43 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -10,11 +10,12 @@
 
 #---------------------------------------------------------------------------#
 
-# Target Operating System (LINUX/FREEBSD/NETBSD/OPENBSD/BEOS/ATHEOS/LIBC)
+# Target operating system. Valid values are:
+# LINUX/FREEBSD/NETBSD/OPENBSD/SOLARIS/UNIXWARE/BEOS/ATHEOS/LIBC
 
 OS = LINUX
 
-# Kernel version (1.2 = 12, 2.4 = 24, 3.6 = 36, etc)
+# kernel version of target OS (1.2 = 12, 2.4 = 24, 3.6 = 36, etc)
 
 KERNEL = 24
 
@@ -47,7 +48,7 @@ ELF_MACROS = y
 
 #---------------------------------------------------------------------------#
 
-VERSION = 0.15
+VERSION = 0.16
 
 ${OS} = y
 
@@ -94,6 +95,10 @@ AOUT = y
 endif
 ifdef OPENBSD
 AOUT = y
+endif
+
+ifdef BEOS
+STARTUP = y
 endif
 
 ifdef LIBC

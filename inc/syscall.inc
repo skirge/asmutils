@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.9 2001/08/28 06:38:50 konst Exp $
+; $Id: syscall.inc,v 1.10 2001/11/12 15:53:18 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 28-Aug-2001
-; version	: 0.15
+; modified	: 12-Nov-2001
+; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: system call macros
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -44,7 +44,7 @@
      %if %3>5
 %ifdef __LINUX__
 %if __KERNEL >= 24
-	_mov	ebp,%8
+	_mov	ebp,%9
 %endif
 %endif
      %endif
@@ -101,7 +101,7 @@
       %if P>6 && %3>6
 	push	dword %10
       %endif
-	push	ebp
+	push	dword %9	;push	ebp
      %endif
 	push	edi
     %endif
@@ -160,39 +160,12 @@ extern %{1}
 	__syscall eax, 6, %0, %1, %2, %3, %4, %5, %6
 %endmacro
 
-;Source references are made conforming to Linux Kernel,
-;so they will be different on other kernels
-
-;--------------------------------------------------------------------------
-;arch/i386/
-;--------------------------------------------------------------------------
-
 ;
-;arch/i386/kernel/ioport.c
+;unistd.h
 ;
-
-%macro sys_ioperm 0-3
-	__syscall ioperm, 3, %0, %1, %2, %3
-%endmacro
-
-%macro sys_iopl 0-1
-	__syscall iopl, 1, %0, %1
-%endmacro
-
-;
-;arch/i386/kernel/process.c
-;
-
-%macro sys_idle 0
-	__syscall idle, 0
-%endmacro
 
 %macro sys_fork 0-1
 	__syscall fork, 1, %0, %1
-%endmacro
-
-%macro sys_clone 0-2
-	__syscall clone, 2, %0, %1, %2
 %endmacro
 
 %macro sys_vfork 0-1
@@ -203,86 +176,21 @@ extern %{1}
 	__syscall execve, 3, %0, %1, %2, %3
 %endmacro
 
-;
-;arch/i386/kernel/ptrace.c
-;
-
-%macro sys_ptrace 0-4
-	__syscall ptrace, 4, %0, %1, %2, %3, %4
-%endmacro
-
-;
-;arch/i386/kernel/signal.c
-;
-
-%macro sys_sigaction 0-3
-	__syscall sigaction, 3, %0, %1, %2, %3
-%endmacro
-
-%macro sys_altstack 0-2
-	__syscall rt_altstack, 2, %0, %1, %2
-%endmacro
-
-%macro sys_sigreturn 0-1
-	__syscall sigreturn, 1 %0, %1
-%endmacro
-
-%macro sys_rt_sigreturn 0-1
-	__syscall rt_sigreturn, 1, %0, %1
-%endmacro
-
-%macro sys_sigsuspend 0-3
-	__syscall sigsuspend, 3, %0, %1, %2, %3
-%endmacro
-
-%macro sys_rt_sigsuspend 0-2
-	__syscall rt_sigsuspend, 2, %0, %1, %2
-%endmacro
-
-;
-;arch/i386/kernel/sys_i386.c
-;
-
 %macro sys_pause 0
 	__syscall pause, 0
-%endmacro
-
-%macro sys_mmap 0-1
-	__syscall mmap, 1, %0, %1
 %endmacro
 
 %macro sys_pipe 0-1
 	__syscall pipe, 1, %0, %1
 %endmacro
 
-%macro sys_uname 0-1
-	__syscall uname, 1, %0, %1
-%endmacro
-
-;--------------------------------------------------------------------------
-;fs/
-;--------------------------------------------------------------------------
-
-;
-;fs/readdir.c
-;
-
 %macro sys_getdents 0-3
 	__syscall getdents, 3, %0, %1, %2, %3
 %endmacro
 
-;
-;fs/dcache.c
-;
-
 %macro sys_getcwd 0-2
 	__syscall getcwd, 2, %0, %1, %2
 %endmacro
-
-
-;
-;fs/read_write.c
-;
 
 %macro sys_read 0-3
 	__syscall read, 3, %0, %1, %2, %3
@@ -302,30 +210,6 @@ extern %{1}
 
 %macro sys_pwrite 0-4
 	__syscall pwrite, 4, %0, %1, %2, %3, %4
-%endmacro
-
-%macro sys_readv  0-3
-	__syscall readv, 3, %0, %1, %2, %3
-%endmacro
-
-%macro sys_writev  0-3
-	__syscall writev, 3, %0, %1, %2, %3
-%endmacro
-
-;
-;fs/open.c
-;
-
-%macro sys_open 0-3
-	__syscall open, 3, %0, %1, %2, %3
-%endmacro
-
-%macro sys_close 0-1
-	__syscall close, 1, %0, %1
-%endmacro
-
-%macro sys_statfs 0-2
-	__syscall statfs, 2, %0, %1, %2
 %endmacro
 
 %macro sys_chroot 0-1
@@ -356,17 +240,13 @@ extern %{1}
 	__syscall chdir, 1, %0, %1
 %endmacro
 
-%macro sys_utime 0-2
-	__syscall utime, 2, %0, %1, %2
+%macro sys_open 0-3
+	__syscall open, 3, %0, %1, %2, %3
 %endmacro
 
-%macro sys_utimes 0-2
-	__syscall utimes, 2, %0, %1, %2
+%macro sys_close 0-1
+	__syscall close, 1, %0, %1
 %endmacro
-
-;
-;fs/select.c
-;
 
 %macro sys_select 0-5
 	__syscall select, 5, %0, %1, %2, %3, %4, %5
@@ -376,37 +256,9 @@ extern %{1}
 	__syscall poll, 3, %0, %1, %2, %3
 %endmacro
 
-;
-;fs/super.c
-;
-
-%macro sys_mount 0-5
-	__syscall mount, 5, %0, %1, %2, %3, %4, %5
-%endmacro
-
-%macro sys_umount 0-1
-	__syscall umount, 1, %0, %1
-%endmacro
-
-%macro sys_umount2 0-2
-	__syscall umount2, 2, %0, %1, %2
-%endmacro
-
-;
-;fs/buffer.c
-;
-
 %macro sys_sync 0
 	__syscall sync, 0
 %endmacro
-
-%macro sys_bdflush 0-2
-	__syscall bdflush, 2, %0, %1, %2
-%endmacro
-
-;
-;fs/fcntl.c
-;
 
 %macro sys_fcntl 0-3
     __syscall fcntl, 3, %0, %1, %2, %3
@@ -419,10 +271,6 @@ extern %{1}
 %macro sys_dup2 0-2
 	__syscall dup2, 2, %0, %1, %2
 %endmacro
-
-;
-;fs/namei.c
-;
 
 %macro sys_mknod 0-3
 	__syscall mknod, 3, %0, %1, %2, %3
@@ -452,22 +300,6 @@ extern %{1}
 	__syscall rename, 2, %0, %1, %2
 %endmacro
 
-;
-;fs/ioctl.c
-;
-
-%macro sys_ioctl 0-3
-	__syscall ioctl, 3, %0, %1, %2, %3
-%endmacro
-
-%macro sys_sysctl 0-6
-	__syscall sysctl, 6, %0, %1, %2, %3, %4, %5, %6
-%endmacro
-
-;
-;fs/stat.c
-;
-
 %macro sys_readlink 0-3
 	__syscall readlink, 3, %0, %1, %2, %3
 %endmacro
@@ -484,20 +316,8 @@ extern %{1}
 	__syscall lstat, 2, %0, %1, %2
 %endmacro
 
-;--------------------------------------------------------------------------
-;kernel/
-;--------------------------------------------------------------------------
-
-;
-;kernel/sched.c
-;
-
 %macro sys_alarm 0-1
 	__syscall alarm, 1, %0, %1
-%endmacro
-
-%macro sys_nanosleep 0-2
-	__syscall nanosleep, 2, %0, %1, %2
 %endmacro
 
 %macro sys_getuid 0
@@ -510,34 +330,6 @@ extern %{1}
 
 %macro sys_nice 0-1
 	__syscall nice, 1, %0, %1
-%endmacro
-
-%macro sys_getpriority 0-2
-	__syscall getpriority, 2, %0, %1, %2
-%endmacro
-
-%macro sys_setpriority 0-3
-	__syscall setpriority, 3, %0, %1, %2, %3
-%endmacro
-
-;
-;kernel/signal.c
-;
-
-%macro sys_kill 0-2
-	__syscall kill, 2, %0, %1, %2
-%endmacro
-
-%macro sys_signal 0-2
-	__syscall signal, 2, %0, %1, %2
-%endmacro
-
-;
-;kernel/sys.c
-;
-
-%macro sys_reboot 0-4
-	__syscall reboot, 4, %0, %1, %2, %3, %4
 %endmacro
 
 %macro sys_sethostname 0-2
@@ -568,39 +360,11 @@ extern %{1}
         __syscall umask, 1, %0
 %endmacro
 
-;
-;kernel/time.c
-;
-
-%macro sys_gettimeofday 0-2
-	__syscall gettimeofday, 2, %0, %1, %2
-%endmacro
-
-%macro sys_time 0-1
-	__syscall time, 1, %0, %1
-%endmacro
-
-;
-;kernel/mmap.c
-;
-
-%macro sys_munmap 0-2
-	__syscall munmap, 2, %0, %1, %2
-%endmacro
-
 %macro	sys_brk	0-1
 	__syscall brk, 1, %0, %1
 %endmacro
 
 %define sys_break sys_brk
-
-;
-;kernel/exit.c
-;
-
-%macro sys_wait4 0-4
-	__syscall wait4, 2, %0, %1, %2, %3, %4
-%endmacro
 
 %macro sys_exit 0-1
 	__syscall exit, 1, %0, %1
@@ -615,48 +379,128 @@ extern %{1}
 %endmacro
 
 ;
-;kernel/info.c
+;sys/ptrace.h
 ;
 
-%macro sys_sysinfo 0-1
-	__syscall sysinfo, 1, %0, %1
+%macro sys_ptrace 0-4
+	__syscall ptrace, 4, %0, %1, %2, %3, %4
 %endmacro
 
 ;
-;kernel/printk.c
+;signal.h
 ;
 
-%macro sys_syslog 0-3
-	__syscall syslog, 3, %0, %1, %2, %3
+%macro sys_kill 0-2
+	__syscall kill, 2, %0, %1, %2
 %endmacro
 
-;
-;kernel/module.c
-;
-
-%macro sys_delete_module 0-1
-	__syscall delete_module, 1, %0, %1
+%macro sys_signal 0-2
+	__syscall signal, 2, %0, %1, %2
 %endmacro
 
-%macro sys_init_module 0-2
-	__syscall init_module, 2, %0, %1, %2
+%macro sys_sigaction 0-3
+	__syscall sigaction, 3, %0, %1, %2, %3
 %endmacro
 
-%macro sys_create_module 0-2
-	__syscall create_module, 2, %0, %1, %2
+%macro sys_sigaltstack 0-2
+	__syscall sigaltstack, 2, %0, %1, %2
 %endmacro
 
-%macro sys_query_module 0-5
-	__syscall query_module, 5, %0, %1, %2, %3, %4, %5
+%macro sys_sigreturn 0-1
+	__syscall sigreturn, 1 %0, %1
 %endmacro
 
-%macro sys_get_kernel_syms 0-1
-	__syscall get_kernel_syms, 1, %0, %1
+%macro sys_sigsuspend 0-3
+	__syscall sigsuspend, 3, %0, %1, %2, %3
 %endmacro
 
 ;
-;kernel/itimer.c
+;sys/utsname.h
 ;
+
+%macro sys_uname 0-1
+	__syscall uname, 1, %0, %1
+%endmacro
+
+;
+;sys/uio.h
+;
+
+%macro sys_readv  0-3
+	__syscall readv, 3, %0, %1, %2, %3
+%endmacro
+
+%macro sys_writev  0-3
+	__syscall writev, 3, %0, %1, %2, %3
+%endmacro
+
+;
+;sys/vfs.h
+;
+
+%macro sys_statfs 0-2
+	__syscall statfs, 2, %0, %1, %2
+%endmacro
+
+;
+;time.h
+;
+
+%macro sys_nanosleep 0-2
+	__syscall nanosleep, 2, %0, %1, %2
+%endmacro
+
+%macro sys_time 0-1
+	__syscall time, 1, %0, %1
+%endmacro
+
+;
+;utime.h
+;
+
+%macro sys_utime 0-2
+	__syscall utime, 2, %0, %1, %2
+%endmacro
+
+%macro sys_utimes 0-2
+	__syscall utimes, 2, %0, %1, %2
+%endmacro
+
+;
+;sys/mount.h
+;
+
+%macro sys_mount 0-5
+	__syscall mount, 5, %0, %1, %2, %3, %4, %5
+%endmacro
+
+%macro sys_umount 0-1
+	__syscall umount, 1, %0, %1
+%endmacro
+
+;
+;sys/ioctl.h
+;
+
+%macro sys_ioctl 0-3
+	__syscall ioctl, 3, %0, %1, %2, %3
+%endmacro
+
+;
+;sys/time.h
+;
+
+%macro sys_getpriority 0-2
+	__syscall getpriority, 2, %0, %1, %2
+%endmacro
+
+%macro sys_setpriority 0-3
+	__syscall setpriority, 3, %0, %1, %2, %3
+%endmacro
+
+%macro sys_gettimeofday 0-2
+	__syscall gettimeofday, 2, %0, %1, %2
+%endmacro
 
 %macro sys_getitimer 0-2
 	__syscall getitimer, 2, %0, %1, %2
@@ -666,82 +510,90 @@ extern %{1}
 	__syscall setitimer, 3, %0, %1, %2, %3
 %endmacro
 
-;--------------------------------------------------------------------------
-;mm/
-;--------------------------------------------------------------------------
+;
+;sys/wait.h
+;
+
+%macro sys_wait4 0-4
+	__syscall wait4, 2, %0, %1, %2, %3, %4
+%endmacro
 
 ;
-;mm/mprotect.c
+;sys/mman.h
 ;
+
+%macro sys_munmap 0-2
+	__syscall munmap, 2, %0, %1, %2
+%endmacro
 
 %macro sys_mprotect 0-3
 	__syscall mprotect, 3, %0, %1, %2, %3
 %endmacro
 
 ;
-;mm/filemap.c
+;sys/sendfile.h
 ;
 
 %macro sys_sendfile 0-4
 	__syscall sendfile, 4, %0, %1, %2, %3, %4
 %endmacro
 
-;
-;mm/swapfile.c
-;
-
-%macro sys_swapon 0-2
-	__syscall swapon, 2, %0, %1, %2
-%endmacro
-
-%macro sys_swapoff 0-1
-	__syscall swapoff, 1, %0, %1
-%endmacro
-
 ;--------------------------------------------------------------------------
-;network syscalls
+;OS specific syscalls
 ;--------------------------------------------------------------------------
 
 %ifndef __LINUX__	;linux has its own implementation in os_linux.inc
 
-%macro	sys_socket 3
+;
+;sys/socket.h
+;
+
+%macro	sys_socket 0-3
 	__syscall socket, 3, %0, %1, %2, %3
 %endmacro
 
-%macro	sys_accept 3
+%macro	sys_accept 0-3
 	__syscall accept, 3, %0, %1, %2, %3
 %endmacro
 
-%macro	sys_connect 3
+%macro	sys_connect 0-3
 	__syscall connect, 3, %0, %1, %2, %3
 %endmacro
 
-%macro	sys_bind 3
+%macro	sys_bind 0-3
 	__syscall bind, 3, %0, %1, %2, %3
 %endmacro
 
-%macro	sys_setsockopt 5
+%macro	sys_setsockopt 0-5
 	__syscall setsockopt, 5, %0, %1, %2, %3, %4, %5
 %endmacro
 
-%macro	sys_getsockopt 5
+%macro	sys_getsockopt 0-5
 	__syscall getsockopt, 5, %0, %1, %2, %3, %4, %5
 %endmacro
 
-%macro	sys_shutdown 2
+%macro	sys_shutdown 0-2
 	__syscall shutdown, 2, %0, %1, %2
 %endmacro
 
-%macro	sys_listen 2
+%macro	sys_listen 0-2
 	__syscall listen, 2, %0, %1, %2
 %endmacro
 
-%macro	sys_sendto 6
+%macro	sys_sendto 0-6
 	__syscall sendto, 6, %0, %1, %2, %3, %4, %5, %6
 %endmacro
 
-%macro	sys_recvfrom 6
+%macro	sys_recvfrom 0-6
 	__syscall recvfrom, 6, %0, %1, %2, %3, %4, %5, %6
+%endmacro
+
+;
+;sys/mman.h
+;
+
+%macro	sys_mmap 0-6
+	__syscall mmap, 6, %0, %1, %2, %3, %4, %5, %6
 %endmacro
 
 %endif	;__LINUX__
