@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.31 2001/12/09 15:12:15 konst Exp $
+# $Id: Makefile,v 1.32 2001/12/24 07:22:05 konst Exp $
 
 #DEBUG = y
 
@@ -13,22 +13,24 @@ include ../MCONFIG
 FILES = basename cat chmod chroot chown cpuinfo cut date dc dd dirname\
 	echo env extname factor fromdos grep head hexdump hostname\
 	id init kill ln lzss mkdir mknod od rot13 paste\
-	readelf readlink renice	sh sleep strings sync tail tar tee tr true\
-	uname wc whoami yes\
+	readelf readlink reboot renice sh sleep strings sync\
+	tail tar tee tr true uname wc whoami yes\
 	md5sum rmdsum rc6crypt\
 
 FILES += clear cp httpd m_inetd less ls more mount mv nc readkey rm ping pwd\
 	 touch watch which write
 
-BONUS =	execve report asmutils
+LINKS = arch cpuspeed domainname false mkfifo rmdir sln todos umount\
+	halt poweroff\
+	regs
 
-LINKS = arch cpuspeed domainname false mkfifo rmdir regs sln todos
+BONUS =	execve report asmutils
 
 ifdef LINUX
 FILES += chvt dmesg df eject finger ifconfig lsmod mesg ps\
-	 reboot softdog swapon tty update
+	 softdog swapon tty update
+LINKS += ccd deallocvt swapoff rmmod route
 BONUS += window leaves fire256 snake game
-LINKS += ccd deallocvt halt poweroff swapoff umount rmmod route
 endif
 
 ifdef FREEBSD
@@ -62,8 +64,8 @@ links:	$(FILES)
 	)
 
 install:$(FILES)
-	$(MKDIR) ../bin/$(OS)-$(KERNEL)
-	$(CP) $(FILES) $(LINKS) ../bin/$(OS)-$(KERNEL)
+	$(MKDIR) $(INSTALLDIR)
+	$(CP) $(FILES) $(LINKS) $(INSTALLDIR)
 
 clean:
 	$(RM) *.o $(FILES) $(BONUS) $(LINKS)

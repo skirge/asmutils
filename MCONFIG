@@ -2,7 +2,7 @@
 #
 # MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.12 2001/12/03 19:19:58 konst Exp $
+# $Id: MCONFIG,v 1.13 2001/12/24 07:22:59 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -11,7 +11,7 @@
 #---------------------------------------------------------------------------#
 
 # Target operating system. Valid values are:
-# LINUX/FREEBSD/NETBSD/OPENBSD/SOLARIS/UNIXWARE/BEOS/ATHEOS/LIBC
+# LINUX FREEBSD OPENBSD NETBSD SOLARIS UNIXWARE BEOS ATHEOS LIBC
 
 OS = LINUX
 
@@ -42,11 +42,11 @@ OPTIMIZE = SIZE
 # ELF hack for smaller binaries
 ELF_MACROS = y
 
-#---------------------------------------------------------------------------#
+#---------------------------------------------------------------#
 
-#			DO NOT EDIT BELOW WHEN IN DOUBT
+#			DO NOT EDIT BELOW			#
 
-#---------------------------------------------------------------------------#
+#---------------------------------------------------------------#
 
 VERSION = 0.16
 
@@ -58,8 +58,7 @@ CC := gcc
 MAKE := gmake
 
 ASVER := $(shell $(AS) -r | cut -d ' ' -f 3)
-LDVER := $(shell $(LD) -v | cut -d ' ' -f 4)
-
+#LDVER := $(shell $(LD) -v | cut -d ' ' -f 4)
 CORRECT_ASVER = 0.98
 
 #
@@ -76,6 +75,8 @@ CP += -a
 else
 CP += -Rp
 endif
+
+INSTALLDIR=../bin/$(OS)-$(KERNEL)
 
 LDFLAGS :=
 ASFLAGS := -w+orphan-labels -w+macro-params -i../inc/
@@ -95,12 +96,12 @@ ifndef LINUX
 
 ELF_MACROS =
 
-#ifdef NETBSD
-#AOUT = y
-#endif
 ifdef OPENBSD
 AOUT = y
 endif
+#ifdef NETBSD
+#AOUT = y
+#endif
 
 ifdef BEOS
 STARTUP = y
