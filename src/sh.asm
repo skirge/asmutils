@@ -5,7 +5,7 @@
 ;       		 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;       		 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: sh.asm,v 1.17 2002/03/01 17:20:16 konst Exp $
+;$Id: sh.asm,v 1.18 2002/03/08 18:58:00 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -66,6 +66,7 @@
 ;			internal commands, some bugfixes (RM)
 ;0.08  01-Mar-2002	'#' comments, improved scripting, misc fixes,
 ;			cleanup, WRITE_* macros (KB)
+;0.09  08-Mar-2002	added clear internal (KB)
 
 %include "system.inc"
 
@@ -327,7 +328,7 @@ environ_inherit:
 	inc 	edx
 	cmp 	edx,CMDLINE_MAX_ENVIRONMENT
 	mov 	[environ_count],edx
-	jnz .ok_next_is_env
+	jnz	.ok_next_is_env
 	;int 3 ;too much environ...
 .env_done:		
 	jmp	ebx
@@ -485,8 +486,8 @@ cmdline_get:
 	jz 	.enter
 	xor 	ah,ah		;write in on console
 	cmp 	byte [edi],ah
-	jz 	.ok_have_end    ;test if insert or append
-	push edi      		;insert
+	jz 	.ok_have_end	;test if insert or append
+	push	edi		;insert
 .loop:
 	xchg 	al,[edi]
 	inc 	edi
@@ -515,16 +516,13 @@ cmdline_get:
 	sub 	eax,cmdline.buffer1-1
 	mov 	ebx,eax
 	dec 	ebx
-	jnz  .ok_end
+	jnz	.ok_end
 	xor 	eax,eax		;if EAX==1 =>eax=0 
 .ok_end:
 	ret			;bye bye ...
 
-.clstr		db	 0x1b,"[H",0x1b,"[J"
-.clstr_len	equ	$ - .clstr
-
 .clear:
-	WRITE_CHARS .clstr,.clstr_len
+	call	cmd_clear
         jmp	get_cmdline
 
 .back_space:	
@@ -917,9 +915,9 @@ cmdline_parse_restart:
 	add	edi,[cmdline.buffer2_offset]
 
 .next_character:
-	lodsb			;load next char from buffer
+	lodsb
 	test	al,al
-	jz	near .end	;we are done
+	jz	near .end
 	test	ebx,cmdline_parse_flags.seperator ;are we in argument or between?
 	jnz	.check_seperator
         cmp	al,'#'
@@ -947,21 +945,21 @@ cmdline_parse_restart:
 	cmp	byte [esi],'|'
 	je	.normal
 	cmp	byte [esi-2],'|'	;dangerous!!!
-	jne	near .pipe		;pipe mania !
+	jne	near .pipe
 .normal:
-	mov	[cmdline.arguments + 4 * ebp],edi	;ok time to create new arg
-	inc	ebp	;take notice that we have more args from now
+	mov	[cmdline.arguments + 4 * ebp],edi	;time to create new arg
+	inc	ebp					;we have more args from now
 	inc	edx
 	or	ebx,cmdline_parse_flags.seperator	;set in separator flag
 .check_seperator:
-	cmp	al,'"'	;handle correctly the " between " " nothing to parse
+	cmp	al,'"'			;handle correctly the " between " " nothing to parse
 	jne	.not_quota1
 	xor	ebx,cmdline_parse_flags.quota1
 	jmps	.skip_character
 .not_quota1:
 	test	ebx,cmdline_parse_flags.quota1 
 	jnz	.copy_character
-	cmp	al,__t	;are we at the end of arg ?
+	cmp	al,__t			;are we at the end of arg?
 	je	.seperate
 	cmp	al,__n
 	je	.end
@@ -1928,6 +1926,12 @@ ctrl_z:
 	sys_kill EMPTY,SIGSTOP
 	ret
 
+cmd_clear:
+	WRITE_STRING .cls
+	ret
+
+.cls	db	0x1b,"[H",0x1b,"[J",0
+
 ;****************************************************************************
 ;****************************************************************************
 ;*
@@ -1968,6 +1972,7 @@ builtin_cmds:
 		dd	.fg, cmd_fg
 		dd	.bg, cmd_bg
 		dd	.jobs, cmd_jobs
+		dd	.clear, cmd_clear
 		dd	0, 0
 
 .and		db	"&&", 0
@@ -1980,6 +1985,7 @@ builtin_cmds:
 .fg		db	"fg", 0
 .bg		db 	"bg", 0
 .jobs		db	"jobs", 0
+.clear		db	"clear", 0
 
 .paths		db	"/bin", 0
 		db	"/sbin", 0
