@@ -1,19 +1,18 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: lsmod.asm,v 1.3 2000/12/10 08:20:36 konst Exp $
+;$Id: lsmod.asm,v 1.4 2001/12/04 18:22:51 konst Exp $
 ;
 ;hackers' lsmod/rmmod
-;
-;0.01: 17-Jun-1999	initial release
-;0.02: 04-Jul-1999	fixed bug with 2.0 kernel
-;0.03: 06-Sep-2000	merged with rmmod (KB)
 ;
 ;syntax: lsmod
 ;	 rmmod module...
 ;
 ;example: rmmod sound ppp
 ;
-;lsmod just opens /proc/modules, prints header and the data inside that file
+;0.01: 17-Jun-1999	initial release
+;0.02: 04-Jul-1999	fixed bug with 2.0 kernel
+;0.03: 06-Sep-2000	merged with rmmod (KB)
+;0.04: 04-Dec-2001	sys_query_module when /proc/modules is missing (KB)
 
 %include "system.inc"
 
@@ -25,9 +24,9 @@ header	db	'Module         Pages    Used by',__n
 header	db	'Module                  Size  Used by',__n
 %endif
 _hlength	equ	$-header
-
 %assign hlength _hlength
-%assign	BufSize	0x2000
+
+%assign	BUFSIZE	0x2000
 
 START:
 	pop	ebp
@@ -55,20 +54,44 @@ _exit:
 	sys_exit eax
 
 do_lsmod:
-	sys_open filename,O_RDONLY
-	mov	ebp,eax
-	test	eax,eax
-	js	_exit
         sys_write STDOUT,header,hlength
-	sys_read ebp,Buf,BufSize
-	sys_write STDOUT,EMPTY,eax
+
+	sys_open filename, O_RDONLY
+	test	eax, eax
+	js	.query_module
+
+;	mov	ebp, eax
+	sys_read eax, buf, BUFSIZE
+	mov	edx, eax
+
+.write:
+	sys_write STDOUT
 ;	sys_close ebp
 	jmps	_exit
+
+.query_module:
+	sys_query_module NULL, QM_MODULES, buf, BUFSIZE, qret
+	test	eax,eax
+	js	_exit
+
+	mov	ecx,[qret]
+	mov	esi,edx
+.q0:
+	lodsb
+	or	al,al
+	jnz	.q0
+	mov	byte [esi - 1],__n
+	loop	.q0
+	sub	esi,edx
+	mov	ecx,edx
+	mov	edx,esi
+	jmps	.write
 
 filename	db	"/proc/modules",EOL
 
 UDATASEG
 
-Buf	resb	BufSize
+qret	resd	1
+buf	resb	BUFSIZE
 
 END
