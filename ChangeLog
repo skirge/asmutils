@@ -7,11 +7,11 @@
 	- added "-e" & "-E" switches to echo (full GNU compliance) (KB)
 	- added "-m" (mode) switch to mkdir (KB)
 	- added lib/rmd.asm (RIPEMD-160 algo) (CS)
+	- fixed bug in ln (DW)
 	- working alpha of libc (KB & CS)
 	- _mov (former __setreg32), _add, _sub macros in system.inc (KB)
 	- types.inc merged kernel.inc, config.inc merged system.inc (KB)
-	- sstrip, lib/util removed (KB)
-	- fixed bug in ln (DW)
+	- source directory structure changed; sstrip, lib/util removed (KB)
 	- special bonus: fbcon intro "leaves" and text window implementation
 	  [src/leaves.asm & src/window.asm] (KB)
 
