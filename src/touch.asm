@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Jonathan Leto <jonathan@leto.net>
 ;
-;$Id: touch.asm,v 1.2 2001/02/23 12:39:29 konst Exp $
+;$Id: touch.asm,v 1.3 2001/08/01 05:05:29 konst Exp $
 ;
 ;hackers' touch
 ;
@@ -14,16 +14,16 @@
 
 CODESEG
 
-.exit:
-	sys_exit 0 
-
 START:
 	pop eax
 	pop eax
 .next:
 	pop eax
 	or eax,eax
-	jz .exit
+	jnz .continue
+
+.continue:
+	sys_exit 0 
 
 	cmp word [eax],'-c'
 	je	.nocreate
