@@ -1,44 +1,41 @@
 
-Current release notes (0.08)
+Current release notes (0.09)
   
- There are plenty of different changes. Here are few worth to mention.
+ Here are the most noticable things that have happened. There's a number of
+ new utils (6), I would like to thank H-Peter Recktenwald and Alexandr Gorlov
+ for new utils, and Christopher Li for bugfix in dmesg. Now you can learn
+ almost everything about your CPU with cpuinfo and cpuspeed, change your CDs
+ with ccd, figure out extention, directory, and tty names with extname and
+ dirname and tty respectively :)
      
- I tried to port asmutils to BeOS, but because of confusing and weird
- BeOS kernel bugs asmutils/BeOS do not work yet.
- Read my comments in os_beos.inc for details.
+ Due to internal improvements FreeBSD binaries are smaller, and..
+ Yes! httpd now works on FreeBSD, and is less than 1kb !! :)
      
- Another cool port was done -- libc port :); i.e. it is possible to fallback on
- libc functions instead of using direct kernel syscalls (by defining OS=LIBC in
- Makefile). This can be useful when running project on OS with unknown/broken
- kernel call conventions (f.e. by means of this asmutils can run on BeOS).
+ Documentation was updated, I've created Asmutils-HOWTO instead of old docs,
+ which will contain all development- and usage-related information;
+ I suggest all developers to read this document.
      
- There were several portability improvements: kill and tee now run on FreeBSD.
- httpd was rewritten and now is only 596 bytes on Linux (and almost works on
- FreeBSD, but falls into endless fork loop on the first request, why? :).
- Network syscalls macros added (sys_socket, sys_accept.. etc, instead of Linux
- specific sys_socketcall), so it's possible to write portable network utils now.
+ I'd like to ask and encourage everyone to stress-test this release
+ and report bugs. I am going to make 0.10 release marked as "stable",
+ and go for "development" release 0.11, which will break a lot of things.
      
- Assembly libc now features run-time fastcall support.
+ Full list of utils in 0.09 release (total of 58):
      
- There were other various internal improvements, new features, and bugfixes.
-     
- Full list of utils in 0.08 release (total of 52):
-     
-    arch basename cat chmod chroot chvt deallocvt df dmesg domainname echo
-    eject env factor false grep halt hosname httpd id kill ln ls lsmod
-    lzss md5sum mkdir more mount nc poweroff ps pwd rc6crypt reboot
-    rmdir rmdsum rmmod sleep sln softdog strings swapoff swapon sync
-    tee true umount uname update wc yes
+    arch basename cat ccd chmod chroot chvt cpuinfo cpuspeed deallocvt df
+    dirname dmesg domainname echo eject env extname factor false grep halt
+    hosname httpd id kill ln ls lsmod lzss md5sum mkdir more mount nc
+    poweroff ps pwd rc6crypt reboot rmdir rmdsum rmmod sleep sln softdog
+    strings swapoff swapon sync tee true tty umount uname update wc yes
        
- GNU compliant utils:
+ Fully functional utils:
 
-    arch basename echo factor false pwd sleep sync tee true uname yes
+    arch basename dirname echo factor false pwd sleep sync tee true uname yes
        
- Almost GNU compliant utils:
+ Almost fully functional utils:
 
-    chroot mkdir sln wc
+    chroot dmesg mkdir sln tty wc
        
- Please note that this compliance mainly affects command line options support;
- behavior is not well tested, however it SEEMS to be the same.
+ Please note that this functionality mainly affects command line options
+ support; behavior is not well tested, however it SEEMS to be the same.
  You are especially encouraged to use and test them :)
  Long options like --version and --help are not supported.
