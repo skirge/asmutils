@@ -23,7 +23,7 @@
 ;| Requires	 : asmutils package, nasm                                     |
 ;|----------------------------------------------------------------------------|
 ;
-; $Id: readelf.asm,v 1.4 2002/02/02 08:49:25 konst Exp $                                                                         
+; $Id: readelf.asm,v 1.5 2002/02/19 12:36:43 konst Exp $                                                                         
 
 BITS 32
 
@@ -870,6 +870,7 @@ addZeros:
 ;	EDI = address of an ASCII string
 ; Returns:
 ;	buffer at EDI gets filled up with the number (and the 0's)
+
 	pushad
 	Nr2ASCII EMPTY, HEXA, EMPTY, length
 	cmp byte [length], 8
@@ -877,13 +878,17 @@ addZeros:
 
 	xchg ebx, ecx
 	sub ecx, [length]	;how many zeros to put
+;	int 3
+;	nop
+	or ecx,ecx
+	jz .not_dead
 	pushad
 	mov al, '0'
 .addZ:
 	stosb
 	loop .addZ
 	popad
-
+.not_dead:
 	add edi, ecx
  	Nr2ASCII EMPTY, HEXA, EMPTY, length
 .addZexit:
