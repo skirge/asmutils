@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.17 2001/08/24 09:47:28 konst Exp $
+# $Id: Makefile,v 1.18 2001/08/27 15:41:08 konst Exp $
 
 #DEBUG = y
 
@@ -24,7 +24,8 @@ BONUS =	execve report asmutils
 LINKS = arch cpuspeed domainname false mkfifo rmdir regs sln todos
 
 ifdef LINUX
-FILES += chvt dmesg df eject lsmod mount ps reboot softdog swapon tty update
+FILES += chvt dmesg df eject ifconfig lsmod mount ps\
+	 reboot softdog swapon tty update
 BONUS += window leaves fire256 snake
 LINKS += ccd deallocvt halt poweroff swapoff umount rmmod 
 endif
