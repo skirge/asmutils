@@ -2,7 +2,7 @@
 #
 # MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.16 2002/01/28 18:53:26 konst Exp $
+# $Id: MCONFIG,v 1.17 2002/02/02 14:00:42 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -23,12 +23,12 @@ KERNEL = 24
 
 OPTIMIZE = SIZE
 
-# System call convention. Valid values are: KERNEL, LIBC
+# System call convention (KERNEL/LIBC)
 
 SYSCALL = KERNEL
 
-# ELF hack for smaller binaries (when possible).
-# Disable it if you have trouble running resulting executables.
+# ELF hack for smaller binaries (when possible)
+# Disable if you have trouble with running resulting executables.
 
 ELF_MACROS = y
 

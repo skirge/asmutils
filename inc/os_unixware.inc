@@ -1,6 +1,6 @@
 ; Copyright (C) 2001 Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
 ;
-; $Id: os_unixware.inc,v 1.2 2001/11/14 16:01:42 konst Exp $
+; $Id: os_unixware.inc,v 1.3 2002/02/02 13:59:59 konst Exp $
 ;
 ; file  	: os_unixware.inc
 ; created	: 08-Nov-2001
@@ -23,11 +23,8 @@
 %error "this file must be included from system.inc"
 %endif
 
-%ifndef __UNIXWARE7_INC
-%define __UNIXWARE7_INC
-
-%define PUSH_ARGS
-%define SYSTEM_V
+%ifndef __UNIXWARE_INC
+%define __UNIXWARE_INC
 
 %macro	DO_SYSCALL 0
 	call 0x7:0x0		; Unixware uses call-gates
@@ -272,4 +269,4 @@ __syscall_gate:
 %assign SYS_xsocket		247
 %assign SYS_xsocketpair		248
 
-%endif
+%endif	;_UNIXWARE_INC

@@ -1,6 +1,6 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.15 2002/02/02 12:33:39 konst Exp $
+; $Id: syscall.inc,v 1.16 2002/02/02 13:59:59 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
@@ -90,11 +90,11 @@
 	_mov	eax,SYS_%{1}
 
 %ifdef __LINUX__
-	int	0x80
+	DO_SYSCALL
 %elifdef __ATHEOS__
-	int	0x80
+	DO_SYSCALL
 %elifdef __V2OS__
-	int	0x20
+	DO_SYSCALL
 %else		;__BSD__ & other
 ;Note:
 ;BSD related part is optimized for size by moving all 'push'es and

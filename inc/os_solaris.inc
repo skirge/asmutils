@@ -1,6 +1,6 @@
 ; Copyright (C) 2001 Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
 ; 
-; $Id: os_solaris.inc,v 1.3 2001/11/24 09:45:27 konst Exp $
+; $Id: os_solaris.inc,v 1.4 2002/02/02 13:59:59 konst Exp $
 ;
 ; file		: os_solaris.inc
 ; created	: 04-Nov-2001
@@ -23,9 +23,6 @@
 
 %ifndef __SOLARIS_INC
 %define __SOLARIS_INC
-
-%define PUSH_ARGS
-%define SYSTEM_V
 
 %macro	DO_SYSCALL 0
 	call 0x27:0x0
@@ -297,7 +294,7 @@ __syscall_gate:
 %error "sys_brk doesnt work correctly under Solaris"
 %endmacro
 
-struc stat
+struc Stat
 .st_dev		ULONG	1
 .st_pad1	ULONG	3
 .st_ino		ULONG	1
