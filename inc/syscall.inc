@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.6 2001/08/13 05:52:27 konst Exp $
+; $Id: syscall.inc,v 1.7 2001/08/19 12:42:50 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 14-May-2001
+; modified	: 16-Aug-2001
 ; version	: 0.15
 ; assembler	: nasm 0.98
 ; description	: system call macros
@@ -354,6 +354,10 @@ extern %{1}
 
 %macro sys_utime 0-2
 	__syscall utime, 2, %0, %1, %2
+%endmacro
+
+%macro sys_utimes 0-2
+	__syscall utimes, 2, %0, %1, %2
 %endmacro
 
 ;

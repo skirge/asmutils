@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.5 2001/03/18 07:08:25 konst Exp $
+; $Id: system.inc,v 1.6 2001/08/19 12:42:50 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 11-Mar-2001
-; version	: 0.14
+; modified	: 16-Aug-2001
+; version	: 0.15
 ; assembler	: nasm 0.98
 ; description	: generic (not OS specific) macros, sections, headers, etc.
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -32,6 +32,7 @@
 ;0.13: 21-Feb-2001	modified __syscall_gate (KB)
 ;0.14: 11-Feb-2001	added B_STRUC macro (aka ELF_BSTRUC from elf.inc) (BR),
 ;			moved __syscall_gate to os_xxx.inc files (KB)
+;0.15: 16-Aug-2001	QNX RPT stuff (KB)
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
@@ -45,6 +46,7 @@
 ;
 
 %ifndef __LINUX__
+%ifndef __QNXRTP__
 %ifndef __ATHEOS__
 %ifndef __BEOS__
 %define __BSD__
@@ -59,13 +61,14 @@
 %endif
 %endif
 %endif
+%endif
 
 ;
 ;kernel version
 ;
 
 %ifndef __KERNEL__
-%assign	__KERNEL__	22
+%assign	__KERNEL__	24
 %endif
 
 ;
@@ -93,6 +96,8 @@
 %include "os_netbsd.inc"
 %elifdef __OPENBSD__
 %include "os_openbsd.inc"
+%elifdef __QNXRTP__
+%include "os_qnxrtp.inc"
 %elifdef __BEOS__
 %include "os_beos.inc"
 %elifdef __ATHEOS__
