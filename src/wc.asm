@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: wc.asm,v 1.3 2000/09/03 16:13:54 konst Exp $
+;$Id: wc.asm,v 1.4 2001/08/28 06:31:55 konst Exp $
 ; 
 ;hackers' wc
 ;
@@ -11,6 +11,7 @@
 ;
 ;0.01: 20-Feb-2000	initial release
 ;0.02: 23-Aug-2000	reading from stdin fixed (TH)
+;0.03: 25-Aug-2001	option without argument fixed (JH)
 ;
 ;syntax: wc [option] [file, file, file...]
 ;
@@ -57,7 +58,8 @@ fetch_from_table:
 		cmp	word [ebx],ax		; is it our option?
 		jnz	try_next_option		; nope
 		or	byte [flgs],dl		; set bitflag
-		pop	ebx			; get the next argument off the stack
+		jmps	get_next_arg
+		;pop	ebx			; get the next argument off the stack
 try_next_option:
 		shr	dl,1	
 		xor	eax,eax			; clear counters
@@ -71,6 +73,7 @@ just_open_it:
 		
 		mov	edi,ebx			; save filename
 		
+		mov	byte [_opened_a_file], 1
 		sys_open EMPTY,O_RDONLY
 		test	eax,eax
 		js	near error
@@ -156,6 +159,12 @@ print_newline:
 		jmp	get_next_arg	
 
 no_more_args:
+		cmp	byte [_opened_a_file], 0
+		jne	true_exit
+		mov	byte [_opened_a_file], 1
+		xor	eax, eax
+		jmp	use_stdin
+true_exit:
 		xor	ebx,ebx		
 		jmp	do_exit
 error:		
@@ -228,7 +237,6 @@ bin_to_dec:
 		popad
 		ret	
 
-
 		DATASEG
 
 opts_table:
@@ -247,6 +255,7 @@ _lines:		resd	1
 _words:		resd	1
 _bytes:		resd	1
 _use_stdin:	resb	1
+_opened_a_file:	resb	1
 
 num_buf:	resb	16
 buf:		resb	4096
