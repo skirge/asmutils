@@ -1,99 +1,145 @@
 ;Copyright (C) 2001 Jani Monoses <jani@astechnix.ro>
 ;
-;$Id: ifconfig.asm,v 1.1 2001/08/27 15:41:08 konst Exp $
+;$Id: ifconfig.asm,v 1.2 2001/09/19 07:47:29 konst Exp $
 ;
-;hackers' ifconfig
+;hackers' ifconfig/route
 ;
-;syntax: ifconfig interface [ip_address] [netmask net_address] [up] [down]
+;syntax: ifconfig interface [ip_address] [netmask net_address] 
+;				[broadcast brd_address] [up] [down]
 ;
-;	 much like 'normal' ifconfig, order of args is not fixed
-;	 no other args supported (yet) 
 ;	 
+;	 route [ add | del ] [ -net | -host ] ip_address 
+;				[netmask net_address] [gw gw_address] [dev interface] 
 ;
 ;only tested on linux 2.4 with ethernet & loopback
+;
 ; 
-;TODO ?:	print interface status
+;TODO ?:	print interface status/routing table
 ;	  	set hw addresses (hw ether)
-;		other flags (arp,promisc,broadcast)
+;		other flags (arp,promisc)
 		
+
+
+;route and interface flags
+
+%assign	RTF_UP		1
+%assign RTF_GATEWAY	2
+%assign RTF_HOST	4
+
+%assign	IFF_UP		1		
+
+
 %include "system.inc"
 
 CODESEG
 
 START:
-	pop		ebx					;get argument count
-	dec		ebx
-	mov		byte[argc],bl
-	dec		ebx
-	jle		near .exit				;if argc <= 2 bail out	
+	pop		ebp					;get argument count
+	dec		ebp
+	dec		ebp
+	jle		.exit1					;if argc <= 2 bail out	
+
+	sys_socket	AF_INET,SOCK_DGRAM,IPPROTO_IP		;subject to ioctls
+	mov		dword[socket],eax			;save sock descr
+
 	pop		esi					;program name
+
+.findlast:							;ifconfig or route?	
+	lodsb
+	or		al,al
+	jnz		.findlast
+	cmp		byte[esi-2],'e'
+	jz		near .route
+
+
+;
+;	ifconfig part
+;
+.ifconfig:
+
 
 	pop		esi					;interface name
 	mov		edi,ifreq				
-	mov		ecx,16					;max name length
-
+	_mov		ecx,16					;max name length
 	repne		movsb					;put if name in ifreq
 
-	sys_socket	AF_INET,SOCK_DGRAM,IPPROTO_IP		;subject to ioctls
-	mov		ebp,eax					;save sock descr
-	
 
 .argloop:
-	dec		byte[argc]
-	jz		.exit
+	dec		ebp
+	jl		.exit
 	pop		esi
 
 	cmp		byte[esi],"9"
 	jle		.ipaddr
 
-;ignore "broadcast" for now
-	cmp		byte[esi],"b"
-	jz		.ignore1	
-;ignore "hw ether" for now
-	cmp		byte[esi],"h"
-	jz		.ignore2	
+	cmp		byte[esi],"b"				; 'broadcast' 
+	jnz		.netm
 
+	pop		esi
+	dec		ebp
+	mov		edi,addr
+	call		.ip2int
+	mov		word[flags],AF_INET
+	mov		ecx,SIOCSIFBRDADDR
+	jmps		.ioctl
+
+;ignore "hw ether" for now
+;	cmp		byte[esi],"h"
+;	jz		.ignore2	
+
+.exit1:
+	jmps		.exit
+.netm:
 	cmp		byte[esi],"n"
 	jnz		.updown
 	pop		esi
-	dec		byte[argc]
+	dec		ebp	
 	mov		edi,addr
 	call		.ip2int
 	mov		word[flags],AF_INET
 
-	sys_ioctl	ebp,SIOCSIFNETMASK,ifreq
-
+	_mov		ecx,SIOCSIFNETMASK
+.ioctl:
+	call		.do_ioctl
 	jmps		.argloop
 
-.ignore2:
-	pop		esi
-	dec		byte[argc]
-.ignore1:
-	pop		esi
-	dec		byte[argc]
-	jmps		.argloop	
+;.ignore2:
+;	pop		esi
+;	dec		ebp
+;	pop		esi
+;	dec		ebp
+;	jmps		.argloop	
+
+.do_ioctl:
+	mov		ebx, dword[socket]
+	sys_ioctl	EMPTY,EMPTY,ifreq	
+	ret
 .exit:
 	sys_exit
-		
 .ipaddr:
 	mov		edi,addr
 	call		.ip2int
 	mov		word[flags],AF_INET
 
-	sys_ioctl	ebp,SIOCSIFADDR,ifreq
+	_mov		ecx,SIOCSIFADDR
+	call		.do_ioctl
 
 
 ;"up" or "down"
 .updown:
-	sys_ioctl	ebp,SIOCGIFFLAGS,ifreq			;get interface flags
-	and		word[flags],0xfffe
+	_mov		ecx,SIOCGIFFLAGS			;get interface flags 
+	call		.do_ioctl
+	and		byte[flags],~IFF_UP
 	cmp		byte[esi],"d"				;interface down 
 	jz		.setf		
-	or		word[flags],1	
+	or		byte[flags],IFF_UP	
 .setf:
-	sys_ioctl	ebp,SIOCSIFFLAGS,ifreq			;set interface flags 
-	jmp		.argloop	 
+	_mov		ecx,SIOCSIFFLAGS			;set interface flags 
+	jmps		.ioctl	 
 
+
+;convert IP number pointed to by esi to dword pointed to by edi
+;for invalid IP number the result is 0 (so that default == 0.0.0.0 for route)
 
 .ip2int:
 	xor		eax,eax
@@ -104,6 +150,8 @@ START:
 	lodsb
 	sub		al,'0'
 	jb		.next
+	cmp		al,'a'-'0'
+	jae		.next
 	imul		edx,byte 10
 	add		edx,eax
 	jmp		short .c	
@@ -114,10 +162,91 @@ START:
 	jne		.cc
 	ret	
 
+;
+;	route part
+;
+
+.route:
+
+	or		byte[route_flags], RTF_HOST 
+
+	_mov		ebx,SIOCADDRT
+	pop		esi
+	cmp		byte[esi],'a'			; 'add' or 'del' ?
+	jz		.routeargs
+	_mov		ebx,SIOCDELRT
+.routeargs:
+	dec		ebp
+	jl		.doit				;if no more args proceed
+	pop		esi
+	cmp		word[esi], '-n'			; '-net'
+	jnz		.l1
+	and		byte[route_flags], ~RTF_HOST
+.l1:
+	cmp		word[esi], '-h'			; '-host'
+	jz		.routeargs
+
+	cmp		byte[esi], 'g'			; 'gw'
+	jnz		.l2
+	or		byte[route_flags], RTF_GATEWAY
+	mov		edi, gw
+	jmps 		.helper
+.l2:
+	cmp		byte[esi], 'n'			; 'netmask'
+	jnz		.l3
+	mov		edi, genmask
+	jmps		.helper
+.l3:
+	cmp		word[esi+1],'ev'		; 'dev' 
+	jnz		.l4
+	pop		esi
+	dec		ebp	
+	mov		dword[dev],esi
+	jmps		.routeargs
+.l4:
+	mov		edi,dst				; destination
+	mov		word[edi], AF_INET
+	_add		edi, 4
+	cmp		byte[esi], 'd'			; 'default'
+	jnz		.l5
+	and		byte[route_flags], ~RTF_HOST
+.l5:
+	call		.ip2int
+	jmps		.routeargs
+	
+.doit:	
+	push		ebx
+	pop		ecx
+	mov		ebx, dword[socket]
+	sys_ioctl	EMPTY,EMPTY,rtentry
+
+	jmp		.exit 			
+
+.helper:
+	pop		esi
+	dec		ebp	
+	mov		word[edi], AF_INET
+	_add		edi, 4
+	jmps		.l5
+
+
 UDATASEG
-	argc		resb	1
-	ifreq:		resb	16
-	flags:		resb	2	
-	p:		resb	2
-	addr:		resb	4
+	socket		resb	4
+	
+;this corresponds to struct ifreq
+	ifreq:		resb	16	;interface name
+	flags:		resb	2	;flags | start of sockaddr_in
+	port:		resb	2	;
+	addr:		resb	4	;IP address
+	unused:		resb	8	;padding in sockaddr_in
+
+;this corresponds to struct rtentry
+	rtentry:	resb	4
+	dst:		resb	16	
+	gw:		resb	16
+	genmask:	resb	16
+	route_flags:	resb	2
+	unused2:	resb	14	;dword align while skipping some fields
+	dev:		resb	4	;interface name
+;	we don't care about the rest of it	
 END
