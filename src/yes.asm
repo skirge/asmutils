@@ -1,12 +1,8 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek@mare.ee>
 ;
-;$Id: yes.asm,v 1.5 2002/03/14 07:12:12 konst Exp $
+;$Id: yes.asm,v 1.6 2002/03/26 05:24:27 konst Exp $
 ;
 ;hackers' yes		[GNU replacement]
-;
-;0.01: 17-Jun-1999	initial release
-;0.02: 04-Jul-1999	fixed bug with 2.0 kernel (KB)
-;0.03: 14-Mar-2002	size improvements (KB)
 ;
 ;syntax: yes [string...]
 ;
@@ -15,6 +11,10 @@
 ;         yes onlyonestring
 ;
 ;Concatenates all strings, the resulting string can be 0xfff bytes long
+;
+;0.01: 17-Jun-1999	initial release
+;0.02: 04-Jul-1999	fixed bug with 2.0 kernel (KB)
+;0.03: 14-Mar-2002	size improvements (KB)
 
 %include "system.inc"
 
