@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.7 2001/03/18 07:08:25 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.8 2001/08/21 12:55:29 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -13,7 +13,7 @@
     <surname>Boldyshev</surname>
     <affiliation>
 	<orgname>
-	    <ulink url="http://linuxassembly.org/">
+	    <ulink url="http://linuxassembly.org">
 	    Linux Assembly<anchor id="konst"></ulink>
 	</orgname>
 	<address>
@@ -22,8 +22,8 @@
     </affiliation>
 </author>
 
-<releaseinfo>Version 0.6</releaseinfo>
-<pubdate role="cvs">$Date: 2001/03/18 07:08:25 $</pubdate>
+<releaseinfo>Version 0.7</releaseinfo>
+<pubdate role="cvs">$Date: 2001/08/21 12:55:29 $</pubdate>
 
 <copyright>
 <year>1999-2001</year><holder>Konstantin Boldyshev</holder>
@@ -77,13 +77,13 @@ with no Invariant Sections, with no Front-Cover Texts, and no Back-Cover texts.
 <para>
 I assume you are familiar with Unix and assembly language to an extent
 when you are able to understand what is written here.
-If you are unable to comprehend most of what is written here,
-probably this manuscript is not for you, sorry.
+If you are unable to comprehend most of it,
+then probably this manuscript is not for you, sorry.
 </para>
 
 <para>
-I expect that you will dig in and examine
-source code of <application>asmutils</application>.
+Also, I expect you to dig in and examine source code
+of <application>asmutils</application>.
 This document is not intended to replace the source, its goal is only
 to accompany <application>asmutils</application> source
 and explain several unclear moments.
@@ -93,11 +93,11 @@ I am not going to explain all and everything here.
 </para>
 
 <para>
+Okay, enough ranting.
 This document deals with compiling, developing, debugging, contributing issues,
 it shows some tricks you can use;
-also it describes a set of macros I've developed to write fast and readable:
-they are hiding from you unneeded details,
-and take care of optimization.
+also it describes a set of macros I've developed to write fast and readable,
+that are hiding from you unneeded details and take care of optimization.
 </para>
 
 <para>
@@ -120,7 +120,7 @@ GNU <command>make</command>,
 <command>ln</command>,
 <command>rm</command>,
 possibly <command>strip</command>
-and possibly something else, depending on your OS.
+and possibly something else, depending on your target OS.
 </para>
 
 <para>
@@ -155,6 +155,24 @@ instead of using direct system calls by defining
 if your really want to do so; then you will also need
 <command>gcc</command> and libc headers.
 </para>
+
+<note><para>
+Do not expect LIBC port to work out-of-the-box.
+Instead, prepare to hack <filename>MCONFIG</filename> (hint:
+<function>STARTUP=y</function> may help if startup stack differs from usual),
+<filename>.inc</filename> files and source code to animate this malformation.
+After a couple of sleepless nigths you may understand that it is impossible
+to get things right -- you are bypassing libc headers, and on various libc
+versions miscellaneous functions can be implemented as macros,
+or can be just missing (e.g. getdents on glibc 2.2.x).
+Also, expect any other kind of disaster and affliction
+when trying to run what you have built after all,
+especially on weird systems like BeOS or QNX
+(hint: check constants in <filename>os_libc.inc</filename>).
+Finally, find yourself close to suicide,
+devising your all to developers of your libc.
+They say, life ain't easy.
+</para></note>
 
 <note><para>
 several utils (<command>cpuinfo</command>, <command>eject</command>,
@@ -683,7 +701,7 @@ $ cvs -d:pserver:anonymous@cvs.linuxassembly.org:/cvsroot/asm login
 
 (when prompted for password, just press [Enter].
 
-$ cvs -d:pserver:anonymous@cvs.linuxassembly.org:/cvsroot/asm co asmutils
+$ cvs -z9 -d:pserver:anonymous@cvs.linuxassembly.org:/cvsroot/asm co asmutils
 </screen>
 
 or contact maintainer first, may be somebody is already doing (or has done)
@@ -749,6 +767,9 @@ try to use only POSIX/BSD syscall subset
 I think you've got an idea. Just try to imagine your program on other OS,
 and ask yourself: what one will need to do make it run?
 what should I do to make compile on as many OSes as possible?
+If your program is not OS specific, try to set <function>OS</function>
+parameter in <filename>MCONFIG</filename> to some other value
+and see what happens.
 Even your program is OS specific (e.g. <command>lsmod</command>),
 at least try to make it readable.
 </para>
@@ -961,6 +982,11 @@ Seek, and you may find more..
 <para><revhistory>
 
 <revision>
+<revnumber>0.7</revnumber><date>20 Aug 2001</date><authorinitials>konst</authorinitials>
+<revremark>note on LIBC port</revremark>
+</revision>
+
+<revision>
 <revnumber>0.6</revnumber><date>10 Mar 2001</date><authorinitials>konst</authorinitials>
 <revremark>various notes on contributions</revremark>
 </revision>
@@ -1024,7 +1050,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.7 2001/03/18 07:08:25 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.8 2001/08/21 12:55:29 konst Exp $
 </literal></para>
 </appendix>
 
