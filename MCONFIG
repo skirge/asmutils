@@ -1,8 +1,8 @@
-# Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
+# Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 #
 # MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.13 2001/12/24 07:22:59 konst Exp $
+# $Id: MCONFIG,v 1.14 2002/01/04 08:26:22 konst Exp $
 
 #---------------------------------------------------------------------------#
 

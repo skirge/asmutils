@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.10 2001/11/24 09:48:24 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.11 2002/01/04 08:29:24 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -23,10 +23,10 @@
 </author>
 
 <releaseinfo>Version 0.7</releaseinfo>
-<pubdate role="cvs">$Date: 2001/11/24 09:48:24 $</pubdate>
+<pubdate role="cvs">$Date: 2002/01/04 08:29:24 $</pubdate>
 
 <copyright>
-<year>1999-2001</year><holder>Konstantin Boldyshev</holder>
+<year>1999-2002</year><holder>Konstantin Boldyshev</holder>
 </copyright>
 
 <legalnotice><para>
@@ -176,9 +176,19 @@ They say, life ain't easy.
 </para></note>
 
 <note><para>
-several utils (<command>cpuinfo</command>, <command>eject</command>,
+Several utils (<command>cpuinfo</command>, <command>eject</command>,
 <command>httpd</command>, <command>kill</command>, etc)
 have their own additional configuration in the source code.
+</para></note>
+
+<note><para>
+You can easily cross-compile <application>asmutils</application>, at least
+if executable format on target OS is the same (it depends on linker).
+</para></note>
+
+<note><para>
+On BSD system you may try Linux emulation to run Linux binaries,
+but as a rule native binaries will do the job better.
 </para></note>
 
 </section>
@@ -993,8 +1003,8 @@ Seek, and you may find more..
 <para><revhistory>
 
 <revision>
-<revnumber>0.8</revnumber><date>24 Nov 2001</date><authorinitials>konst</authorinitials>
-<revremark>more notes on contributions</revremark>
+<revnumber>0.8</revnumber><date>04 Jan 2002</date><authorinitials>konst</authorinitials>
+<revremark>more notes on contributions, cleanups</revremark>
 </revision>
 
 <revision>
@@ -1066,7 +1076,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.10 2001/11/24 09:48:24 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.11 2002/01/04 08:29:24 konst Exp $
 </literal></para>
 </appendix>
 

@@ -1,8 +1,8 @@
-# Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
+# Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.33 2001/12/28 06:51:55 konst Exp $
+# $Id: Makefile,v 1.34 2002/01/04 08:25:16 konst Exp $
 
 #DEBUG = y
 
@@ -27,7 +27,7 @@ LINKS = arch cpuspeed domainname false mkfifo rmdir sln todos umount\
 BONUS =	execve report asmutils
 
 ifdef LINUX
-FILES += chvt dmesg df eject finger ifconfig lsmod mesg ps\
+FILES += chvt dmesg df eject fdisk finger ifconfig lsmod mesg ps\
 	 softdog swapon tty update
 LINKS += ccd deallocvt swapoff rmmod route
 BONUS += window leaves fire256 snake game
