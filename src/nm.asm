@@ -1,6 +1,6 @@
 ; Copyright (C) 2002 Thomas M. Ogrisegg
 ;
-; $Id: nm.asm,v 1.2 2002/02/15 18:46:05 konst Exp $
+; $Id: nm.asm,v 1.3 2002/02/16 17:54:03 konst Exp $
 ;
 ; nm - list symbols from ELF binary
 ;
@@ -12,58 +12,16 @@
 ; License           :       GNU General Public License
 ; Author            :       Thomas Ogrisegg
 ; E-Mail            :       tom@rhadamanthys.org
-; Version           :       0.5
+; Version           :       0.6
 ; Release-Date      :       02/02/02
-; Last updated      :       02/12/02
+; Last updated      :       02/16/02
 ; SuSV2-Compliant   :       no
 ; GNU-compatible    :       no
 ;
 
-%include "system.incc
+%include "system.inc"
 
-%assign SHT_SYMTAB 0x2
-
-struc elf_hdr
-.e_ident	UCHAR	16
-.e_type		USHORT	1
-.e_mach		USHORT	1
-.e_version	LONG	1
-.e_entry	LONG	1
-.e_phoff	LONG	1
-.e_shoff	LONG	1
-.e_flags	LONG	1
-.e_ehsize	SHORT	1
-.e_phsize	SHORT	1
-.e_phnum	SHORT	1
-.e_shentsz	SHORT	1
-.e_shnum	SHORT	1
-.e_strndx	SHORT	1
-endstruc
-;; sizeof(elf_hdr) = 52 ;;
-
-struc elf_shdr
-.sh_name	LONG	1
-.sh_type	LONG	1
-.sh_flags	LONG	1
-.sh_addr	LONG	1
-.sh_offset	LONG	1
-.sh_size	LONG	1
-.sh_link	LONG	1
-.sh_info	LONG	1
-.sh_addal	LONG	1
-.sh_entsz	LONG	1
-endstruc
-;; sizeof(elf_shdr) = 40 ;;
-
-struc elf_sym
-.st_name	LONG	1
-.st_value	LONG	1
-.st_size	LONG	1
-.st_info	UCHAR	1
-.st_other	UCHAR	1
-.st_shndx	USHORT	1
-endstruc
-;; sizeof(elf_sym) = 16 ;;
+%include "elfheader.inc"
 
 CODESEG
 
@@ -93,69 +51,90 @@ aout	db	"a.out", EOL
 
 START:
 		pop ecx
-		pop esi
+		pop ebx
 		dec ecx
+		mov [argc],ecx
 		jnz argv_loop
-		mov esi, aout
-		jmp open
+		mov ebx, aout
+		jmps open
+
+do_error:
+		sys_write STDOUT, errstr, errlen
+		xor edx,edx
+		call write_fname
+		inc ebp
+
 argv_loop:
-		pop esi
-		or esi, esi
-		jz near exit
+		pop ebx
+		or ebx, ebx
+		jnz open
+
+do_exit:
+		sys_exit ebp
+
 open:
-		sys_open esi, O_RDONLY
+		mov [fname], ebx
+		sys_open EMPTY, O_RDONLY
 		or eax, eax
-		js near _error
+		js do_error
 		mov [fd], eax
 		sys_lseek eax, 0, SEEK_END
+		push ebp
 		sys_mmap NULL, eax, PROT_READ | PROT_WRITE, MAP_PRIVATE, [fd], 0
+		pop ebp
 		mov [ptr], eax
 		mov esi, eax
-		xor ecx,ecx
-		mov cx, [eax+elf_hdr.e_shnum]
-		add eax, [eax+elf_hdr.e_shoff]
-		sub eax, 40
+
+		cmp [argc],byte 2
+		jb .cont
+		call write_nl
+		mov dl,':'
+		call write_fname
+.cont:
+		movzx ecx, word [eax+ELF32_Ehdr.e_shnum]
+		add eax, [eax+ELF32_Ehdr.e_shoff]
+		sub eax, byte 40
 		;; search symtab entry ;;
 .Lsrch_symtab:
-		add eax, 40
+		add eax, byte 40
 		dec ecx
 		jz argv_loop
-		cmp byte [eax+elf_shdr.sh_type], SHT_SYMTAB
+		cmp byte [eax+ELF32_Shdr.sh_type], SHT_SYMTAB
 		jnz .Lsrch_symtab
 		;; found symtab entry  ;;
 .Lfound_symtab:
 		push eax
 		push ecx
 		mov [shdr], eax
-		mov ebx, [eax+elf_shdr.sh_offset]
-		mov ecx, [eax+elf_shdr.sh_size]
+		mov ebx, [eax+ELF32_Shdr.sh_offset]
+		mov ecx, [eax+ELF32_Shdr.sh_size]
 		shr ecx, 0x4		; sizeof(elf_sym)=16
 		inc ecx
 		add ebx, [ptr]
-		sub ebx, 16
+		sub ebx, byte 0x10
 .Lsrch_symbols:
 		dec ecx
 		jz near .Lback
-		add ebx, 0x10
-		cmp long [ebx+elf_sym.st_name], 0x0
+		add ebx, byte 0x10
+		cmp long [ebx+ELF32_Sym.st_name], 0x0
 		jz .Lsrch_symbols
 .Lfound:
 		pusha
-		mov edx, [eax+elf_shdr.sh_link]
+		mov edx, [eax+ELF32_Shdr.sh_link]
 		imul edx, 40
 		mov eax, [ptr]
-		add eax, [eax+elf_hdr.e_shoff]
+		add eax, [eax+ELF32_Ehdr.e_shoff]
 		add eax, edx
-		mov edx, [eax+elf_shdr.sh_offset]
+		mov edx, [eax+ELF32_Shdr.sh_offset]
 		add edx, [ptr]
-		add edx, [ebx+elf_sym.st_name]
+		add edx, [ebx+ELF32_Sym.st_name]
 		
 		mov esi, edx
 		mov ecx, edx
-		mov ecx, [ebx+elf_sym.st_value]
+		mov ecx, [ebx+ELF32_Sym.st_value]
 		mov edi, buf
 		call hextostr
-		add edx, 0x8
+		add edx, byte 0x8
 		add edi, edx
 		inc edi
 		mov al, ' '
@@ -179,34 +158,46 @@ open:
 .Lreturn:
 		jmp .Lsrch_symtab
 
-exit:
-		sys_exit ebp
-
-_error:
-		sys_write STDOUT, errstr, errlen
+write_fname:
+		pusha
+		mov esi, [fname]
 		mov edi, esi
 		xor al, al
 		xor ecx, ecx
 		dec ecx
 		repnz scasb
-		dec edi
-		mov al, __n
-		stosb
 		not ecx
+		or dl,dl
+		jz .write
+		dec edi
+		mov al,dl
+		stosb
+.write:
 		sys_write STDOUT, esi, ecx
-		inc ebp
-		jmp argv_loop
+		call write_nl
+		popa
+		ret
+
+write_nl:
+	pusha
+	sys_write STDOUT,.nl,1
+	popa
+	ret
+.nl:	db	__n
 
 errstr	db	"Error opening file: ", EOL
 errlen equ $ - errstr -1
-NL	db	__n
 
 UDATASEG
+
+argc	DWORD	1
+fname	DWORD	1
 buf	UCHAR	100
 fd	LONG	1
 ptr	LONG	1
 shdr	LONG	1
 link	LONG	1
+
 END
 
 %ifdef __VIM__
