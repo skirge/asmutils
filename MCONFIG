@@ -2,7 +2,7 @@
 #
 # MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.11 2001/11/24 15:17:36 konst Exp $
+# $Id: MCONFIG,v 1.12 2001/12/03 19:19:58 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -60,6 +60,8 @@ MAKE := gmake
 ASVER := $(shell $(AS) -r | cut -d ' ' -f 3)
 LDVER := $(shell $(LD) -v | cut -d ' ' -f 4)
 
+CORRECT_ASVER = 0.98
+
 #
 # avoid using asmutils during the build process if PATH has '.'
 #
@@ -96,9 +98,9 @@ ELF_MACROS =
 #ifdef NETBSD
 #AOUT = y
 #endif
-#ifdef OPENBSD
-#AOUT = y
-#endif
+ifdef OPENBSD
+AOUT = y
+endif
 
 ifdef BEOS
 STARTUP = y

@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: uname.asm,v 1.7 2001/09/24 16:49:19 konst Exp $
+;$Id: uname.asm,v 1.8 2001/12/03 19:19:45 konst Exp $
 ;
 ;hackers' uname/arch	[GNU replacement]
 ;
@@ -12,8 +12,8 @@
 ;-r	os release
 ;-v	os version
 ;-m	machine (hardware) type
-;-a	all the above information
 ;-p	processor (supported only in sysctl based version)
+;-a	all the above information
 ;
 ;0.01: 17-Jun-1999	initial release
 ;0.02: 03-Jul-1999	arch support
@@ -22,10 +22,11 @@
 ;0.05: 22-Oct-2000	sysctl based part (TH),
 ;			size improvemets (KB)
 ;0.06: 04-Mar-2001	use B_STRUC (KB)
+;0.07: 03-Dec-2001	various sysctl fixes on BSD (KB)
 
 %include "system.inc"
 
-%ifdef __OPENBSD__
+%ifdef __BSD__
 %define USE_SYSCTL
 %endif
 
@@ -135,8 +136,14 @@ get_uname:
 
 	mov	dword [oldlenp], BUF_LEN
 	pusha
-	sys_sysctl	ebp, 2, buffer, oldlenp, 0, 0
-	sys_write	STDOUT, buffer, dword [oldlenp]
+	mov	ebx,ebp
+	sys_sysctl	EMPTY, 2, buffer, oldlenp, 0, 0
+	test	eax,eax
+	js	.skip_write
+	mov	eax,[oldlenp]
+	dec	eax
+	sys_write	STDOUT, buffer, eax
+.skip_write:
 	popa
 
 %else
@@ -158,11 +165,15 @@ get_uname:
 	pop	ecx
 
 .skip:
+%ifdef	USE_SYSCTL
+	_add	ebp,8
+%else
 	_add	ebp,SYS_NMLN
+%endif
 	loop	.printinfo
 
 _exit:
-	sys_write	EMPTY,lf,1
+	sys_write	EMPTY, lf, 1
 	sys_exit	0
 
 
@@ -171,7 +182,7 @@ req_start:
 kern_ostype_req:
 	dd	CTL_KERN
 	dd	KERN_OSTYPE
-kern_osname_req:
+kern_hostname_req:
 	dd	CTL_KERN
 	dd	KERN_HOSTNAME
 kern_osrelease_req:
@@ -179,7 +190,7 @@ kern_osrelease_req:
 	dd	KERN_OSRELEASE
 kern_osversion_req:
 	dd	CTL_KERN
-	dd	KERN_OSVERSION
+	dd	KERN_VERSION
 hw_machine_req:
 	dd	CTL_HW
 	dd	HW_MACHINE
@@ -195,8 +206,8 @@ space	resb	1
 
 %ifdef USE_SYSCTL
 
-buffer		CHAR	BUF_LEN
 oldlenp		DWORD	1
+buffer		CHAR	BUF_LEN
 
 %else
 

@@ -1,7 +1,7 @@
 ;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Yuri Ivliev <yuru@black.cat.kazan.su>
 ;
-;$Id: pwd.asm,v 1.7 2001/03/18 07:08:25 konst Exp $
+;$Id: pwd.asm,v 1.8 2001/12/03 19:19:45 konst Exp $
 ;
 ;hackers' pwd
 ;
@@ -18,9 +18,13 @@
 %include "system.inc"
 
 %ifdef __LINUX__
-%if __KERNEL__ = 20
+%if __KERNEL__ <= 20
 %define STAT_PWD
 %endif
+%endif
+
+%ifdef __OPENBSD__
+%define STAT_PWD	;no getcwd :(
 %endif
 
 %assign	lPath 0xff

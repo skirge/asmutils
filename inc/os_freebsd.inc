@@ -1,10 +1,10 @@
 ; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_freebsd.inc,v 1.4 2001/11/14 16:01:42 konst Exp $
+; $Id: os_freebsd.inc,v 1.5 2001/12/03 19:20:49 konst Exp $
 ;
 ; file          : os_freebsd.inc
 ; created       : 08-Feb-2000
-; modified      : 14-Nov-2001
+; modified      : 03-Dec-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : FreeBSD kernel (3.2+) defined constants and structures
@@ -18,11 +18,11 @@
 %ifndef __FREEBSD_INC
 %define __FREEBSD_INC
 
-;created from FreeBSD: src/sys/kern/syscalls.master,v 1.72.2.5 2000/08/09 00:08:30 peter Exp
-
 ;
 ;sys/syscall.h
 ;
+;$FreeBSD: src/sys/sys/syscall.h,v 1.69.2.8 2001/06/16 20:41:40 tegge Exp $
+;created from FreeBSD: src/sys/kern/syscalls.master,v 1.72.2.6 2000/11/02 04:25:15 marcel Exp 
 
 %assign	SYS_syscall	0
 %assign	SYS_exit	1
@@ -117,8 +117,10 @@
 ;				/* 84 is old wait */
 %assign	SYS_swapon	85
 %assign	SYS_getitimer	86
+%if __KERNEL__ < 40
 %assign	SYS_gethostname 87
 %assign	SYS_sethostname 88
+%endif
 %assign	SYS_getdtablesize	89
 %assign	SYS_dup2	90
 %assign	SYS_fcntl	92
@@ -224,7 +226,7 @@
 %assign	SYS___semctl	220
 %assign	SYS_semget	221
 %assign	SYS_semop	222
-%assign	SYS_semconfig	223
+;%assign	SYS_semconfig	223
 %assign	SYS_msgctl	224
 %assign	SYS_msgget	225
 %assign	SYS_msgsnd	226
@@ -327,10 +329,136 @@
 ;
 
 %assign	SYS_brk		SYS_break
+%assign	SYS_sysctl	SYS___sysctl
 %assign	SYS_umount	SYS_unmount
 %assign	SYS_getcwd	SYS___getcwd
 %assign	SYS_alarm	SYS_getpid
 %assign	SYS_signal	SYS_getpid
+
+;
+;sys/sysctl.h
+;
+;$FreeBSD: src/sys/sys/sysctl.h,v 1.81.2.7 2001/07/18 15:36:56 pirzyk Exp $
+
+%assign CTL_MAXNAME	12	;largest number of components supported
+
+struc ctlname
+.ctl_name	PCHAR	1	;*char to subsystem name
+.ctl_type	INT	1	;type of name
+endstruc
+
+%assign CTLTYPE		0xf	;Mask for the type
+%assign	CTLTYPE_NODE	1	;name is a node
+%assign	CTLTYPE_INT	2	;name describes an integer
+%assign	CTLTYPE_STRING	3	;name describes a string
+%assign	CTLTYPE_QUAD	4	;name describes a 64-bit number
+%assign	CTLTYPE_OPAQUE	5	;name describes a structure
+%assign	CTLTYPE_STRUCT	CTLTYPE_OPAQUE	;name describes a structure
+%assign	CTLTYPE_UINT	6	;name describes an unsigned integer
+%assign	CTLTYPE_LONG	7	;name describes a long
+%assign	CTLTYPE_ULONG	8	;name describes an unsigned long
+
+%assign CTLFLAG_RD	0x80000000	;Allow reads of variable
+%assign CTLFLAG_WR	0x40000000	;Allow writes to the variable
+%assign CTLFLAG_RW	(CTLFLAG_RD|CTLFLAG_WR)
+%assign CTLFLAG_NOLOCK	0x20000000	;XXX Don't Lock
+%assign CTLFLAG_ANYBODY	0x10000000	;All users can set this var
+%assign CTLFLAG_SECURE	0x08000000	;Permit set only if securelevel<=0
+%assign CTLFLAG_PRISON	0x04000000	;Prisoned roots can fiddle
+%assign CTLFLAG_DYN	0x02000000	;Dynamic oid - can be freed
+
+%assign	CTL_UNSPEC	0		;unused
+%assign	CTL_KERN	1		;"high kernel": proc, limits
+%assign	CTL_VM		2		;virtual memory
+%assign	CTL_VFS		3		;file system, mount type is next
+%assign	CTL_NET		4		;network, see socket.h
+%assign	CTL_DEBUG	5		;debugging parameters
+%assign	CTL_HW		6		;generic cpu/io
+%assign	CTL_MACHDEP	7		;machine dependent
+%assign	CTL_USER	8		;user-level
+%assign	CTL_P1003_1B	9		;POSIX 1003.1B
+%assign	CTL_MAXID	10		;number of valid top-level ids
+
+%assign	KERN_OSTYPE	 	 1	;string: system version
+%assign	KERN_OSRELEASE	 	 2	;string: system release
+%assign	KERN_OSREV	 	 3	;int: system revision
+%assign	KERN_VERSION	 	 4	;string: compile time info
+%assign	KERN_MAXVNODES	 	 5	;int: max vnodes
+%assign	KERN_MAXPROC	 	 6	;int: max processes
+%assign	KERN_MAXFILES	 	 7	;int: max open files
+%assign	KERN_ARGMAX	 	 8	;int: max arguments to exec
+%assign	KERN_SECURELVL	 	 9	;int: system security level
+%assign	KERN_HOSTNAME		10	;string: hostname
+%assign	KERN_HOSTID		11	;int: host identifier
+%assign	KERN_CLOCKRATE		12	;struct: struct clockrate
+%assign	KERN_VNODE		13	;struct: vnode structures
+%assign	KERN_PROC		14	;struct: process entries
+%assign	KERN_FILE		15	;struct: file entries
+%assign	KERN_PROF		16	;node: kernel profiling info
+%assign	KERN_POSIX1		17	;int: POSIX.1 version
+%assign	KERN_NGROUPS		18	;int: # of supplemental group ids
+%assign	KERN_JOB_CONTROL	19	;int: is job control available
+%assign	KERN_SAVED_IDS		20	;int: saved set-user/group-ID
+%assign	KERN_BOOTTIME		21	;struct: time kernel was booted
+%assign KERN_NISDOMAINNAME	22	;string: YP domain name
+%assign KERN_DOMAINNAME		KERN_NISDOMAINNAME	;loopback
+%assign KERN_UPDATEINTERVAL	23	;int: update process sleep time
+%assign KERN_OSRELDATE		24	;int: OS release date
+%assign KERN_NTP_PLL		25	;node: NTP PLL control
+%assign	KERN_BOOTFILE		26	;string: name of booted kernel
+%assign	KERN_MAXFILESPERPROC	27	;int: max open files per proc
+%assign	KERN_MAXPROCPERUID 	28	;int: max processes per uid
+%assign KERN_DUMPDEV		29	;dev_t: device to dump on
+%assign	KERN_IPC		30	;node: anything related to IPC
+%assign	KERN_DUMMY		31	;unused
+%assign	KERN_PS_STRINGS		32	;int: address of PS_STRINGS
+%assign	KERN_USRSTACK		33	;int: address of USRSTACK
+%assign	KERN_LOGSIGEXIT		34	;int: do we log sigexit procs?
+%assign KERN_MAXID		35      ;number of valid kern ids
+
+%assign KERN_PROC_ALL		0	;everything
+%assign	KERN_PROC_PID		1	;by process id
+%assign	KERN_PROC_PGRP		2	;by process group id
+%assign	KERN_PROC_SESSION	3	;by session of pid
+%assign	KERN_PROC_TTY		4	;by controlling tty
+%assign	KERN_PROC_UID		5	;by effective uid
+%assign	KERN_PROC_RUID		6	;by real uid
+%assign	KERN_PROC_ARGS		7	;get/set arguments/proctitle
+
+%assign	HW_MACHINE	 1		;string: machine class
+%assign	HW_MODEL	 2		;string: specific machine model
+%assign	HW_NCPU		 3		;int: number of cpus
+%assign	HW_BYTEORDER	 4		;int: machine byte order
+%assign	HW_PHYSMEM	 5		;int: total memory
+%assign	HW_USERMEM	 6		;int: non-kernel memory
+%assign	HW_PAGESIZE	 7		;int: software page size
+%assign	HW_DISKNAMES	 8		;strings: disk drive names
+%assign	HW_DISKSTATS	 9		;struct: diskstats[]
+%assign HW_FLOATINGPT	10		;int: has HW floating point?
+%assign HW_MACHINE_ARCH	11		;string: machine architecture
+%assign	HW_MAXID	12		;number of valid hw ids
+
+%assign	USER_CS_PATH		 1	;string: _CS_PATH
+%assign	USER_BC_BASE_MAX	 2	;int: BC_BASE_MAX
+%assign	USER_BC_DIM_MAX		 3	;int: BC_DIM_MAX
+%assign	USER_BC_SCALE_MAX	 4	;int: BC_SCALE_MAX
+%assign	USER_BC_STRING_MAX	 5	;int: BC_STRING_MAX
+%assign	USER_COLL_WEIGHTS_MAX	 6	;int: COLL_WEIGHTS_MAX
+%assign	USER_EXPR_NEST_MAX	 7	;int: EXPR_NEST_MAX
+%assign	USER_LINE_MAX		 8	;int: LINE_MAX
+%assign	USER_RE_DUP_MAX		 9	;int: RE_DUP_MAX
+%assign	USER_POSIX2_VERSION	10	;int: POSIX2_VERSION
+%assign	USER_POSIX2_C_BIND	11	;int: POSIX2_C_BIND
+%assign	USER_POSIX2_C_DEV	12	;int: POSIX2_C_DEV
+%assign	USER_POSIX2_CHAR_TERM	13	;int: POSIX2_CHAR_TERM
+%assign	USER_POSIX2_FORT_DEV	14	;int: POSIX2_FORT_DEV
+%assign	USER_POSIX2_FORT_RUN	15	;int: POSIX2_FORT_RUN
+%assign	USER_POSIX2_LOCALEDEF	16	;int: POSIX2_LOCALEDEF
+%assign	USER_POSIX2_SW_DEV	17	;int: POSIX2_SW_DEV
+%assign	USER_POSIX2_UPE		18	;int: POSIX2_UPE
+%assign	USER_STREAM_MAX		19	;int: POSIX2_STREAM_MAX
+%assign	USER_TZNAME_MAX		20	;int: POSIX2_TZNAME_MAX
+%assign	USER_MAXID		21	;number of valid user ids
 
 ;
 ;generic BSD stuff

@@ -1,10 +1,10 @@
 ; Copyright (C) 2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_bsd.inc,v 1.2 2001/11/19 06:59:47 konst Exp $
+; $Id: os_bsd.inc,v 1.3 2001/12/03 19:20:49 konst Exp $
 ;
 ; file          : os_bsd.inc
 ; created       : 12-Nov-2000
-; modified      : 18-Nov-2001
+; modified      : 03-Dec-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : common BSD defines
@@ -289,6 +289,10 @@ endstruc
 
 %macro	sys_sbrk	0-1
 	__syscall sbrk, 1, %0, %1
+%endmacro
+
+%macro sys_sysctl 0-6
+	__syscall sysctl, 6, %0, %1, %2, %3, %4, %5, %6
 %endmacro
 
 %endif	;__BSD_INC

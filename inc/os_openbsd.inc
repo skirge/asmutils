@@ -1,11 +1,11 @@
 ; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ; Copyright (C) 2000 Tani Hosokawa <unknown@riverstyx.net>
 ;
-; $Id: os_openbsd.inc,v 1.5 2001/11/14 16:01:42 konst Exp $
+; $Id: os_openbsd.inc,v 1.6 2001/12/03 19:20:49 konst Exp $
 ;
 ; file          : os_openbsd.inc
 ; created       : 18-Aug-2000
-; modified      : 14-Nov-2001
+; modified      : 03-Dec-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : OpenBSD kernel (2.7+) defined constants and structures
@@ -19,11 +19,12 @@
 %ifndef __OPENBSD_INC
 %define __OPENBSD_INC
 
-;created from OpenBSD: syscalls.master,v 1.41 2000/06/22 22:41:19 mickey Exp
-
 ;
 ;sys/syscall.h
 ;
+;see sys/syscall.h and sys/syscallargs.h to find out arguments for each syscall
+;$OpenBSD: syscall.h,v 1.53 2001/08/26 04:11:12 deraadt Exp $
+;created from;	OpenBSD: syscalls.master,v 1.47 2001/06/26 19:56:52 dugsong Exp 
 
 %assign	SYS_syscall	0
 %assign	SYS_exit	1
@@ -43,7 +44,7 @@
 %assign	SYS_chmod	15
 %assign	SYS_chown	16
 %assign	SYS_break	17
-%assign	SYS_ogetfsstat	18
+;				/* 18 is compat_25 ogetfsstat */
 ;				/* 19 is compat_43 olseek */
 %assign	SYS_getpid	20
 %assign	SYS_mount	21
@@ -112,8 +113,6 @@
 ;				/* 84 is compat_43 owait */
 %assign	SYS_swapon	85
 %assign	SYS_getitimer	86
-%assign	SYS_compat_43_ogethostname	87
-%assign	SYS_compat_43_osethostname	88
 ;				/* 87 is compat_43 ogethostname */
 ;				/* 88 is compat_43 osethostname */
 ;				/* 89 is compat_43 ogetdtablesize */
@@ -178,15 +177,12 @@
 ;				/* 150 is compat_43 ogetsockname */
 %assign	SYS_nfssvc	155
 ;				/* 156 is compat_43 ogetdirentries */
-%assign	SYS_ostatfs	157
-%assign	SYS_ofstatfs	158
+;				/* 157 is compat_25 ostatfs */
+;				/* 158 is compat_25 ostatfs */
 %assign	SYS_getfh	161
 ;				/* 162 is compat_09 ogetdomainname */
 ;				/* 163 is compat_09 osetdomainname */
 ;				/* 164 is compat_09 ouname */
-%assign	SYS_compat_09_osetdomainname 163
-%assign	SYS_compat_09_ogetdomainname 162
-%assign	SYS_compat_09_ouname 164
 %assign	SYS_sysarch	165
 ;				/* 169 is compat_10 osemsys */
 ;				/* 170 is compat_10 omsgsys */
@@ -223,16 +219,16 @@
 %assign	SYS_futimes	206
 %assign	SYS_getpgid	207
 %assign	SYS_xfspioctl	208
-%assign	SYS___osemctl	220
+;				/* 220 is compat_23 __osemctl */
 %assign	SYS_semget	221
 %assign	SYS_semop	222
 ;				/* 223 is obsolete sys_semconfig */
-%assign	SYS_omsgctl	224
+;				/* 224 is compat_23 omsgctl */
 %assign	SYS_msgget	225
 %assign	SYS_msgsnd	226
 %assign	SYS_msgrcv	227
 %assign	SYS_shmat	228
-%assign	SYS_oshmctl	229
+;				/* 229 is compat_23 oshmctl */
 %assign	SYS_shmdt	230
 %assign	SYS_shmget	231
 %assign	SYS_clock_gettime	232
@@ -258,7 +254,12 @@
 %assign	SYS_fhstatfs	266
 %assign	SYS_preadv	267
 %assign	SYS_pwritev	268
-%assign	SYS_MAXSYSCALL	269
+%assign	SYS_kqueue	269
+%assign	SYS_kevent	270
+%assign	SYS_mlockall	271
+%assign	SYS_munlockall	272
+%assign	SYS_getpeereid	273
+%assign	SYS_MAXSYSCALL	274
 
 ;
 ;loopbacks
@@ -266,125 +267,157 @@
 
 %assign	SYS_brk		SYS_break
 %assign	SYS_sysctl	SYS___sysctl
-%assign	SYS_setdomainname SYS_compat_09_osetdomainname
-%assign	SYS_getdomainname SYS_compat_09_ogetdomainname
-%assign	SYS_sethostname	SYS_compat_43_osethostname
-%assign	SYS_gethostname	SYS_compat_43_ogethostname
-%assign	SYS_uname	SYS_compat_09_ouname
+;%assign	SYS_setdomainname SYS_compat_09_osetdomainname
+;%assign	SYS_getdomainname SYS_compat_09_ogetdomainname
+;%assign	SYS_sethostname	SYS_compat_43_osethostname
+;%assign	SYS_gethostname	SYS_compat_43_ogethostname
+;%assign	SYS_uname	SYS_compat_09_ouname
 %assign	SYS_getdents	SYS_getdirentries
 %assign	SYS_getcwd	SYS_getpid
 %assign	SYS_signal	SYS_getpid
 %assign	SYS_alarm	SYS_getpid
 
 ;
+;sys/sysctl.h
 ;
-;
+;$OpenBSD: sysctl.h,v 1.43 2001/09/28 01:42:54 millert Exp $
+;$NetBSD: sysctl.h,v 1.16 1996/04/09 20:55:36 cgd Exp $
 
-%assign CTL_MAXNAME	12	; largest number of components supported
-%assign	CTLTYPE_NODE	1	; name is a node
-%assign	CTLTYPE_INT	2	; name describes an integer
-%assign	CTLTYPE_STRING	3	; name describes a string
-%assign	CTLTYPE_QUAD	4	; name describes a 64-bit number
-%assign	CTLTYPE_STRUCT	5	; name describes a structure
-%assign	CTL_UNSPEC	0		; unused
-%assign	CTL_KERN	1		; "high kernel": proc, limits
-%assign	CTL_VM		2		; virtual memory
-%assign	CTL_FS		3		; file system, mount type is next
-%assign	CTL_NET		4		; network, see socket.h
-%assign	CTL_DEBUG	5		; debugging parameters
-%assign	CTL_HW		6		; generic cpu/io
-%assign	CTL_MACHDEP	7		; machine dependent
-%assign	CTL_USER	8		; user-level
-%assign	CTL_DDB		9		; DDB user interface, see db_var.h
-%assign CTL_VFS         10              ; VFS sysctl's
-%assign	CTL_MAXID	11		; number of valid top-level ids
-%assign	KERN_OSTYPE	 	 1	; string: system version
-%assign	KERN_OSRELEASE	 	 2	; string: system release
-%assign	KERN_OSREV	 	 3	; int: system revision
-%assign	KERN_VERSION	 	 4	; string: compile time info
-%assign	KERN_MAXVNODES	 	 5	; int: max vnodes
-%assign	KERN_MAXPROC	 	 6	; int: max processes
-%assign	KERN_MAXFILES	 	 7	; int: max open files
-%assign	KERN_ARGMAX	 	 8	; int: max arguments to exec
-%assign	KERN_SECURELVL	 	 9	; int: system security level
-%assign	KERN_HOSTNAME		10	; string: hostname
-%assign	KERN_HOSTID		11	; int: host identifier
-%assign	KERN_CLOCKRATE		12	; struct: struct clockrate
-%assign	KERN_VNODE		13	; struct: vnode structures
-%assign	KERN_PROC		14	; struct: process entries
-%assign	KERN_FILE		15	; struct: file entries
-%assign	KERN_PROF		16	; node: kernel profiling info
-%assign	KERN_POSIX1		17	; int: POSIX.1 version
-%assign	KERN_NGROUPS		18	; int: # of supplemental group ids
-%assign	KERN_JOB_CONTROL	19	; int: is job control available
-%assign	KERN_SAVED_IDS		20	; int: saved set-user/group-ID
-%assign	KERN_BOOTTIME		21	; struct: time kernel was booted
-%assign	KERN_DOMAINNAME		22	; string: (YP) domainname
-%assign	KERN_MAXPARTITIONS	23	; int: number of partitions/disk
-%assign KERN_RAWPARTITION	24	; int: raw partition number
-%assign	KERN_NTPTIME		25	; struct: extended-precision time
-%assign	KERN_TIMEX		26	; struct: ntp timekeeping state
-%assign	KERN_OSVERSION		27	; string: kernel build version
-%assign	KERN_SOMAXCONN		28	; int: listen queue maximum
-%assign	KERN_SOMINCONN		29	; int: half-open controllable param
-%assign	KERN_USERMOUNT		30	; int: users may mount filesystems
-%assign KERN_RND		31	; struct: rnd(4) statistics
-%assign KERN_NOSUIDCOREDUMP	32	; int: no setuid coredumps ever */ 
-%assign	KERN_FSYNC		33      ; int: file synchronization support
-%assign	KERN_SYSVMSG		34      ; int: SysV message queue suppoprt
-%assign	KERN_SYSVSEM		35      ; int: SysV semaphore support
-%assign	KERN_SYSVSHM		36      ; int: SysV shared memory support
-%assign	KERN_ARND		37	; int: random integer from arc4rnd
-%assign	KERN_MSGBUFSIZE		38	; int: size of message buffer
-%assign	KERN_MAXID		39	; number of valid kern ids
-%assign KERN_PROC_ALL		0	; everything
-%assign	KERN_PROC_PID		1	; by process id
-%assign	KERN_PROC_PGRP		2	; by process group id
-%assign	KERN_PROC_SESSION	3	; by session of pid
-%assign	KERN_PROC_TTY		4	; by controlling tty
-%assign	KERN_PROC_UID		5	; by effective uid
-%assign	KERN_PROC_RUID		6	; by real uid
+%assign CTL_MAXNAME	12	;largest number of components supported
+
+struc ctlname
+.ctl_name	PCHAR	1	;*char to subsystem name
+.ctl_type	INT	1	;type of name
+endstruc
+
+%assign	CTLTYPE_NODE	1	;name is a node
+%assign	CTLTYPE_INT	2	;name describes an integer
+%assign	CTLTYPE_STRING	3	;name describes a string
+%assign	CTLTYPE_QUAD	4	;name describes a 64-bit number
+%assign	CTLTYPE_STRUCT	5	;name describes a structure
+
+%assign	CTL_UNSPEC	0		;unused
+%assign	CTL_KERN	1		;"high kernel": proc, limits
+%assign	CTL_VM		2		;virtual memory
+%assign	CTL_FS		3		;file system, mount type is next
+%assign	CTL_NET		4		;network, see socket.h
+%assign	CTL_DEBUG	5		;debugging parameters
+%assign	CTL_HW		6		;generic cpu/io
+%assign	CTL_MACHDEP	7		;machine dependent
+%assign	CTL_USER	8		;user-level
+%assign	CTL_DDB		9		;DDB user interface, see db_var.h
+%assign CTL_VFS         10              ;VFS sysctl's
+%assign	CTL_MAXID	11		;number of valid top-level ids
+
+%assign	KERN_OSTYPE	 	 1	;string: system version
+%assign	KERN_OSRELEASE	 	 2	;string: system release
+%assign	KERN_OSREV	 	 3	;int: system revision
+%assign	KERN_VERSION	 	 4	;string: compile time info
+%assign	KERN_MAXVNODES	 	 5	;int: max vnodes
+%assign	KERN_MAXPROC	 	 6	;int: max processes
+%assign	KERN_MAXFILES	 	 7	;int: max open files
+%assign	KERN_ARGMAX	 	 8	;int: max arguments to exec
+%assign	KERN_SECURELVL	 	 9	;int: system security level
+%assign	KERN_HOSTNAME		10	;string: hostname
+%assign	KERN_HOSTID		11	;int: host identifier
+%assign	KERN_CLOCKRATE		12	;struct: struct clockrate
+%assign	KERN_VNODE		13	;struct: vnode structures
+%assign	KERN_PROC		14	;struct: process entries
+%assign	KERN_FILE		15	;struct: file entries
+%assign	KERN_PROF		16	;node: kernel profiling info
+%assign	KERN_POSIX1		17	;int: POSIX.1 version
+%assign	KERN_NGROUPS		18	;int: # of supplemental group ids
+%assign	KERN_JOB_CONTROL	19	;int: is job control available
+%assign	KERN_SAVED_IDS		20	;int: saved set-user/group-ID
+%assign	KERN_BOOTTIME		21	;struct: time kernel was booted
+%assign	KERN_DOMAINNAME		22	;string: (YP) domainname
+%assign	KERN_MAXPARTITIONS	23	;int: number of partitions/disk
+%assign KERN_RAWPARTITION	24	;int: raw partition number
+%assign	KERN_NTPTIME		25	;struct: extended-precision time
+%assign	KERN_TIMEX		26	;struct: ntp timekeeping state
+%assign	KERN_OSVERSION		27	;string: kernel build version
+%assign	KERN_SOMAXCONN		28	;int: listen queue maximum
+%assign	KERN_SOMINCONN		29	;int: half-open controllable param
+%assign	KERN_USERMOUNT		30	;int: users may mount filesystems
+%assign KERN_RND		31	;struct: rnd(4) statistics
+%assign KERN_NOSUIDCOREDUMP	32	;int: no setuid coredumps ever */ 
+%assign	KERN_FSYNC		33      ;int: file synchronization support
+%assign	KERN_SYSVMSG		34      ;int: SysV message queue suppoprt
+%assign	KERN_SYSVSEM		35      ;int: SysV semaphore support
+%assign	KERN_SYSVSHM		36      ;int: SysV shared memory support
+%assign	KERN_ARND		37	;int: random integer from arc4rnd
+%assign	KERN_MSGBUFSIZE		38	;int: size of message buffer
+%assign KERN_MALLOCSTATS	39	;node: malloc statistics
+%assign KERN_CPTIME		40	;array: cp_time
+%assign KERN_NCHSTATS		41	;struct: vfs cache statistics
+%assign KERN_FORKSTAT		42	;struct: fork statistics
+%assign KERN_NSELCOLL		43	;int: select(2) collisions
+%assign KERN_TTY		44	;node: tty information
+%assign	KERN_CCPU		45	;int: ccpu
+%assign	KERN_FSCALE		46	;int: fscale
+%assign	KERN_NPROCS		47	;int: number of processes
+%assign	KERN_MSGBUF		48	;message buffer, KERN_MSGBUFSIZE
+%assign	KERN_POOL		49	;struct: pool information
+%assign	KERN_STACKGAPRANDOM	50	;int: stackgap_random
+%assign	KERN_SYSVIPC_INFO	51	;struct: SysV sem/shm/msg info
+%assign	KERN_MAXID		52	;number of valid kern ids
+
+%assign KERN_PROC_ALL		0	;everything
+%assign	KERN_PROC_PID		1	;by process id
+%assign	KERN_PROC_PGRP		2	;by process group id
+%assign	KERN_PROC_SESSION	3	;by session of pid
+%assign	KERN_PROC_TTY		4	;by controlling tty
+%assign	KERN_PROC_UID		5	;by effective uid
+%assign	KERN_PROC_RUID		6	;by real uid
+%assign	KERN_PROC_KTHREAD	7	;also return kernel threads
+
 %assign	WMESGLEN	7
-%assign	EPROC_CTTY	0x01	; controlling tty vnode active
-%assign	EPROC_SLEADER	0x02	; session leader
+%assign	EPROC_CTTY	0x01	;controlling tty vnode active
+%assign	EPROC_SLEADER	0x02	;session leader
 %assign EMULNAMELEN	7
-%assign	FS_POSIX	1		; POSIX flags
+
+%assign	FS_POSIX	1		;POSIX flags
 %assign	FS_MAXID	2
-%assign	FS_POSIX_SETUID	1		; int: always clear SGID/SUID bit when owner change
+
+%assign	FS_POSIX_SETUID	1		;int: always clear SGID/SUID bit when owner change
 %assign	FS_POSIX_MAXID	2
-%assign	HW_MACHINE	 1		; string: machine class
-%assign	HW_MODEL	 2		; string: specific machine model
-%assign	HW_NCPU		 3		; int: number of cpus
-%assign	HW_BYTEORDER	 4		; int: machine byte order
-%assign	HW_PHYSMEM	 5		; int: total memory
-%assign	HW_USERMEM	 6		; int: non-kernel memory
-%assign	HW_PAGESIZE	 7		; int: software page size
-%assign	HW_DISKNAMES	 8		; strings: disk drive names
-%assign	HW_DISKSTATS	 9		; struct: diskstats[]
-%assign	HW_MAXID	10		; number of valid hw ids
-%assign	USER_CS_PATH		 1	; string: _CS_PATH
-%assign	USER_BC_BASE_MAX	 2	; int: BC_BASE_MAX
-%assign	USER_BC_DIM_MAX		 3	; int: BC_DIM_MAX
-%assign	USER_BC_SCALE_MAX	 4	; int: BC_SCALE_MAX
-%assign	USER_BC_STRING_MAX	 5	; int: BC_STRING_MAX
-%assign	USER_COLL_WEIGHTS_MAX	 6	; int: COLL_WEIGHTS_MAX
-%assign	USER_EXPR_NEST_MAX	 7	; int: EXPR_NEST_MAX
-%assign	USER_LINE_MAX		 8	; int: LINE_MAX
-%assign	USER_RE_DUP_MAX		 9	; int: RE_DUP_MAX
-%assign	USER_POSIX2_VERSION	10	; int: POSIX2_VERSION
-%assign	USER_POSIX2_C_BIND	11	; int: POSIX2_C_BIND
-%assign	USER_POSIX2_C_DEV	12	; int: POSIX2_C_DEV
-%assign	USER_POSIX2_CHAR_TERM	13	; int: POSIX2_CHAR_TERM
-%assign	USER_POSIX2_FORT_DEV	14	; int: POSIX2_FORT_DEV
-%assign	USER_POSIX2_FORT_RUN	15	; int: POSIX2_FORT_RUN
-%assign	USER_POSIX2_LOCALEDEF	16	; int: POSIX2_LOCALEDEF
-%assign	USER_POSIX2_SW_DEV	17	; int: POSIX2_SW_DEV
-%assign	USER_POSIX2_UPE		18	; int: POSIX2_UPE
-%assign	USER_STREAM_MAX		19	; int: POSIX2_STREAM_MAX
-%assign	USER_TZNAME_MAX		20	; int: POSIX2_TZNAME_MAX
-%assign	USER_MAXID		21	; number of valid user ids
-%assign	CTL_DEBUG_NAME		0	; string: variable name
-%assign	CTL_DEBUG_VALUE		1	; int: variable value
+
+%assign	HW_MACHINE	 1		;string: machine class
+%assign	HW_MODEL	 2		;string: specific machine model
+%assign	HW_NCPU		 3		;int: number of cpus
+%assign	HW_BYTEORDER	 4		;int: machine byte order
+%assign	HW_PHYSMEM	 5		;int: total memory
+%assign	HW_USERMEM	 6		;int: non-kernel memory
+%assign	HW_PAGESIZE	 7		;int: software page size
+%assign	HW_DISKNAMES	 8		;strings: disk drive names
+%assign	HW_DISKSTATS	 9		;struct: diskstats[]
+%assign	HW_DISKCOUNT	10		;int: number of disks
+%assign	HW_MAXID	11		;number of valid hw ids
+
+%assign	USER_CS_PATH		 1	;string: _CS_PATH
+%assign	USER_BC_BASE_MAX	 2	;int: BC_BASE_MAX
+%assign	USER_BC_DIM_MAX		 3	;int: BC_DIM_MAX
+%assign	USER_BC_SCALE_MAX	 4	;int: BC_SCALE_MAX
+%assign	USER_BC_STRING_MAX	 5	;int: BC_STRING_MAX
+%assign	USER_COLL_WEIGHTS_MAX	 6	;int: COLL_WEIGHTS_MAX
+%assign	USER_EXPR_NEST_MAX	 7	;int: EXPR_NEST_MAX
+%assign	USER_LINE_MAX		 8	;int: LINE_MAX
+%assign	USER_RE_DUP_MAX		 9	;int: RE_DUP_MAX
+%assign	USER_POSIX2_VERSION	10	;int: POSIX2_VERSION
+%assign	USER_POSIX2_C_BIND	11	;int: POSIX2_C_BIND
+%assign	USER_POSIX2_C_DEV	12	;int: POSIX2_C_DEV
+%assign	USER_POSIX2_CHAR_TERM	13	;int: POSIX2_CHAR_TERM
+%assign	USER_POSIX2_FORT_DEV	14	;int: POSIX2_FORT_DEV
+%assign	USER_POSIX2_FORT_RUN	15	;int: POSIX2_FORT_RUN
+%assign	USER_POSIX2_LOCALEDEF	16	;int: POSIX2_LOCALEDEF
+%assign	USER_POSIX2_SW_DEV	17	;int: POSIX2_SW_DEV
+%assign	USER_POSIX2_UPE		18	;int: POSIX2_UPE
+%assign	USER_STREAM_MAX		19	;int: POSIX2_STREAM_MAX
+%assign	USER_TZNAME_MAX		20	;int: POSIX2_TZNAME_MAX
+%assign	USER_MAXID		21	;number of valid user ids
+
+%assign	CTL_DEBUG_NAME		0	;string: variable name
+%assign	CTL_DEBUG_VALUE		1	;int: variable value
 %assign	CTL_DEBUG_MAXID		20
 
 ;

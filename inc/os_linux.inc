@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.13 2001/11/24 15:18:41 konst Exp $
+; $Id: os_linux.inc,v 1.14 2001/12/03 19:20:49 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 24-Nov-2001
+; modified      : 03-Dec-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
@@ -63,7 +63,7 @@ endstruc
 
 %assign KDGKBTYPE	0x4B33	;get keyboard type
 %assign KB_84		0x01
-%assign KB_101		0x02		;this is what we always answer
+%assign KB_101		0x02	;this is what we always answer
 %assign KB_OTHER	0x03
 
 %assign	KIOCSOUND	0x4B2F	;start sound generation (0 for off)
@@ -123,15 +123,15 @@ endstruc
 %assign VT_WAITACTIVE	0x5607	;wait for vt active
 %assign VT_DISALLOCATE	0x5608	;free memory associated to vt
 
-%define VT_GETMODE	0x5601	; get mode of active vt
-%define VT_SETMODE	0x5602	; set mode of active vt
+%define VT_GETMODE	0x5601	;get mode of active vt
+%define VT_SETMODE	0x5602	;set mode of active vt
 
 struc vt_mode
-.mode		CHAR	1	; vt mode
-.waitv		SHORT	1	; if set, hang on writes if not active
-.relsig		SHORT	1	; signal to raise on release req
-.acqsig		SHORT	1	; signal to raise on acquisition
-.frsig		SHORT	1	; unused (set to 0)
+.mode		CHAR	1	;vt mode
+.waitv		SHORT	1	;if set, hang on writes if not active
+.relsig		SHORT	1	;signal to raise on release req
+.acqsig		SHORT	1	;signal to raise on acquisition
+.frsig		SHORT	1	;unused (set to 0)
 endstruc
 
 ;
@@ -292,12 +292,12 @@ endstruc
 
 %assign NCCS 19
 struc termios
-.c_iflag	UINT	1	; input mode flags
-.c_oflag	UINT	1	; output mode flags
-.c_cflag	UINT	1	; control mode flags
-.c_lflag	UINT	1	; local mode flags
-.c_line		UCHAR	1	; line discipline
-.c_cc		UCHAR	NCCS	; control characters
+.c_iflag	UINT	1	;input mode flags
+.c_oflag	UINT	1	;output mode flags
+.c_cflag	UINT	1	;control mode flags
+.c_lflag	UINT	1	;local mode flags
+.c_line		UCHAR	1	;line discipline
+.c_cc		UCHAR	NCCS	;control characters
 endstruc
 
 ;
@@ -406,7 +406,7 @@ endstruc
 %assign	FB_ACTIVATE_NXTOPEN	1
 %assign	FB_ACTIVATE_TEST	2
 %assign	FB_ACTIVATE_MASK	15
-%assign	FB_ACTIVATE_VBL		16	; activate changes on next VBL - coool
+%assign	FB_ACTIVATE_VBL		16	;activate changes on next VBL - coool
 %assign	FB_CHANGE_CMAP_VBL	32
 %assign	FB_ACTIVATE_ALL		64
 
@@ -836,67 +836,135 @@ endstruc
 ;linux/net.h (socket calls)
 ;
 
-%assign SYS_SOCKET	1	; sys_socket
-%assign SYS_BIND	2	; sys_bind
-%assign SYS_CONNECT	3	; sys_connect
-%assign SYS_LISTEN	4	; sys_listen
-%assign SYS_ACCEPT	5	; sys_accept
-%assign SYS_GETSOCKNAME	6	; sys_getsockname
-%assign SYS_GETPEERNAME	7	; sys_getpeername
-%assign SYS_SOCKETPAIR	8	; sys_socketpair
-%assign SYS_SEND	9	; sys_send
-%assign SYS_RECV	10	; sys_recv
-%assign SYS_SENDTO	11	; sys_sendto
-%assign SYS_RECVFROM	12	; sys_recvfrom
-%assign SYS_SHUTDOWN	13	; sys_shutdown
-%assign SYS_SETSOCKOPT	14	; sys_setsockopt
-%assign SYS_GETSOCKOPT	15	; sys_getsockopt
-%assign SYS_SENDMSG	16	; sys_sendmsg
-%assign SYS_RECVMSG	17	; sys_recvmsg
+%assign SYS_SOCKET	1
+%assign SYS_BIND	2
+%assign SYS_CONNECT	3
+%assign SYS_LISTEN	4
+%assign SYS_ACCEPT	5
+%assign SYS_GETSOCKNAME	6
+%assign SYS_GETPEERNAME	7
+%assign SYS_SOCKETPAIR	8
+%assign SYS_SEND	9
+%assign SYS_RECV	10
+%assign SYS_SENDTO	11
+%assign SYS_RECVFROM	12
+%assign SYS_SHUTDOWN	13
+%assign SYS_SETSOCKOPT	14
+%assign SYS_GETSOCKOPT	15
+%assign SYS_SENDMSG	16
+%assign SYS_RECVMSG	17
 
 ;
 ;linux/sockios.h
 ;
 
-%assign SIOCADDRT	0x890B		; add routing table entry	
-%assign SIOCDELRT	0x890C		; delete routing table entry	
-%assign SIOCRTMSG	0x890D		; call to routing system	
+%assign SIOCADDRT	0x890B		;add routing table entry	
+%assign SIOCDELRT	0x890C		;delete routing table entry	
+%assign SIOCRTMSG	0x890D		;call to routing system	
 
-%assign SIOCGIFNAME	0x8910		; get iface name		
-%assign SIOCSIFLINK	0x8911		; set iface channel		
-%assign SIOCGIFCONF	0x8912		; get iface list		
-%assign SIOCGIFFLAGS	0x8913		; get flags			
-%assign SIOCSIFFLAGS	0x8914		; set flags			
-%assign SIOCGIFADDR	0x8915		; get PA address		
-%assign SIOCSIFADDR	0x8916		; set PA address		
-%assign SIOCGIFDSTADDR	0x8917		; get remote PA address	
-%assign SIOCSIFDSTADDR	0x8918		; set remote PA address	
-%assign SIOCGIFBRDADDR	0x8919		; get broadcast PA address	
-%assign SIOCSIFBRDADDR	0x891a		; set broadcast PA address	
-%assign SIOCGIFNETMASK	0x891b		; get network PA mask		
-%assign SIOCSIFNETMASK	0x891c		; set network PA mask		
-%assign SIOCGIFMETRIC	0x891d		; get metric			
-%assign SIOCSIFMETRIC	0x891e		; set metric			
-%assign SIOCGIFMEM	0x891f		; get memory address (BSD)	
-%assign SIOCSIFMEM	0x8920		; set memory address (BSD)	
-%assign SIOCGIFMTU	0x8921		; get MTU size			
-%assign SIOCSIFMTU	0x8922		; set MTU size			
-%assign SIOCSIFNAME	0x8923		; set interface name 
-%assign	SIOCSIFHWADDR	0x8924		; set hardware address 	
-%assign SIOCGIFENCAP	0x8925		; get/set encapsulations       
+%assign SIOCGIFNAME	0x8910		;get iface name		
+%assign SIOCSIFLINK	0x8911		;set iface channel		
+%assign SIOCGIFCONF	0x8912		;get iface list		
+%assign SIOCGIFFLAGS	0x8913		;get flags			
+%assign SIOCSIFFLAGS	0x8914		;set flags			
+%assign SIOCGIFADDR	0x8915		;get PA address		
+%assign SIOCSIFADDR	0x8916		;set PA address		
+%assign SIOCGIFDSTADDR	0x8917		;get remote PA address	
+%assign SIOCSIFDSTADDR	0x8918		;set remote PA address	
+%assign SIOCGIFBRDADDR	0x8919		;get broadcast PA address	
+%assign SIOCSIFBRDADDR	0x891a		;set broadcast PA address	
+%assign SIOCGIFNETMASK	0x891b		;get network PA mask		
+%assign SIOCSIFNETMASK	0x891c		;set network PA mask		
+%assign SIOCGIFMETRIC	0x891d		;get metric			
+%assign SIOCSIFMETRIC	0x891e		;set metric			
+%assign SIOCGIFMEM	0x891f		;get memory address (BSD)	
+%assign SIOCSIFMEM	0x8920		;set memory address (BSD)	
+%assign SIOCGIFMTU	0x8921		;get MTU size			
+%assign SIOCSIFMTU	0x8922		;set MTU size			
+%assign SIOCSIFNAME	0x8923		;set interface name 
+%assign	SIOCSIFHWADDR	0x8924		;set hardware address 	
+%assign SIOCGIFENCAP	0x8925		;get/set encapsulations       
 %assign SIOCSIFENCAP	0x8926		
-%assign SIOCGIFHWADDR	0x8927		; Get hardware address		
-%assign SIOCGIFSLAVE	0x8929		; Driver slaving support	
+%assign SIOCGIFHWADDR	0x8927		;Get hardware address		
+%assign SIOCGIFSLAVE	0x8929		;Driver slaving support	
 %assign SIOCSIFSLAVE	0x8930
-%assign SIOCADDMULTI	0x8931		; Multicast address lists	
+%assign SIOCADDMULTI	0x8931		;Multicast address lists	
 %assign SIOCDELMULTI	0x8932
-%assign SIOCGIFINDEX	0x8933		; name -> if_index mapping	
-%assign SIOGIFINDEX	SIOCGIFINDEX	; misprint compatibility :-)	
-%assign SIOCSIFPFLAGS	0x8934		; set/get extended flags set	
+%assign SIOCGIFINDEX	0x8933		;name -> if_index mapping	
+%assign SIOGIFINDEX	SIOCGIFINDEX	;misprint compatibility :-)	
+%assign SIOCSIFPFLAGS	0x8934		;set/get extended flags set	
 %assign SIOCGIFPFLAGS	0x8935
-%assign SIOCDIFADDR	0x8936		; delete PA address		
-%assign	SIOCSIFHWBROADCAST	0x8937	; set hardware broadcast addr	
-%assign SIOCGIFCOUNT	0x8938		; get number of devices 
+%assign SIOCDIFADDR	0x8936		;delete PA address		
+%assign	SIOCSIFHWBROADCAST	0x8937	;set hardware broadcast addr	
+%assign SIOCGIFCOUNT	0x8938		;get number of devices 
+
+;
+;linux/sysctl.h
+;
+
+%assign	CTL_MAXNAME 10
+
+%assign	CTL_KERN	1	;General kernel info and control
+%assign	CTL_VM		2	;VM management
+%assign	CTL_NET		3	;Networking
+%assign	CTL_PROC	4	;Process info
+%assign	CTL_FS		5	;Filesystems
+%assign	CTL_DEBUG	6	;Debugging
+%assign	CTL_DEV		7	;Devices
+%assign	CTL_BUS		8	;Busses
+%assign	CTL_ABI		9	;Binary emulation
+%assign	CTL_CPU		10	;CPU stuff (speed scaling, etc)
+
+%assign	KERN_OSTYPE	1	;string: system version
+%assign	KERN_OSRELEASE	2	;string: system release
+%assign	KERN_OSREV	3	;int: system revision
+%assign	KERN_VERSION	4	;string: compile time info
+%assign	KERN_SECUREMASK	5	;struct: maximum rights mask
+%assign	KERN_PROF	6	;table: profiling information
+%assign	KERN_NODENAME	7
+%assign	KERN_HOSTNAME	KERN_NODENAME
+%assign	KERN_DOMAINNAME	8
+
+%assign	KERN_CAP_BSET	14	;int: capability bounding set
+%assign	KERN_PANIC	15	;int: panic timeout
+%assign	KERN_REALROOTDEV	16	;real root device to mount after initrd
+
+%assign	KERN_SPARC_REBOOT	21	;reboot command on Sparc
+%assign	KERN_CTLALTDEL	22	;int: allow ctl-alt-del to reboot
+%assign	KERN_PRINTK	23	;struct: control printk logging parameters
+%assign	KERN_NAMETRANS	24	;Name translation
+%assign	KERN_PPC_HTABRECLAIM	25	;turn htab reclaimation on/off on PPC
+%assign	KERN_PPC_ZEROPAGED	26	;turn idle page zeroing on/off on PPC
+%assign	KERN_PPC_POWERSAVE_NAP	27	;use nap mode for power saving
+%assign	KERN_MODPROBE	28
+%assign	KERN_SG_BIG_BUFF	29
+%assign	KERN_ACCT	30	;BSD process accounting parameters
+%assign	KERN_PPC_L2CR	31	;l2cr register on PPC
+
+%assign	KERN_RTSIGNR	32	;Number of rt sigs queued
+%assign	KERN_RTSIGMAX	33	;Max queuable
+	
+%assign	KERN_SHMMAX	34	;long: Maximum shared memory segment
+%assign	KERN_MSGMAX	35	;int: Maximum size of a messege
+%assign	KERN_MSGMNB	36	;int: Maximum message queue size
+%assign	KERN_MSGPOOL	37	;int: Maximum system message pool size
+%assign	KERN_SYSRQ	38	;int: Sysreq enable 
+%assign	KERN_MAX_THREADS	39	;int: Maximum nr of threads in the system
+%assign	KERN_RANDOM	40	;Random driver
+%assign	KERN_SHMALL	41	;int: Maximum size of shared memory
+%assign	KERN_MSGMNI	42	;int: msg queue identifiers
+%assign	KERN_SEM	43	;struct: sysv semaphore limits
+%assign	KERN_SPARC_STOP_A	44	;int: Sparc Stop-A enable
+%assign	KERN_SHMMNI	45	;int: shm array identifiers
+%assign	KERN_OVERFLOWUID	46	;int: overflow UID
+%assign	KERN_OVERFLOWGID	47	;int: overflow GID
+%assign	KERN_SHMPATH	48	;string: path to shm fs
+%assign	KERN_HOTPLUG	49	;string: path to hotplug policy agent
+%assign	KERN_IEEE_EMULATION_WARNINGS	50	;int: unimplemented ieee instructions
+%assign	KERN_S390_USER_DEBUG_LOGGING	51	;int: dumps of user faults
+%assign	KERN_CORE_USES_PID	52	;int: use core or core.%pid
+%assign	KERN_TAINTED	53	;int: various kernel tainted flags
+%assign	KERN_CADPID	54	;int: PID of the process to notify on CAD
 
 ;
 ;utmp.h
@@ -907,6 +975,16 @@ endstruc
 %assign	UT_LINESIZE	32
 %assign	UT_NAMESIZE	32
 %assign	UT_HOSTSIZE	256
+
+%assign RUN_LVL		1	;The system's runlevel
+%assign BOOT_TIME	2	;Time of system boot
+%assign NEW_TIME	3	;Time after system clock changed
+%assign OLD_TIME	4	;Time when system clock changed
+%assign INIT_PROCESS	5	;Process spawned by the init process
+%assign LOGIN_PROCESS	6	;Session leader of a logged in user
+%assign USER_PROCESS	7	;Normal process
+%assign DEAD_PROCESS	8	;Terminated process
+%assign ACCOUNTING	9
 
 struc exit_status
 .e_termination	SHORT	1	;Process termination status
@@ -1162,11 +1240,19 @@ endstruc
 %endmacro
 
 ;
+
+%macro sys__sysctl 0-1
+	__syscall sysctl, 1, %0, %1
+%endmacro
+
 %macro sys_sysctl 0-6
-	__syscall sysctl, 6, %0, %1, %2, %3, %4, %5, %6
+	__pushargs 6, %0, %1, %2, %3, %4, %5, %6
+	sys__sysctl esp
+	_add	esp,(6 * 4)
 %endmacro
 
 ;
+
 %macro sys_rt_sigreturn 0-1
 	__syscall rt_sigreturn, 1, %0, %1
 %endmacro

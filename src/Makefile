@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.28 2001/11/24 15:18:10 konst Exp $
+# $Id: Makefile,v 1.29 2001/12/03 19:19:45 konst Exp $
 
 #DEBUG = y
 
@@ -25,7 +25,7 @@ BONUS =	execve report asmutils
 LINKS = arch cpuspeed domainname false mkfifo rmdir regs sln todos
 
 ifdef LINUX
-FILES += chvt dmesg df eject ifconfig lsmod mesg mount ps\
+FILES += chvt dmesg df eject finger ifconfig lsmod mesg mount ps\
 	 reboot softdog swapon tty update
 BONUS += window leaves fire256 snake game
 LINKS += ccd deallocvt halt poweroff swapoff umount rmmod route
@@ -62,9 +62,9 @@ clean:
 	$(RM) *.o $(FILES) $(BONUS) $(LINKS)
 
 check:
-ifneq ("$(ASVER)", "0.98")
+ifneq ("$(ASVER)", "$(CORRECT_ASVER)")
 	@echo
-	@echo "$(AS) $(ASVER) may miscompile asmutils, please use only clean nasm 0.98!"
+	@echo "$(AS) $(ASVER) may miscompile asmutils, please use only clean $(AS) $(CORRECT_ASVER)!"
 	@echo
 	@false
 endif
