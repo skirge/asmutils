@@ -1,6 +1,6 @@
 ;Copyright (C) Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: true.asm,v 1.1 2000/01/26 21:20:04 konst Exp $
+;$Id: true.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' true/false
 ;
@@ -16,7 +16,7 @@
 CODESEG
 
 START:
-%if KERNEL=20
+%if __KERNEL__ = 20
 	_mov	ebx,0
 %endif
 	pop	esi

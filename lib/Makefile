@@ -1,8 +1,8 @@
-# Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+# Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 #
 # Makefile for libc
 #
-# $Id: Makefile,v 1.2 2000/02/01 19:56:20 konst Exp $
+# $Id: Makefile,v 1.3 2000/02/10 15:07:04 konst Exp $
 
 FILES = libc #clib
 AS = nasm
@@ -23,7 +23,7 @@ all:	$(FILES) example
 clean:
 	rm -f *.o *.so example
 
-CFLAGS = -O1 -fomit-frame-pointer -nostartfiles #-nostdlib #-mregparm=3
+CFLAGS = -O1 -fomit-frame-pointer -nostartfiles #-nostdlib  #-mregparm=3
 
 example: example.c
 	 gcc $(CFLAGS) -Wl,-e,main -o example example.c $(SO)

@@ -19,19 +19,13 @@
 ;; this program will be very slow on a 486 (and will not work at all
 ;; on a 486SX).
 ;;
-;; $Id: factor.asm,v 1.1 2000/01/26 21:19:28 konst Exp $
+;; $Id: factor.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 
 %include "system.inc"
-;%include "elf.inc"
-
-%define	stdin		0
-%define	stdout		1
-%define	stderr		2
 
 %define	buf_size	80
 
 CODESEG
-;BEGIN_ELF
 
 ;; factorize is the main subroutine of the program. It is called with ebx
 ;; pointing to an NUL-terminated string representing the number to factor.
@@ -285,10 +279,8 @@ itoa80nospc:
 		sub	edx, edi
 		mov	ecx, edi
 		mov	edi, esi
-finalwrite:	xor	ebx, ebx
-		lea	eax, [byte ebx + 4]
-		inc	ebx
-		int	0x80
+finalwrite:
+		sys_write STDOUT
 		dec	eax
 		xchg	eax, ebp
 		ret
@@ -322,10 +314,8 @@ START:
 		pop	ebx
 		or	ebx, ebx
 		jnz	.argloop
-.mainexit:	xchg	eax, ebp
-		xchg	eax, ebx
-		inc	eax
-		int	0x80
+.mainexit:
+		sys_exit ebp
 
 ;; The input loop routine. ecx is pointed to buf, and esi is
 ;; initialized to one less than the size of buf.
@@ -383,11 +373,7 @@ START:
 ;; occurred or if no input was available.
 
 readchar:
-		xor	edx, edx
-		mov	ebx, edx
-		lea	eax, [byte ebx + 3]
-		inc	edx
-		int	0x80
+		sys_read STDIN,EMPTY,1
 		neg	eax
 return:		ret
 
@@ -416,7 +402,6 @@ factorconst:
 newline:	db	10
 
 UDATASEG
-;ELF_DATA
 
 alignb 4
 
@@ -432,4 +417,4 @@ buf		equ	$ - dataorg
 		resb	buf_size	; buffer for I/O
 
 END
-;END_ELF
+

@@ -1,7 +1,7 @@
 ;---------- First Strike of an optimized CLIB       (c) CECCHINEL Stephan 1999
 ;contact:  interzone@pacwan.fr
 ;
-;$Id: clib.asm,v 1.2 2000/02/01 19:56:20 konst Exp $
+;$Id: clib.asm,v 1.3 2000/02/10 15:07:04 konst Exp $
 ;
 ;see doc/clib.html for details
 
@@ -10,10 +10,12 @@
 ;-----------------------------------
 ; Optimisation & Compilation flags
 ;-----------------------------------
-; you have to choose between C_CALL  or ASM_CALL   for C style passing of args(stack)  or ASM style
-; via registers
+; you have to choose between C_CALL or ASM_CALL
+; for C style passing of args(stack)
+; or ASM style via registers
 ;
-; you have to choose between SIZEOPT or SPEEDOPT, if you want CLIB to be optimize for size or speed
+; you have to choose between SIZEOPT or SPEEDOPT,
+; if you want CLIB to be optimize for size or speed
 ; you CANNOT choose SIZEOPT and SPEEDOPT at the same time, sorry...
 ;
 ; just uncomment the one you choose and comment the one you don't use

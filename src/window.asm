@@ -1,6 +1,6 @@
-;Copyright (C) 1995-2000 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1995-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: window.asm,v 1.1 2000/01/26 21:20:09 konst Exp $
+;$Id: window.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;test window example (currently works only in 80x25)
 
@@ -89,15 +89,22 @@ sStatus:
 START:
 	call	open_screen
 
+;clear screen
+
 	mov	ecx,2000
 	mov	ax,cBack
 .next:
 	call	writech
 	loop	.next
 
+
+;draw window
+
 	call	window
 
 	call	close_screen
+
+;read a key
 
 	xor	ebx,ebx
 	mov	edx,ebx
@@ -108,7 +115,7 @@ START:
 	sys_exit
 
 ;
-;Window function
+; Window function
 ;
 
 window:
@@ -183,7 +190,7 @@ sScreenDevice	db	"/dev/vcsa0",0
 
 open_screen:
 	pushad
-	sys_open sScreenDevice,2
+	sys_open sScreenDevice,O_RDWR
 	mov	[sHandle],eax
 
 	sys_read eax,sMaxY,2
@@ -292,7 +299,7 @@ write:
 ;goto xy (ecx - coordinates)
 gotoxy:
 	pushad
-	add	ecx,scradd
+	_add	ecx,scradd
 	xor	edx,edx
 	sys_lseek [sHandle]
 	popad

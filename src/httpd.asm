@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.1 2000/01/26 21:19:30 konst Exp $
+;$Id: httpd.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -31,7 +31,8 @@
 ;
 ;0.01: 17-Jun-1999	initial release
 ;0.02: 04-Jul-1999	fixed bug with 2.0 kernel, minor changes
-;0.03: 29-Jul-1999	size improvements
+;0.03: 29-Jul-1999	size improvements (KB)
+;0.04: 09-Feb-2000	portability fixes (KB)
 
 %include "system.inc"
 
@@ -58,11 +59,11 @@ START:
 ;<ESI -string
 ;>EAX - result
 
-%if KERNEL=20
+%if __KERNEL__ = 20
 	_mov	eax,0
 	_mov	ebx,10
 	_mov	ecx,0
-%elif KERNEL=22
+%elif __KERNEL__ = 22
 	mov	bl,10
 %endif
 .next:
@@ -82,7 +83,7 @@ START:
 
 ;socket ( PF_INET, SOCK_STREAM, IPPROTO_TCP )
 
-	sys_socketcall 1,socketargs
+	sys_socketcall SYS_SOCKET,socketargs
 
 	test	eax,eax
 	js	.exit
@@ -93,7 +94,7 @@ START:
 
 ; setsockopt ( s, SOL_SOCKET, SO_REUSEADDR, &optval, 4);
 
-	sys_socketcall 0x0E,setsockoptargs
+	sys_socketcall SYS_SETSOCKOPT,setsockoptargs
 
 	or	eax,eax
 	jz	.continue1
@@ -110,7 +111,7 @@ START:
 
 ;bind ( s, struct sockaddr *bindsockstruct, 16 );
 
-	sys_socketcall 0x02,Buf
+	sys_socketcall SYS_BIND,Buf
 
 	or	eax,eax
 	jnz	.exit
@@ -119,7 +120,7 @@ START:
 
 ;listen ( s, 0xff )
 
-	sys_socketcall	0x04
+	sys_socketcall	SYS_LISTEN
 
 	or	eax,eax
 	jnz	.exit
@@ -138,7 +139,7 @@ START:
 
 ;accept ( s, struct sockaddr *arg1, int *arg2 )
 
-	sys_socketcall 0x05,Buf
+	sys_socketcall SYS_ACCEPT,Buf
 
 	mov	edi,eax ; our descriptor
 
@@ -243,7 +244,7 @@ START:
 
 ;shutdown ( sock, how )
 
-	sys_socketcall 0x0D,arg1
+	sys_socketcall SYS_SHUTDOWN,arg1
 
 	mov	ebx,edi
 	mov	edx,0xff

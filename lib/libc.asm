@@ -1,6 +1,6 @@
-;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: libc.asm,v 1.2 2000/02/01 19:56:20 konst Exp $
+;$Id: libc.asm,v 1.3 2000/02/10 15:07:04 konst Exp $
 ;
 ;linux libc :)
 ;

@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: dmesg.asm,v 1.1 2000/01/26 21:19:23 konst Exp $
+;$Id: dmesg.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' dmesg
 ;
@@ -21,9 +21,9 @@
 CODESEG
 
 START:
-%if KERNEL=20
+%if __KERNEL__ = 20
 	_mov	ebx,3	;just print the buffer [3]
-%elif KERNEL=22
+%elif __KERNEL__ = 22
 	mov	bl,0x3
 %endif
 	pop	edi		;edi holds argument count

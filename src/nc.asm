@@ -10,7 +10,7 @@
 ;			ip is in form xxx.xxx.xxx.xxx  only numeric (no DNS lookup)
 ;
 ;
-; $Id: nc.asm,v 1.1 2000/01/26 21:19:43 konst Exp $
+; $Id: nc.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 
 [bits 32]
 %include "system.inc"
@@ -62,14 +62,14 @@ START:
         mov [esi+4],eax
         _mov eax,16
         mov [esi+8],eax
-        sys_socketcall 2,esi
+        sys_socketcall SYS_BIND,esi
         test eax,eax
         jnz near .exit
 ; listen
 	xor eax,eax
         inc eax
         mov [esi+4],eax
-        sys_socketcall 4,esi
+        sys_socketcall SYS_LISTEN,esi
 ; accept incoming connection
 	lea eax,[arg1]
 	mov dword[esi+4],eax
@@ -77,7 +77,7 @@ START:
         mov dword[esi+8],eax
 	_mov ebx,16
         mov [eax],ebx
-        sys_socketcall 5,esi
+        sys_socketcall SYS_ACCEPT,esi
 	mov ebp,eax
 ;
 	pop esi
@@ -103,7 +103,7 @@ START:
 	mov edi,eax
 	_mov eax,16
 	mov dword[esi+8],eax
-	sys_socketcall 3,esi		; connect
+	sys_socketcall SYS_CONNECT,esi		; connect
 ;
 .read:	lea esi,[buff]
 	sys_read ebp,esi,1024
@@ -136,7 +136,7 @@ StrToLong:
 ; create a socket with standard args
 ;
 createsock:
-	sys_socketcall 1,socketargs
+	sys_socketcall SYS_SOCKET,socketargs
 exit2:	ret
 
 socketargs:	dd PF_INET, SOCK_STREAM, IPPROTO_TCP	; socket creation standard args

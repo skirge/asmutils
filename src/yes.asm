@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: yes.asm,v 1.1 2000/01/26 21:20:09 konst Exp $
+;$Id: yes.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' yes		[GNU replacement]
 ;
@@ -20,9 +20,9 @@
 CODESEG
 
 START:
-%if KERNEL=20
+%if __KERNEL__ = 20
 	_mov	ebx,1
-%elif KERNEL=22
+%elif __KERNEL__ = 22
 	inc	ebx
 %endif
 	mov	byte [Buf],'y'

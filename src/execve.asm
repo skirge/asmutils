@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: execve.asm,v 1.1 2000/01/26 21:20:09 konst Exp $
+;$Id: execve.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;execute a given program
 ;
@@ -10,33 +10,25 @@
 
 %include "system.inc"
 
+struc regs
+.eax	resd	1
+.ebx	resd	1
+.ecx	resd	1
+.edx	resd	1
+.esi	resd	1
+.edi	resd	1
+.ebp	resd	1
+.esp	resd	1
+.eflags	resd	1
+.cs	resd	1
+.ds	resd	1
+.es	resd	1
+.fs	resd	1
+.gs	resd	1
+.ss	resd	1
+endstruc
+
 CODESEG
-
-START:
-	pop	ebp			;get argc
-	dec	ebp			;exit if no args
-	jnz	.go
-	sys_exit0
-.go:
-	pop	esi			;get our name
-	mov	ebx,[esp]		;ebx -- program name (*)
-	mov	ecx,esp			;ecx -- arguments (**)
-	lea	edx,[esp+(ebp+1)*4]	;edx -- environment (**)
-
-;now we will try to pass some magic values to launched program
-;on Linux 2.0 program will get them!
-
-	mov	esi,0x11223344
-	mov	edi,0x55667788
-	mov	ebp,0x9900AABB
-
-	call	PrintRegs
-
-	sys_execve
-
-;
-;
-;
 
 ;>EDI
 ;<EDX
@@ -106,35 +98,6 @@ LongToStr:
 	popad
 	ret
 
-rstring
-db	"EAX	:	",NULL
-db	"EBX	:	",NULL
-db	"ECX	:	",NULL
-db	"EDX	:	",NULL
-db	"ESI	:	",NULL
-db	"EDI	:	",NULL
-db	"EBP	:	",NULL
-db	"ESP	:	",NULL
-db	"EFLAGS	:	",NULL
-db	"CS	:	",NULL
-db	"DS	:	",NULL
-db	"ES	:	",NULL
-db	"FS	:	",NULL
-db	"GS	:	",NULL
-db	"SS	:	",NULL
-
-line	db	0x0A,"--------------------------"
-lf	db	0x0A
-s_line	equ	$-line
-
-before	db	"Before sys_execve:"
-s_before	equ	$-before
-
-inside	db	0x0A,"Inside called program:"
-s_inside	equ	$-inside
-
-
-
 PrintRegs:
 	pushad
 	mov	[r.eax],eax
@@ -190,27 +153,60 @@ PrintRegs:
 	popad
 	ret
 
+rstring:
+
+db	"EAX	:	",EOL
+db	"EBX	:	",EOL
+db	"ECX	:	",EOL
+db	"EDX	:	",EOL
+db	"ESI	:	",EOL
+db	"EDI	:	",EOL
+db	"EBP	:	",EOL
+db	"ESP	:	",EOL
+db	"EFLAGS	:	",EOL
+db	"CS	:	",EOL
+db	"DS	:	",EOL
+db	"ES	:	",EOL
+db	"FS	:	",EOL
+db	"GS	:	",EOL
+db	"SS	:	",EOL
+
+line	db	0x0A,"--------------------------"
+lf	db	0x0A
+s_line	equ	$-line
+
+before	db	"Before sys_execve:"
+s_before	equ	$-before
+
+inside	db	0x0A,"Inside called program:"
+s_inside	equ	$-inside
+
+
+START:
+	pop	ebp			;get argc
+	dec	ebp			;exit if no args
+	jnz	.go
+	sys_exit_true
+.go:
+	pop	esi			;get our name
+	mov	ebx,[esp]		;ebx -- program name (*)
+	mov	ecx,esp			;ecx -- arguments (**)
+	lea	edx,[esp+(ebp+1)*4]	;edx -- environment (**)
+
+;now we will try to pass some magic values to launched program
+;on Linux 2.0 program will get them!
+
+	mov	esi,0x11223344
+	mov	edi,0x55667788
+	mov	ebp,0x9900AABB
+
+	call	PrintRegs
+
+	sys_execve
+
 UDATASEG
 
-struc regs
-.eax	resd	1
-.ebx	resd	1
-.ecx	resd	1
-.edx	resd	1
-.esi	resd	1
-.edi	resd	1
-.ebp	resd	1
-.esp	resd	1
-.eflags	resd	1
-.cs	resd	1
-.ds	resd	1
-.es	resd	1
-.fs	resd	1
-.gs	resd	1
-.ss	resd	1
-endstruc
-
-r istruc regs
+r I_STRUC regs
 .eax	resd	1
 .ebx	resd	1
 .ecx	resd	1
@@ -228,4 +224,6 @@ r istruc regs
 .ss	resd	1
 iend
 
-tmpstr
+tmpstr	resd	10
+
+END

@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: softdog.asm,v 1.1 2000/01/26 21:19:58 konst Exp $
+;$Id: softdog.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' softdog (software watchdog)
 ;
@@ -16,7 +16,6 @@
 ;		softdog 15
 
 %include "system.inc"
-%include "kernel.inc"
 
 DEFPERIOD	equ	10	;default period
 MAXPERIOD	equ	60	;maximum kernel margin
@@ -36,11 +35,11 @@ START:
 
 ;convert string to 16 bit integer
 
-%if KERNEL=20
+%if __KERNEL__ = 20
 ;	_mov	eax,0
 	_mov	ebx,10
 	_mov	ecx,0
-%elif KERNEL=22
+%elif __KERNEL__ = 22
 	mov	bl,10
 %endif
 
@@ -87,7 +86,7 @@ START:
 	sys_nanosleep t,NULL
 	jmp short .child
 
-softdog	db	'/dev/watchdog',NULL
+softdog	db	'/dev/watchdog',EOL
 
 UDATASEG
 

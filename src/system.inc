@@ -1,14 +1,14 @@
-; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@voshod.com>
+; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.2 2000/02/01 19:56:20 konst Exp $
+; $Id: system.inc,v 1.3 2000/02/10 15:07:04 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 16-Jan-2000
-; version	: 0.06
+; modified	: 09-Feb-2000
+; version	: 0.07
 ; assembler	: nasm 0.98
 ; description	: configuration, sections, headers, etc.
-; author	: Konstantin Boldyshev <konst@voshod.com>
+; author	: Konstantin Boldyshev <konst@linuxassembly.org>
 ; comment	: you must include this file to do anything else
 ;
 ;0.01: 05-Jun-1999	initial release
@@ -21,43 +21,58 @@
 ;0.05: 18-Sep-1999	support for elf.inc, I_STRUC and I_END macros
 ;0.06: 03-Jan-2000	_mov, _add, _sub, _cmp
 ;			invoke, PROC, ENDP
+;0.07: 07-Feb-2000	_push, configuration moved to makefile
+
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
 
 ;--------------------------------------------------------------------------
-;configuration parameters
+; default configuration parameters (used if not specified at compile time)
 ;--------------------------------------------------------------------------
 
 ;
-;kernel version (20 for Linux 2.0, 22 for Linux 2.2)
+;Operating System
 ;
 
-%assign	KERNEL	22
+%ifndef __FREEBSD__
+%define __LINUX__
+%endif
+
+;
+;kernel version
+;
+
+%ifndef __KERNEL__
+%assign	__KERNEL__	20
+%endif
 
 ;
 ;optimization method (size/speed)
 ;
 
-%assign	__O_SIZE	0
-%assign	__O_SPEED	1
+%assign	__O_SIZE__	0
+%assign	__O_SPEED__	1
 
-%assign	__OPTIMIZE __O_SIZE	;__O_SPEED/__O_SIZE
-
-;
-;asmutils version and release date (not used)
-;
-
-%define	__ASMUTILS_VERSION		"asmutils 0.06"
-%define	__ASMUTILS_RELEASE_DATE		"26-Jan-2000"
-
+%ifndef __OPTIMIZE__
+%assign	__OPTIMIZE__ __O_SIZE__	;size/speed
+%endif
 
 ;--------------------------------------------------------------------------
-;Constant definitions
+;
 ;--------------------------------------------------------------------------
 
+%include "includes.inc"
 
-%include "defines.inc"
+%ifdef	__LINUX__
+%include "os_linux.inc"
+%elifdef __FREEBSD__
+%include "os_freebsd.inc"
+%endif
+
+%ifdef __ELF_MACROS__
+%include "elf.inc"
+%endif
 
 ;--------------------------------------------------------------------------
 ;System calls
@@ -66,32 +81,41 @@
 %include "syscall.inc"
 
 ;--------------------------------------------------------------------------
-;ELF macros
+;
 ;--------------------------------------------------------------------------
 
-%ifdef __ELF_MACROS
-%include "elf.inc"
-%endif
-
-;--------------------------------------------------------------------------
-
-%define START _start
+%define START _start 
 
 %macro CODESEG 0
-%ifdef __ELF_MACROS
+%ifdef __ELF_MACROS__
+
 BEGIN_ELF
+
 %else
-%if __OPTIMIZE=__O_SPEED
+
+%if __OPTIMIZE__=__O_SPEED__
     section	.text	align=16
-%elif __OPTIMIZE=__O_SIZE
+%elif __OPTIMIZE__=__O_SIZE__
     section	.text	align=1
 %endif
     global	START
+
 %endif
+
+%ifdef STAMP_VERSION
+	db	__n
+__ver	db	STAMP_VERSION, EOL
+%endif
+
+%ifdef STAMP_DATE
+	db	__t
+__date	db	STAMP_DATE, EOL, __n
+%endif
+
 %endmacro
 
 %macro UDATASEG 0
-%ifdef __ELF_MACROS
+%ifdef __ELF_MACROS__
 ELF_DATA
 %else
 section	.bss
@@ -99,23 +123,23 @@ section	.bss
 %endmacro
 
 %macro DATASEG 0
-%ifndef __ELF_MACROS
-%if __OPTIMIZE=__O_SPEED
+%ifndef __ELF_MACROS__
+%if __OPTIMIZE__=__O_SPEED__
     section	.data	align=16
-%elif __OPTIMIZE=__O_SIZE
+%elif __OPTIMIZE__=__O_SIZE__
     section	.data	align=1
 %endif
 %endif
 %endmacro
 
 %macro END 0
-%ifdef __ELF_MACROS
+%ifdef __ELF_MACROS__
 END_ELF
 %endif
 %endmacro
 
 %macro I_STRUC 1
-%ifdef __ELF_MACROS
+%ifdef __ELF_MACROS__
 ELF_ISTRUC %1
 %else
 istruc %1
@@ -123,7 +147,7 @@ istruc %1
 %endmacro
 
 %macro I_END 0
-%ifdef __ELF_MACROS
+%ifdef __ELF_MACROS__
 ELF_IEND
 %else
 iend
@@ -165,7 +189,7 @@ iend
 
 %macro _mov 2-3
 %ifnidn	%2,EMPTY
- %if __OPTIMIZE=__O_SPEED
+ %if __OPTIMIZE__=__O_SPEED__
         %ifid %2
 	    mov	%1,%2
 	%elifnum %2 && %if %2=0x00000000
@@ -173,7 +197,7 @@ iend
 	%else
 	    mov	%1,%2
 	%endif
- %else			;%if __OPTIMIZE=__O_SIZE
+ %else			;%if __OPTIMIZE__=__O_SIZE__
     %ifid %2
 	mov	%1,%2
     %elifstr %2
@@ -251,11 +275,11 @@ iend
 
 %macro _add 2
 %if %2 != 0
- %if __OPTIMIZE=__O_SPEED
+ %if __OPTIMIZE__=__O_SPEED__
 
 	add	%1,%2
 
- %else			;%if __OPTIMIZE=__O_SIZE
+ %else			;%if __OPTIMIZE__=__O_SIZE__
 
     %if %2=0x00000001
 	inc	%1
@@ -286,11 +310,11 @@ iend
 
 %macro _sub 2
 %if %2 != 0
- %if __OPTIMIZE=__O_SPEED
+ %if __OPTIMIZE__=__O_SPEED__
 
 	sub	%1,%2
 
- %else			;%if __OPTIMIZE=__O_SIZE
+ %else			;%if __OPTIMIZE__=__O_SIZE__
 
     %if %2=0x00000001
 	dec	%1
@@ -356,6 +380,16 @@ iend
 	xor	%1,byte %2
 %else
 	xor	%1,%2
+%endif
+%endmacro
+
+%macro _push 1
+%if %2<0x00000100 && %2>0
+	push	byte %1
+%elif %2>-0x00000100 && %2<0
+	push	byte %1
+%else
+	push	%1
 %endif
 %endmacro
 

@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: mount.asm,v 1.1 2000/01/26 21:19:42 konst Exp $
+;$Id: mount.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' mount/umount
 ;

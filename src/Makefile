@@ -1,45 +1,91 @@
-# Copyright (C) 1999-2000 Konstantin Boldyshev <konst@voshod.com>
+# Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 #
 # Makefile for asmutils
 #
-# $Id: Makefile,v 1.2 2000/02/01 19:56:20 konst Exp $
+# $Id: Makefile,v 1.3 2000/02/10 15:07:04 konst Exp $
 
+#---------------------------------------------------------------------------#
 
-#
-# Enable this line if you want smaller binaries
-#
+#			CONFIGURATION PARAMETERS
 
-__ELF_MACROS = y
+#---------------------------------------------------------------------------#
 
-#
-# Do not edit anything further
-#
+# Operating system (LINUX/FREEBSD)
 
-FILES = basename cat dmesg echo hostname httpd kill lsmod mkdir mount pwd \
-	reboot rmmod sleep softdog swapon sync tee true uname update yes \
-	factor eject chvt df ln more md5sum lzss rmdsum ls strings id wc ps \
-	chmod chroot grep rc6crypt nc window leaves \
-#	dumpcore regs execve
+OS = LINUX
 
-LINKS = arch deallocvt domainname false halt poweroff rmdir swapoff umount
+# Optimization method (SIZE / SPEED)
+
+OPTIMIZE = SIZE
+
+# Kernel version (LINUX only: 20/22)
+
+KERNEL = 22
+
+# ELF hack for smaller binaries (LINUX only)
+
+ELF_MACROS = y
+
+# Include version stamp into binaries
+
+#STAMP = y
+
+#---------------------------------------------------------------------------#
+
+#			DO NOT EDIT BELOW
+
+#---------------------------------------------------------------------------#
 
 AS = nasm
-ASFLAGS = -f elf
-LDFLAGS = -s
 LN = ln -s
+LDFLAGS = -s
+ASFLAGS = -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__
 
-ifdef __ELF_MACROS
-ASFLAGS = -f bin -D__ELF_MACROS
+FILES = basename cat echo mkdir pwd\
+	sleep sync true uname yes\
+	factor ln more md5sum lzss rmdsum strings id wc\
+	chmod chroot grep rc6crypt\
+#	dumpcore regs execve
+
+LINKS = false rmdir
+
+${OS} = y
+
+ifdef LINUX
+
+FILES += dmesg df ls lsmod eject hostname mount\
+	 rmmod chvt reboot softdog swapon ps update\
+	 window leaves \
+	 kill nc httpd tee
+
+LINKS += arch deallocvt domainname halt poweroff swapoff umount
+
+else
+
+ELF_MACROS =
+KERNEL = 22
+
 endif
 
-ifdef __ELF_MACROS
+ifdef KERNEL
+ASFLAGS += -D__KERNEL__=$(KERNEL) 
+endif
+ifdef STAMP
+ASFLAGS += -DSTAMP_VERSION="'asmutils 0.07'" -DSTAMP_DATE="'$(shell date "+%d-%b-%Y %H:%M")'"
+endif
+
+
+ifdef ELF_MACROS
+
+ASFLAGS += -D__ELF_MACROS__ -f bin
 
 %:	%.asm
-
 	$(AS) $(ASFLAGS) $<
 	chmod +x $*
 
 else
+
+ASFLAGS += -f elf
 
 %.o:	%.asm
 	$(AS) $(ASFLAGS) $<
@@ -54,15 +100,21 @@ endif
 all:	$(FILES) links
 
 links:
-	$(LN) chvt deallocvt
-	$(LN) hostname domainname
-	$(LN) mount umount
-	$(LN) reboot halt
-	$(LN) reboot poweroff
-	$(LN) mkdir rmdir
-	$(LN) swapon swapoff
-	$(LN) true false
-	$(LN) uname arch
+	@( \
+	mkln() {\
+	[ ! -e $$2 ] && [ -x $$1 ] && $(LN) $$1 $$2;\
+	};\
+	\
+	mkln chvt deallocvt;\
+	mkln hostname domainname;\
+	mkln mount umount;\
+	mkln reboot halt;\
+	mkln reboot poweroff;\
+	mkln mkdir rmdir;\
+	mkln swapon swapoff;\
+	mkln true false;\
+	mkln uname arch;\
+	)
 
 clean:
 	rm -f *.o $(FILES) $(LINKS)

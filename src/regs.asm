@@ -1,12 +1,10 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: regs.asm,v 1.1 2000/01/26 21:19:14 konst Exp $
+;$Id: regs.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;show startup info
 
 %include "system.inc"
-
-UDATASEG
 
 struc regs
 .eax	resd	1
@@ -30,29 +28,6 @@ struc regs
 .envp0	resd	1
 endstruc
 
-r istruc regs
-.eax	resd	1
-.ebx	resd	1
-.ecx	resd	1
-.edx	resd	1
-.esi	resd	1
-.edi	resd	1
-.ebp	resd	1
-.esp	resd	1
-.eflags	resd	1
-.cs	resd	1
-.ds	resd	1
-.es	resd	1
-.fs	resd	1
-.gs	resd	1
-.ss	resd	1
-.argc	resd	1
-.argv0	resd	1
-.argv1	resd	1
-.envp0	resd	1
-iend
-
-tmpstr
 
 CODESEG
 
@@ -124,26 +99,27 @@ LongToStr:
 	popad
 	ret
 
-rstring
-db	"EAX	:	",NULL
-db	"EBX	:	",NULL
-db	"ECX	:	",NULL
-db	"EDX	:	",NULL
-db	"ESI	:	",NULL
-db	"EDI	:	",NULL
-db	"EBP	:	",NULL
-db	"ESP	:	",NULL
-db	"EFLAGS	:	",NULL
-db	"CS	:	",NULL
-db	"DS	:	",NULL
-db	"ES	:	",NULL
-db	"FS	:	",NULL
-db	"GS	:	",NULL
-db	"SS	:	",NULL
-db	"argc	:	",NULL
-db	"&argv[0]	:	",NULL
-db	"&argv[1]	:	",NULL
-db	"&envp[0]	:	",NULL
+rstring:
+
+db	"EAX	:	",EOL
+db	"EBX	:	",EOL
+db	"ECX	:	",EOL
+db	"EDX	:	",EOL
+db	"ESI	:	",EOL
+db	"EDI	:	",EOL
+db	"EBP	:	",EOL
+db	"ESP	:	",EOL
+db	"EFLAGS	:	",EOL
+db	"CS	:	",EOL
+db	"DS	:	",EOL
+db	"ES	:	",EOL
+db	"FS	:	",EOL
+db	"GS	:	",EOL
+db	"SS	:	",EOL
+db	"argc	:	",EOL
+db	"&argv[0]	:	",EOL
+db	"&argv[1]	:	",EOL
+db	"&envp[0]	:	",EOL
 
 lf	db	0x0A
 
@@ -202,3 +178,32 @@ mainloop:
 	loop	mainloop
 exit:
 	sys_exit
+
+
+UDATASEG
+
+r I_STRUC regs
+.eax	resd	1
+.ebx	resd	1
+.ecx	resd	1
+.edx	resd	1
+.esi	resd	1
+.edi	resd	1
+.ebp	resd	1
+.esp	resd	1
+.eflags	resd	1
+.cs	resd	1
+.ds	resd	1
+.es	resd	1
+.fs	resd	1
+.gs	resd	1
+.ss	resd	1
+.argc	resd	1
+.argv0	resd	1
+.argv1	resd	1
+.envp0	resd	1
+iend
+
+tmpstr	resd	10
+
+END

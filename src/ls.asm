@@ -1,12 +1,14 @@
-;Copyright (C) 1999 Dmitry Bakhvalov <dl@hrg.dhtp.kiae.ru>
+;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: ls.asm,v 1.1 2000/01/26 21:19:40 konst Exp $
+;$Id: ls.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' ls
 ;
 ;0.01: 15-Oct-1999	initial release
 ;0.02: 18-Oct-1999	added support for symlinks. Added checks for trailing
 ;			'/' in the arguments
+;0.03: 10-Feb-2000	symlinks listing bugfix, thanks to
+;			Franck Lesage <lesage@nexus.pulp.eu.org>
 ;
 ;syntax: ls [option] [dir, dir, dir...]
 ;        The only supported option by now is -l which is, as you might have 
@@ -30,6 +32,8 @@
 		
 		CODESEG
 		
+		LINK_BUF_LEN	equ	260
+
 		%define	D_RECLEN	8
 		%define D_FILENAME	10
 
@@ -160,6 +164,23 @@ print_names_only:
 		jnz	short_form
 		
 		mov	ebx,fname
+
+		; reset [link_buf] so that we don't
+		; print characters of a previous symlink
+		; we could optimize it with by storing
+		; the previous strlen in a word.
+		; Franck Lesage <lesage@nexus.pulp.eu.org>
+		push	eax
+		push	ecx
+		push	edi
+		xor	eax,eax
+		mov	edi,link_buf
+		mov	ecx,LINK_BUF_LEN/4
+		rep	stosd
+		pop	edi
+		pop	ecx
+		pop	eax
+
 		mov	ecx,link_buf+4
 		xor	edx,edx
 		inc	dh
@@ -171,7 +192,7 @@ print_names_only:
 		sub	cl,4
 		mov	dword [ecx]," -> "
 		call	print
-						
+
 short_form:		
 		mov	ecx,cr		; CR
 		call	print
@@ -398,7 +419,7 @@ fname:
 srcdir:	
 			resb	256
 link_buf:
-			resb	260
+			resb	LINK_BUF_LEN
 num_buf:
 			resb	16
 

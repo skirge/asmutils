@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: asmutils.asm,v 1.1 2000/01/26 21:19:15 konst Exp $
+;$Id: asmutils.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;asmutils multicall binary
 
@@ -9,35 +9,22 @@
 
 CODESEG
 
-    dd	"mkdi",p_mkdir
-    dd	"unam",p_uname
-    dd	"true",p_true
-    dd	"slee",p_sleep
-    dd	"pwd",p_pwd
-    dd	"cat",p_cat
-    dd	"tee",p_tee
-    dd	"yes",p_yes
-    dd	"upda",p_update
-    dd	"sync",p_sync
-    
-    
+names:
+
+dd	"arch",	_uname
+dd	"base",	_basename
+dd	"echo",	_echo
+dd	"fact",	_factor
+dd	"fals",	_true
+dd	"pwd",	_pwd
+dd	"slee",	_sleep
+dd	"sync",	_sync
+dd	"tee",	_tee
+dd	"true",	_true
+dd	"unam",	_uname
+dd	"yes",	_yes
+
 START:
 
 exit:
 	sys_exit
-
-
-
-    
-p_mkdir:
-p_uname:
-p_true:
-p_sleep:
-
-p_cat:
-p_tee:
-p_yes:
-p_pwd:
-
-p_update:
-p_sync:

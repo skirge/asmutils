@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Dmitry Bakhvalov <dl@hrg.dhtp.kiae.ru>
+;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: ps.asm,v 1.1 2000/01/26 21:19:49 konst Exp $
+;$Id: ps.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' ps
 ;

@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: chroot.asm,v 1.1 2000/01/26 21:19:16 konst Exp $
+;$Id: chroot.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' chroot
 ;
@@ -44,6 +44,6 @@ START:
 exit:
 	sys_exit eax
 
-shell	db	"/bin/sh";,NULL
+shell	db	"/bin/sh";,EOL
 
 END

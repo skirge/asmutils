@@ -2,19 +2,19 @@
 			       asmutils
 			       ~~~~~~~~
 
-	    collection of different utilities for Linux/i386
+		 collection of different unix utilities
 		    written in pure assembly language
 
-			    (version 0.06)
+			    (version 0.07)
 
 			http://linuxassembly.org
 
 
 ; BIG FAT WARNING:
 ;
-; THESE UTILITIES WORK WITH LINUX KERNEL DIRECTLY.
+; THESE UTILITIES WORK WITH KERNEL DIRECTLY.
 ; AUTHORS ARE NOT RESPONSIBLE FOR ANY DAMAGE THEY CAN DO TO YOUR SYSTEM.
-; THEY WORKED ON MY LINUX BOX, BUT THEY CAN CRASH YOURS.
+; THEY WORKED ON MY BOX, BUT THEY CAN CRASH YOURS.
 ; NO WARRANTY. THIS IS DEVELOPMENT VERSION, USE SOLELY AT YOUR OWN RISK.
 
 
@@ -41,7 +41,7 @@ Do I need this?
 
 In general case you don't.
 
-This package is great for small Linux distributions (rescue, embedded,
+This package is great for small distributions (rescue, embedded,
 etc). It contains extremely small and fast replacements for several unix
 utilities. Usual way for small system is to replace binaries with shell
 scripts; however, scripts require much more memory and are slow.
@@ -60,11 +60,11 @@ at least on 2.0 and 2.2 kernels.
 
 So, it's better to say in such a way: if you need this, you know it.
 
-Another goal of this package is to provide source code and some kind of
-library, and encourage assembly programmers to write for Linux. Usually
-Linux is associated with C, and no one wants to deal with assembly..
-Browse the source, look -- it is simple. Read the docs, start
-to write, and you will like it :)
+Another goal of this package is to provide source code and some kind
+of library, and encourage assembly programmers to write for Linux/Unix.
+Usually Unix is associated with C, and no one wants to deal with assembly..
+Browse the source, look -- it is simple. Read the docs, start to write,
+and you will like it :)
 
 
 
@@ -74,9 +74,11 @@ How to install
  REQUIREMENTS:
 
 	1) i386 (however some programs may require higher CPU)
-	2) Linux kernel 2.0/2.2 (may work on 2.1 & 2.3 too)
-	3) ELF support in the kernel (usually it is there)
+	2) ELF support
 	3) some programs may require FPU (or kernel emulation)
+
+	Currently project supports Linux and FreeBSD, however
+	it is quite portable to any ELF/i386 based OS.
 
  WARNING: Before using any command first look at its syntax!
 	  Some utils can work not as you may expect!
@@ -87,13 +89,8 @@ How to install
  "syntax" script in [bin] directory.
  
  
- Asmutils include two sets of precompiled binaries, both for
- Linux 2.0 and Linux 2.2.
-
- Rule is simple:
-
-  - use binaries for Linux 2.0 on Linux 2.0
-  - use binaries for Linux 2.2 on Linux 2.2
+ Asmutils include few sets of precompiled binaries, for Linux 2.0/2.2
+ and FreeBSD. Rule is simple -- use the one which suits your kernel.
 
  Installation itself is simple too: take precompiled binaries from
  [bin] directory for your kernel and copy them where you need.
@@ -101,12 +98,13 @@ How to install
 
  If you want to compile source you will need:
 
-  - nasm 0.98 or higher (older may work too, I used 0.98)
-    (nasm can be obtained from http://www.cryogen.com/nasm)
-  - binutils 2.9 or higher (older may work too, I used 2.9.0.15 and higher)
+  - nasm 0.98 or higher
+  - ld from GNU binutils 2.9
+  - GNU make 3.77 or higher  
+
+  (older/other versions may work too, just these are versions I used)
   
-  cd [src], issue make and hopefully all will be done. However some binaries
-  can be a bit bigger because precompiled were additionally hacked :)
+  cd [src], issue make (or gmake) and hopefully all will be done.
   You may also read Asmutils Source Guide (doc/asmutils-source-guide.html)
   if you want to learn some details on compilation (size/speed optimization,
   different kernel versions, etc).
@@ -120,8 +118,9 @@ Other stuff
  http://linuxassemmbly.org/asmutils.html
 
  Contributions are welcome!
- If you wish to contribute please read doc/HOWTO-CONTRIBUTE file.
+ If you wish to contribute please read doc/HOWTO-CONTRIBUTE file,
+ and doc/asmutils-source-guide.html
 
- Send feedback & bugreports to konst@voshod.com
+ Send feedback & bugreports to project maintainter.
 
- $Id: README,v 1.2 2000/02/01 19:56:20 konst Exp $
+ $Id: README,v 1.3 2000/02/10 15:07:04 konst Exp $

@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Bart Hanssens <antares@mail.dma.be>
 ;
-;$Id: eject.asm,v 1.1 2000/01/26 21:19:23 konst Exp $
+;$Id: eject.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' eject (eject CD-ROM)
 ;
@@ -33,6 +33,6 @@ START:
 .exit:
 	sys_exit
 
-default_dev	db	"/dev/cdrom"	;,NULL
+default_dev	db	"/dev/cdrom"	;,EOL
 
 END

@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Dmitry Bakhvalov <dl@hrg.dhtp.kiae.ru>
+;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: strings.asm,v 1.1 2000/01/26 21:20:00 konst Exp $
+;$Id: strings.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' strings
 ;

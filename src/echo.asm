@@ -1,12 +1,13 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: echo.asm,v 1.2 2000/02/01 19:56:20 konst Exp $
+;$Id: echo.asm,v 1.3 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' echo		[GNU replacement]
 ;
 ;0.01: 17-Jun-1999	initial release
 ;0.02: 04-Jul-1999	small bugfixes
 ;0.03: 19-Dec-1999	-eE support and full GNU compliance
+;0.04: 08-Feb-2000	\e added ( but what for? :)
 ;
 ;syntax: echo [OPTION] [STRING ...]
 ;
@@ -14,6 +15,7 @@
 ;-e	interpretation of the following backslash-escaped characters:
 ;	\a	alert (bell)
 ;	\b	backspace
+;	\e	escape
 ;	\c	suppress trailing newline
 ;	\f	form feed
 ;	\n	new line
@@ -35,15 +37,9 @@ CODESEG
 %assign _e	00000010b
 %assign _E	00000100b
 
-e_num	equ	7
-e_asc	db	"abfnrtv"
-e_bin	db	0x07
-	db	0x08
-	db	0x0c
-lf	db	__n
-	db	__r
-	db	__t
-	db	0x0b
+e_num	equ	8
+e_asc	db	"abefnrtv"
+e_bin	db	__a, __b, __e, __f, __n, __r, __t, __v
 
 START:
 	_mov	edi,Buf

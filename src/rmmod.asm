@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: rmmod.asm,v 1.1 2000/01/26 21:19:57 konst Exp $
+;$Id: rmmod.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' rmmod
 ;
@@ -16,9 +16,9 @@
 CODESEG
 
 START:
-%if KERNEL=20
+%if __KERNEL__ = 20
 	_mov	edi,1
-%elif KERNEL=22
+%elif __KERNEL__ = 22
 	inc	edi
 %endif
 	pop	ebp

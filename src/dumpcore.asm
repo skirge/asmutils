@@ -1,23 +1,12 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: dumpcore.asm,v 1.1 2000/01/26 21:19:14 konst Exp $
+;$Id: dumpcore.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;dumps core
 ;
 ;was used to examine ELF segment layout 
 
 %include "system.inc"
-
-UDATASEG
-
-u1:
-	resd	0x100
-u2:
-
-DATASEG
-
-d1	db	"THIS IS MY DATA SEGMENT"
-d2	dd	0x12345678
 
 CODESEG
 
@@ -41,3 +30,16 @@ START:
 ;and dump core
 
 	hlt
+
+DATASEG
+
+d1	db	"THIS IS MY DATA SEGMENT"
+d2	dd	0x12345678
+
+UDATASEG
+
+u1:
+	resd	0x100
+u2:
+
+END

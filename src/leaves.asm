@@ -1,8 +1,8 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: leaves.asm,v 1.2 2000/02/01 19:56:20 konst Exp $
+;$Id: leaves.asm,v 1.3 2000/02/10 15:07:04 konst Exp $
 ;
-;leaves		-	fbcon intro in 408 bytes
+;leaves		-	Linux fbcon intro in 408 bytes
 ;
 ;Once I've took one of my old DOS intros made in tasm, and rewrote it
 ;for nasm and Linux/fbcon.. He-he.. I've got 408 bytes.
@@ -28,7 +28,7 @@
 ;Intro runs for about a minute and a half (depends on machine),
 ;and is interruptible at any time with ^C.
 ;
-;Here is the source. It is quite short and self-explaining :)
+;Here is the source. It is quite short and self-explaining..
 ;Well, actually source is badly optimized for size, contains
 ;some Linux specific tricks, and can be hard to understand.
 ;
@@ -249,6 +249,6 @@ ColorBegin:
 	db	0,0,2,0,0,2,10,2
 ColorEnd:
 
-fb	db	"/dev/fb0";,NULL
+fb	db	"/dev/fb0";,EOL
 
 END

@@ -1,7 +1,29 @@
-Current release notes (0.06)
+Current release notes (0.07)
   
- Long awaited release is finally here.
+ There're no new utils in this release. Main thing that happened: asmutils
+ have been ported to FreeBSD (yes, libc works too :). Half of them do not
+ work (Linux dependent ones, like chvt, ps, reboot, ..), but half of them
+ does (like basename, cat, echo, etc..). All was done almost WITHOUT utils
+ source code changes, (except few badly written utils), all changes were on
+ macro level. This is still the work in progress though.
      
+ I have launched them only on FreeBSD 3.2. I do not know whether they run on
+ older/newer versions. Also utils behavior was not thoroughly tested, so some
+ weird bugs may exist.. Enjoy :)
+     
+ Ah.. Yes, asmutils still work on Linux :-)
+     
+ Good news are that now I can claim that it is possible to port asmutils
+ (well, at least some of them) to any ELF/i386 based system just by providing
+ OS dependent include file with OS dependent definitions (syscall numbers, etc),
+ and a couple of lines in makefile and system.inc.
+     
+ If you are interested in asmutils running on your Unix, I am willing to help.
+ However I need that distribution, so you will have to donate me CD's (do not
+ ask me to download it from the net!). Drop me a mail if you are interested.
+
+0.06 release notes
+  
  A lot of new utils were added, and existing were improved.
  Main contributors for this release are Dmitry Bakhvalov
  and Cecchinel Stephan (thanks, guys!).
@@ -15,12 +37,6 @@ Current release notes (0.06)
  RUNTIME (!). How can it be done?? Well, remember that everything is
  possible with assembly language ;)
      
- Also soon the project will become portable across x86 platform,
- and will run under FreeBSD and other *BSD's, and possibly under BeOS
- (hmm, how about Windows? :). Portability was implemented into the
- asmutils from the beginning, but somewhy is still not brought to
- working stage. This will happen a bit later, possibly in 0.07 -- 0.08.
-     
  Full list of utils in 0.06 release (total of 50):
 
 	arch basename cat chmod chroot chvt deallocvt df dmesg domainname
@@ -31,11 +47,11 @@ Current release notes (0.06)
        
  GNU compliant utils:
 
-	basename, echo, factor, false, pwd, sleep, tee, true, uname, yes
+	arch basename echo factor false pwd sleep sync tee true uname yes
 
  Almost GNU compliant utils:
 
-	mkdir, wc
+	chroot mkdir wc
 
  Please note that this compliance mainly affects command line
  options support; behavior is not well tested, however it SEEMS to

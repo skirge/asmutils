@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: cat.asm,v 1.1 2000/01/26 21:19:16 konst Exp $
+;$Id: cat.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' cat
 ;
@@ -20,7 +20,7 @@ CODESEG
 ;edi	-	return code
 
 START:
-%if KERNEL = 20
+%if __KERNEL__ = 20
 	_mov	edi,0
 	_mov	ebp,STDIN	;file handle (STDIN if no args)
 %endif

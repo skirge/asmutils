@@ -1,7 +1,7 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Yuri Ivliev <yuru@black.cat.kazan.su>
 ;
-;$Id: pwd.asm,v 1.1 2000/01/26 21:19:50 konst Exp $
+;$Id: pwd.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' pwd
 ;
@@ -10,20 +10,20 @@
 ;0.03: 04-Jul-1999	kernel 2.0 support added (YI)
 ;0.04: 18-Sep-1999	elf macros support (KB)
 ;0.05: 17-Dec-1999	size improvements (KB)
+;0.06: 08-Feb-2000	(KB)
 ;
 ;syntax: pwd
 
 %include "system.inc"
-%include "kernel.inc"
 
 CODESEG
 
-%if KERNEL = 20
-Root.path	db	'/',NULL
+%if __KERNEL__ = 20
+Root.path	db	'/',EOL
 %endif
 
 START:
-%if KERNEL = 20
+%if __KERNEL__ = 20
 ;;getting root's inode and block device
 	sys_lstat	Root.path,st		;get stat for root
 	mov	ax,[ecx+stat.st_dev]
@@ -89,8 +89,8 @@ START:
 	js	.exit
 	sys_getdents EMPTY,esi,dirent_size	;get current dirent
 	test	eax,eax
-	js	.exit
-	jz	.exit
+	js	near .exit
+	jz	near .exit
 	mov	edx,ebx
 	;concatenate current location and current dirent name
 ;;;;	mov	ecx,ebp
@@ -111,10 +111,10 @@ START:
 	js	near .exit
 	mov	ax,[ecx+stat.st_dev]
 	cmp	ax,[Dev]		;is this block device ours'
-	jne	.next_de		;no, try next dirent
+	jne	near .next_de		;no, try next dirent
 	mov	eax,[ecx+stat.st_ino]
 	cmp	eax,[Inode]		;is this inode ours'
-	jne	.next_de		;no, try next dirent
+	jne	near .next_de		;no, try next dirent
 ;; the end of get directory entry loop
 	sys_close	edx		;close current location
 	mov	[ebp],al
@@ -136,7 +136,7 @@ START:
 	movsb
 	jmp	.up
 ;; the end of up to root loop
-%elif KERNEL = 22
+%elif __KERNEL__ = 22
 	sys_getcwd	Buf,lBuf
 
 	mov	esi,ebx
@@ -155,7 +155,7 @@ START:
 
 UDATASEG
 
-%if KERNEL = 20
+%if __KERNEL__ = 20
 
 lBackPath	equ	0x00000040
 BackPath	CHAR	lBackPath	;back path buffer
@@ -197,7 +197,7 @@ Root.st_dev	USHORT	1
 Root.st_ino	USHORT	1
 
 
-%elif KERNEL = 22
+%elif __KERNEL__ = 22
 
 lBuf	equ	256
 Buf	CHAR	lBuf

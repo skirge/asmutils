@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: hostname.asm,v 1.1 2000/01/26 21:19:29 konst Exp $
+;$Id: hostname.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' hostname/domainname
 ;
@@ -16,12 +16,11 @@
 ;you must be root to set host/domain name
 
 %include "system.inc"
-%include "kernel.inc"
 
 CODESEG
 
 START:
-%if KERNEL=20
+%if __KERNEL__ = 20
 	_mov	edi,0
 %endif
 	pop	ebx
@@ -38,7 +37,7 @@ START:
 	jz	.getname
 
 	pop	ebx
-	_mov	ecx,__NEW_UTS_LEN
+	_mov	ecx,UTS_LEN
 	dec	edi
 	jz	.setdomain
 	sys_sethostname

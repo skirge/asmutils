@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: reboot.asm,v 1.1 2000/01/26 21:19:51 konst Exp $
+;$Id: reboot.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' reboot/halt/poweroff
 ;

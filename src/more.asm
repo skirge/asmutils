@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: more.asm,v 1.1 2000/01/26 21:19:42 konst Exp $
+;$Id: more.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' more
 ;
@@ -39,7 +39,7 @@ MoreSize	equ	$-MoreLine
 ;GotoSize	equ	$-GotoLine
 
 START:
-%if KERNEL = 20
+%if __KERNEL__ = 20
 	_mov	edi,0
 	_mov	ebp,STDIN	;file handle (STDIN if no args)
 %endif

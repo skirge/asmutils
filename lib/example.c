@@ -1,12 +1,14 @@
 /*
-	Copyright (C) 1999-2000 Konstantin Boldyshev <konst@voshod.com>
+	Copyright (C) 1999-2000 Konstantin Boldyshev
     
 	sample C program for assembly libc
 
-	$Id: example.c,v 1.2 2000/02/01 19:56:20 konst Exp $
+	$Id: example.c,v 1.3 2000/02/10 15:07:04 konst Exp $
 */
 
+#undef __OPTIMIZE__
 #include <stdio.h>
+#include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>

@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Dmitry Bakhvalov <dl@hrg.dhtp.kiae.ru>
+;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: id.asm,v 1.1 2000/01/26 21:19:31 konst Exp $
+;$Id: id.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' id
 ;
@@ -16,12 +16,11 @@
 		CODESEG
 		
 START:
-		xor	eax,eax
-		mov	al,__NR_getuid		; get_uid
+		sys_getuid
 		mov	ebx,"uid="
 		call	print_stuff
 		
-		mov	al,__NR_getgid		; get_gid
+		sys_gegid
 		mov	bl,'g'			; ebx="gid="
 		call	print_stuff
 		
@@ -38,7 +37,6 @@ START:
 print_stuff:
 		pushad
 		
-		__syscall
 		test	eax,eax
 		js	.error
 

@@ -1,7 +1,7 @@
 This is at least a partial credits-file of people who have contributed
 to the asmutils project, in the Linux Kernel CREDITS format.
 
-Please mail konst@voshod.com if you find any uncertain info here.
+Please notify project maintainer if you find any uncertain info here.
 
 It is sorted by name and formatted to allow easy grepping and
 beautification by scripts.  The fields are: name (N), email (E),
@@ -11,7 +11,7 @@ and snail-mail address (S).
 ----------
 
 N: Dmitry Bakhvalov (DB)
-E: dl@hrg.dhtp.kiae.ru
+E: dl@gazeta.ru
 D: id.asm ls.asm ps.asm strings.asm wc.asm
 
 N: Konstantin Boldyshev (KB)
@@ -35,12 +35,12 @@ N: Indrek Mandre (IM)
 E: indrek.mandre@tallinn.ee
 D: basename.asm chvt.asm dmesg.asm false.asm lsmod.asm
 D: httpd.asm rmmod.asm true.asm yes.asm
-D: hackbin.pl testbasename.pl
 D: suggested defines.inc
+D: hackbin.pl testbasename.pl (in < 0.06)
 
 N: Brian Raiter (BR)
 E: breadbox@muppetlabs.com
-D: factor.asm, elf.inc, sstrip
+D: factor.asm, elf.inc
 
 N: Cecchinel Stephan (CS)
 E: interzone@pacwan.fr

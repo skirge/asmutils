@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@voshod.com>
+;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: uname.asm,v 1.1 2000/01/26 21:20:05 konst Exp $
+;$Id: uname.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' uname/arch	[GNU replacement]
 ;
@@ -23,7 +23,6 @@
 ;----------------------------------------------------
 
 %include "system.inc"
-%include "kernel.inc"
 
 %assign	SYSNAME		00000001b
 %assign	NODENAME	00000010b

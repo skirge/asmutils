@@ -1,4 +1,15 @@
 
+10-Feb-2000:	asmutils 0.07
+
+	- project ported to FreeBSD (partially) (KB)
+	- serious include files changes (KB)
+	- symlink listing bugfix in ls (FL)
+	- few portability fixes (KB)
+	- added \e escape to echo (KB)
+	- documenation updates (KB)
+	- configuration options moved to Makefile from system.inc (KB)
+
+
 01-Feb-2000:	asmutils 0.06
 
 	- ls, strings, wc, id, ps (DB)

@@ -1,14 +1,14 @@
-; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@voshod.com>
+; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.2 2000/02/01 19:56:20 konst Exp $
+; $Id: syscall.inc,v 1.3 2000/02/10 15:07:04 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 27-Jan-2000
-; version	: 0.06
+; modified	: 10-Feb-2000
+; version	: 0.07
 ; assembler	: nasm 0.98
 ; description	: system call macros
-; author	: Konstantin Boldyshev <konst@voshod.com>
+; author	: Konstantin Boldyshev <konst@linuxassembly.org>
 ; comment	: included internally from system.inc
 
 %ifdef __SYSTEM_INC
@@ -20,29 +20,79 @@
 ;internal system call macros
 ;
 
-%macro __syscall		0-1
-%if %0>0
-	_mov	eax,%{1}
-%endif
-	int	0x80
-%endmacro
+; system call definition
+;
+; NEVER USE THIS MACRO DIRECTLY!
+;
+; %1	syscall name
+; %2	number of syscall parameters
+; %3	number of registers to prepare
+; %4...	register values
 
-%macro	__syscall_setregs 1-6
-%if %1>0
- %if %1>1
-  %if %1>2
-   %if %1>3
-    %if %1>4
-    _mov	edi,%6
+%macro	__syscall 2-8
+
+%if %0>2
+%if %3>0
+ %if %3>1
+  %if %3>2
+   %if %3>3
+    %if %3>4
+	_mov	edi,%8
     %endif
-    _mov	esi,%5
+	_mov	esi,%7
    %endif
-    _mov	edx,%4
+	_mov	edx,%6
   %endif
-   _mov		ecx,%3
+	_mov	ecx,%5
  %endif
-  _mov		ebx,%2
+	_mov	ebx,%4
 %endif
+%endif
+	_mov	eax,SYS_%{1}
+
+%ifdef __LINUX__
+
+	int	0x80
+
+%else
+
+%if %0>2
+
+%if %3 < %2
+%assign P %2
+%else
+%assign P %3
+%endif
+
+%if P>0
+ %if P>1
+  %if P>2
+   %if P>3
+    %if P>4
+	push	edi
+    %endif
+	push	esi
+   %endif
+	push	edx
+  %endif
+	push	ecx
+ %endif
+	push	ebx
+%endif
+
+%endif
+
+	push	eax
+
+	db	0x9A
+	dd	0
+	dw	7
+
+	_add	esp, (%{2} + 1) * 4
+
+%endif
+
+
 %endmacro
 
 ;--------------------------------------------------------------------------
@@ -59,13 +109,11 @@
 ;
 
 %macro sys_ioperm 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_ioperm
+	__syscall ioperm, 3, %0, %1, %2, %3
 %endmacro
 
 %macro sys_iopl 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_iopl
+	__syscall iopl, 1, %0, %1
 %endmacro
 
 ;
@@ -73,8 +121,7 @@
 ;
 
 %macro sys_modify_ldt 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_modify_ldt
+	__syscall modify_ldt, 3, %0, %1, %2, %3
 %endmacro
 
 ;
@@ -82,27 +129,23 @@
 ;
 
 %macro sys_idle 0
-	__syscall __NR_idle
+	__syscall idle, 0
 %endmacro
 
 %macro sys_fork 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_fork
+	__syscall fork, 1, %0, %1
 %endmacro
 
 %macro sys_clone 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_clone
+	__syscall clone, 1, %0, %1
 %endmacro
 
 %macro sys_vfork 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_vfork
+	__syscall vfork, 1, %0, %1
 %endmacro
 
 %macro sys_execve 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_execve
+	__syscall execve, 3, %0, %1, %2, %3
 %endmacro
 
 ;
@@ -110,8 +153,7 @@
 ;
 
 %macro sys_ptrace 0-4
-	__syscall_setregs %0,%1,%2,%3,%4
-	__syscall __NR_ptrace
+	__syscall ptrace, 4, %0, %1, %2, %3, %4
 %endmacro
 
 ;
@@ -119,33 +161,27 @@
 ;
 
 %macro sys_sigaction 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_sigaction
+	__syscall sigaction, 3, %0, %1, %2, %3
 %endmacro
 
 %macro sys_altstack 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_rt_altstack
+	__syscall rt_altstack, 2, %0, %1, %2
 %endmacro
 
 %macro sys_sigreturn 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_sigreturn
+	__syscall sigreturn, 1 %0, %1
 %endmacro
 
 %macro sys_rt_sigreturn 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_rt_sigreturn
+	__syscall rt_sigreturn, 1, %0, %1
 %endmacro
 
 %macro sys_sigsuspend 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_sigsuspend
+	__syscall sigsuspend, 3, %0, %1, %2, %3
 %endmacro
 
 %macro sys_rt_sigsuspend 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_rt_sigsuspend
+	__syscall rt_sigsuspend, 2, %0, %1, %2
 %endmacro
 
 ;
@@ -153,22 +189,19 @@
 ;
 
 %macro sys_pause 0
-	__syscall __NR_pause
+	__syscall pause, 0
 %endmacro
 
 %macro sys_mmap 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_mmap
+	__syscall mmap, 1, %0, %1
 %endmacro
 
 %macro sys_pipe 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_pipe
+	__syscall pipe, 1, %0, %1
 %endmacro
 
 %macro sys_uname 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_uname
+	__syscall uname, 1, %0, %1
 %endmacro
 
 ;
@@ -176,13 +209,11 @@
 ;
 
 %macro sys_vm86old 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_vm86old
+	__syscall vm86old, 1, %0, %1
 %endmacro
 
 %macro sys_vm86 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_vm86
+	__syscall vm86, 2, %0, %1, %2
 %endmacro
 
 ;--------------------------------------------------------------------------
@@ -194,8 +225,7 @@
 ;
 
 %macro sys_getdents 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_getdents
+	__syscall getdents, 3, %0, %1, %2, %3
 %endmacro
 
 ;
@@ -203,8 +233,7 @@
 ;
 
 %macro sys_getcwd 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_getcwd
+	__syscall getcwd, 2, %0, %1, %2
 %endmacro
 
 
@@ -213,18 +242,15 @@
 ;
 
 %macro sys_read 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_read
+	__syscall read, 3, %0, %1, %2, %3
 %endmacro
 
 %macro sys_write 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_write
+	__syscall write, 3, %0, %1, %2, %3
 %endmacro
 
 %macro sys_lseek 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_lseek
+	__syscall lseek, 3, %0, %1, %2, %3
 %endmacro
 
 ;
@@ -232,33 +258,31 @@
 ;
 
 %macro sys_open 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_open
+	__syscall open, 3, %0, %1, %2, %3
 %endmacro
 
 %macro sys_close 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_close
+	__syscall close, 1, %0, %1
 %endmacro
 
 %macro sys_statfs 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_statfs
+	__syscall statfs, 2, %0, %1, %2
 %endmacro
 
 %macro sys_chroot 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_chroot
+	__syscall chroot, 1, %0, %1
 %endmacro
 
 %macro sys_chmod 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_chmod
+	__syscall chmod, 2, %0, %1, %2
 %endmacro
 
 %macro sys_access 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall  __NR_access
+	__syscall access, 2, %0, %1, %2
+%endmacro
+
+%macro sys_ftruncate 0-2
+	__syscall ftruncate, 2, %0, %1, %2
 %endmacro
 
 ;
@@ -266,18 +290,15 @@
 ;
 
 %macro sys_mount 0-5
-	__syscall_setregs %0,%1,%2,%3,%4,%5
-	__syscall __NR_mount
+	__syscall mount, 5, %0, %1, %2, %3, %4, %5
 %endmacro
 
 %macro sys_umount 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_umount
+	__syscall umount, 1, %0, %1
 %endmacro
 
 %macro sys_umount2 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_umount2
+	__syscall umount2, 2, %0, %1, %2
 %endmacro
 
 ;
@@ -285,12 +306,11 @@
 ;
 
 %macro sys_sync 0
-	__syscall __NR_sync
+	__syscall sync, 0
 %endmacro
 
 %macro sys_bdflush 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_bdflush
+	__syscall bdflush, 2, %0, %1, %2
 %endmacro
 
 ;
@@ -298,28 +318,23 @@
 ;
 
 %macro sys_mkdir 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_mkdir
+	__syscall mkdir, 2, %0, %1, %2
 %endmacro
 
 %macro sys_rmdir 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_rmdir
+	__syscall rmdir, 1, %0, %1
 %endmacro
 
 %macro sys_link 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_link
+	__syscall link, 2, %0, %1, %2
 %endmacro
 
 %macro sys_symlink 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_symlink
+	__syscall symlink, 2, %0, %1, %2
 %endmacro
 
 %macro sys_unlink 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_unlink
+	__syscall unlink, 1, %0, %1
 %endmacro
 
 ;
@@ -327,8 +342,7 @@
 ;
 
 %macro sys_ioctl 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_ioctl
+	__syscall ioctl, 3, %0, %1, %2, %3
 %endmacro
 
 ;
@@ -336,23 +350,19 @@
 ;
 
 %macro sys_readlink 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_readlink
+	__syscall readlink, 3, %0, %1, %2, %3
 %endmacro
 
 %macro sys_stat 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_stat
+	__syscall stat, 2, %0, %1, %2
 %endmacro
 
 %macro sys_fstat 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_fstat
+	__syscall fstat, 2, %0, %1, %2
 %endmacro
 
 %macro sys_lstat 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_lstat
+	__syscall lstat, 2, %0, %1, %2
 %endmacro
 
 ;--------------------------------------------------------------------------
@@ -364,27 +374,32 @@
 ;
 
 %macro sys_alarm 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_alarm
+	__syscall alarm, 1, %0, %1
 %endmacro
 
 %macro sys_nanosleep 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_nanosleep
+	__syscall nanosleep, 2, %0, %1, %2
 %endmacro
+
+%macro sys_getuid 0
+	__syscall getuid, 0
+%endmacro
+
+%macro sys_getgid 0
+	__syscall getgid, 0
+%endmacro
+
 
 ;
 ;kernel/signal.c
 ;
 
 %macro sys_kill 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_kill
+	__syscall kill, 2, %0, %1, %2
 %endmacro
 
 %macro sys_signal 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_signal
+	__syscall signal, 2, %0, %1, %2
 %endmacro
 
 ;
@@ -392,18 +407,15 @@
 ;
 
 %macro sys_reboot 0-4
-	__syscall_setregs %0,%1,%2,%3,%4
-	__syscall __NR_reboot
+	__syscall reboot, 4, %0, %1, %2, %3, %4
 %endmacro
 
 %macro sys_sethostname 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_sethostname
+	__syscall sethostname, 2, %0, %1, %2
 %endmacro
 
 %macro sys_setdomainname 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_setdomainname
+	__syscall setdomainname, 2, %0, %1, %2
 %endmacro
 
 ;
@@ -411,13 +423,11 @@
 ;
 
 %macro sys_munmap 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_munmap
+	__syscall munmap, 2, %0, %1, %2
 %endmacro
 
 %macro	sys_brk	0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_brk
+	__syscall brk, 1, %0, %1
 %endmacro
 
 ;
@@ -425,13 +435,11 @@
 ;
 
 %macro sys_wait4 0-4
-	__syscall_setregs %0,%1,%2,%3,%4
-	__syscall __NR_wait4
+	__syscall wait4, 2, %0, %1, %2, %3, %4
 %endmacro
 
 %macro sys_exit 0-1
-	__syscall_setregs %0,%1
-	__syscall    __NR_exit
+	__syscall exit, 1, %0, %1
 %endmacro
 
 %macro sys_exit_true 0
@@ -439,13 +447,7 @@
 %endmacro
 
 %macro sys_exit_false 0
-%if __OPTIMIZE = __O_SIZE
-	_mov	eax,__NR_exit
-	mov	ebx,eax
-	__syscall
-%else
 	sys_exit 1
-%endif
 %endmacro
 
 ;
@@ -453,8 +455,7 @@
 ;
 
 %macro sys_sysinfo 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_sysinfo
+	__syscall sysinfo, 1, %0, %1
 %endmacro
 
 ;
@@ -462,8 +463,7 @@
 ;
 
 %macro sys_syslog 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_syslog
+	__syscall syslog, 3, %0, %1, %2, %3
 %endmacro
 
 ;
@@ -471,28 +471,23 @@
 ;
 
 %macro sys_delete_module 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_delete_module
+	__syscall delete_module, 1, %0, %1
 %endmacro
 
 %macro sys_init_module 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_init_module
+	__syscall init_module, 2, %0, %1, %2
 %endmacro
 
 %macro sys_create_module 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_create_module
+	__syscall create_module, 2, %0, %1, %2
 %endmacro
 
 %macro sys_query_module 0-5
-	__syscall_setregs %0,%1,%2,%3,%4,%5
-	__syscall __NR_query_module
+	__syscall query_module, 5, %0, %1, %2, %3, %4, %5
 %endmacro
 
 %macro sys_get_kernel_syms 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_get_kernel_syms
+	__syscall get_kernel_syms, 1, %0, %1
 %endmacro
 
 ;--------------------------------------------------------------------------
@@ -504,8 +499,7 @@
 ;
 
 %macro sys_mprotect 0-3
-	__syscall_setregs %0,%1,%2,%3
-	__syscall __NR_mprotect
+	__syscall mprotect, 3, %0, %1, %2, %3
 %endmacro
 
 ;
@@ -513,8 +507,7 @@
 ;
 
 %macro sys_sendfile 0-4
-	__syscall_setregs %0,%1,%2,%3,%4
-	__syscall __NR_sendfile
+	__syscall sendfile, 4, %0, %1, %2, %3, %4
 %endmacro
 
 ;
@@ -522,13 +515,11 @@
 ;
 
 %macro sys_swapon 0-2
-	__syscall_setregs %0,%1,%2
-	__syscall __NR_swapon
+	__syscall swapon, 2, %0, %1, %2
 %endmacro
 
 %macro sys_swapoff 0-1
-	__syscall_setregs %0,%1
-	__syscall __NR_swapoff
+	__syscall swapoff, 1, %0, %1
 %endmacro
 
 
@@ -541,8 +532,7 @@
 ;
 
 %macro sys_socketcall 0-3
-	__syscall_setregs %0,%1,%2,%3
-        __syscall __NR_socketcall
+        __syscall socketcall, 3, %0, %1, %2, %3
 %endmacro
 
 ;--------------------------------------------------------------------------

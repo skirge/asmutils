@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: basename.asm,v 1.1 2000/01/26 21:19:15 konst Exp $
+;$Id: basename.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' basename	[GNU replacement]
 ;
@@ -43,11 +43,11 @@ START:
 	pop	eax		;the path
 	mov	ebx,eax		;mark the beginning of path
 	xor	edx,edx
-	cmp	byte [eax],NULL
+	cmp	byte [eax],EOL
 	je	.printout
 .loopone:
 	inc	eax
-	cmp	byte [eax],NULL
+	cmp	byte [eax],EOL
 	jne	.loopone
 	mov	edx,eax		;mark the end
 .backwego:
@@ -85,11 +85,11 @@ START:
 ;now we check for suffix
 	mov	ebx,eax		;save start of suffix
 
-	cmp	byte [eax],NULL
+	cmp	byte [eax],EOL
 	je	.goaftersuffix	;there was nothing in suffix string, so nothin to remove
 .suffixloop
 	inc	eax
-	cmp	byte [eax],NULL
+	cmp	byte [eax],EOL
 	jne	.suffixloop
 .endsuffixloop
 	sub	eax,ebx		;we have length of suffix here now

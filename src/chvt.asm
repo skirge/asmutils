@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: chvt.asm,v 1.1 2000/01/26 21:19:16 konst Exp $
+;$Id: chvt.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ;hackers' chvt/deallocvt
 ;
@@ -93,7 +93,7 @@ do_dealloc:
 	jmp short next_arg
 
 
-devtty		db	"/dev/tty0",NULL
-devconsole	db	"/dev/console",NULL
+devtty		db	"/dev/tty0",EOL
+devconsole	db	"/dev/console",EOL
 
 END

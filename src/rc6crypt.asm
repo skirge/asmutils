@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Cecchinel Stephan <interzone@pacwan.fr>
 ;
-;$Id: rc6crypt.asm,v 1.1 2000/01/26 21:19:51 konst Exp $
+;$Id: rc6crypt.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
 ;
 ; rc6crypt:       assembly version for asmutils
 ;
@@ -107,9 +107,9 @@ START:
 	popa
 .next_f2:
 	cmp eax,FILEBUFFSIZE
-	jz short .read1
+	jz near .read1
 	and eax,byte 15
-	jz short .finish1
+	jz near .finish1
 	add [length],eax		; length+=rest
 	mov edi,eax
 	lea esi,[buffer]
@@ -117,19 +117,15 @@ START:
         xor esi,esi
         sub esi,edi
         sys_lseek ebp,esi,SEEK_CUR
-	lea ebx,[textrand]
-	xor ecx,ecx
 
-	_mov edx,O_RDONLY
-	_mov eax,5
-	int 0x80			; open /dev/random
+	sys_open [textrand],O_RDONLY			; open /dev/random
+
 	mov ebx,eax
 	_mov eax,16
 	sub eax,edi			; length=16-rest
 	lea ecx,[buffer+edi]
 	mov edx,eax
-	_mov eax,3		; read("/dev/random",buffer+rest,16-rest)
-	int 0x80
+	sys_read		; read("/dev/random",buffer+rest,16-rest)
 
 	invoke RC6_encrypt,buffer,bufferout
         sys_write ebp,bufferout,16
@@ -194,15 +190,12 @@ START:
 	popa
 .next_f3:
 	cmp eax,FILEBUFFSIZE
-	jz short .read3
+	jz near .read3
 
 	lea esi,[buffer]
 	and eax,byte -16
 	mov edi,[esi+eax]
-        mov ebx,ebp
-        mov ecx,edi
-        _mov eax,93
-        int 0x80	; sys_ftruncate
+	sys_ftruncate ebp,edi
 	sys_close ebp
         jmp near .decrypt
         
