@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Jonathan Leto <jonathan@leto.net>
 ;
-;$Id: head.asm,v 1.2 2001/02/23 12:39:29 konst Exp $
+;$Id: head.asm,v 1.3 2001/10/16 15:44:03 konst Exp $
 ;
 ;hackers' head
 ;
@@ -12,6 +12,7 @@
 ;This is slightly over-commented, hopefully someone can learn from it.
 ;
 ;Version 0.1 - Sun Dec 10 00:01:52 EST 2000 
+;Version 0.2 - Tue Oct 09 12:24:26 EST 2001 - Fixed reading from stdin -JH
 
 %include "system.inc"
 
@@ -30,24 +31,30 @@ START:
 	dec	ebx			 
 	pop	ebx			; argv[0], program name
 	jz 	.read			; read stdin if no args
-	jmp	.nextfile
+	jmps	.nextfile
 
 .set_chars:
 	pop	esi
 	call	.ascii_to_num
 	_mov	[chars], eax
-	jmp .nextfile
+	jmps .nextfile
 
 .set_num_of_lines:
 	pop	esi
 	call	.ascii_to_num
 	_mov	[lines], eax
+	jmps	.nextfile
 
+.prepfile:
+	sys_close	ebp		; Close the file discriptor
+	inc	ebp			; If we read stdin, trigger end
 .nextfile:			
 	pop	ebx			; get next arg
 	or	ebx,ebx		
 	jnz	.n2			; exit if none
 .exit:
+	or	ebp, ebp		; If read no files (ebp = STDIN,0)
+	jz	.read			; Read stdin!
 	sys_exit edi			; exit with return value
 .n2:
 	cmp word [ebx], "-n"
@@ -57,8 +64,9 @@ START:
 	je	.set_chars
 	
 	sys_open ebx,O_RDONLY
-	_mov	ebp,eax			; save fd
-	test	eax,eax		
+	xchg	ebp,eax
+	;_mov	ebp,eax			; save fd
+	test	ebp,ebp		
 	jns	.read			; successful open is > 0
 
 .error:
@@ -72,7 +80,7 @@ START:
 	sys_read ebp
 	test	eax,eax
 	js	.error			; fd < 0, error
-	jz	.nextfile		; EOF, go to next file
+	jz	.prepfile		; EOF, go to next file
 
 	mov	esi,[chars]
 	test	esi,esi
