@@ -1,92 +1,93 @@
-; Copyright (C) 2001, Tiago Gasiba (ee97034@fe.up.pt)
+;Copyright (C) 2001 Tiago Gasiba <ee97034@fe.up.pt>
 ;
-; $Id: whoami.asm,v 1.1 2001/08/19 12:41:59 konst Exp $
+;$Id: whoami.asm,v 1.2 2002/03/14 18:25:57 konst Exp $
 ;
-; hacker's whoami
+;hacker's whoami
 ;
+;syntax: whoami
 ;
-; TO DO:
+;TODO:
 ;        - UID not found in /etc/passwd
 ;        - read() doesn't read all file at once
 ;        - optimize SPEED and SIZE (algorithm??)
 
 %include "system.inc"
 
-BUFFERLEN		equ	20
-MAXSTRLEN		equ	200
+%assign	BUFFERLEN	20
+%assign	MAXSTRLEN	200
 
-STACK_FRAME_SIZE	equ	16
+%assign	STACK_FRAME_SIZE	16
 
-FSIZE			equ	12
-FD			equ	8
-UID			equ	4
-BEG_DATA		equ	0
+%define	FSIZE		esp+12
+%define	FD		esp+8
+%define	UID		esp+4
+%define	BEG_DATA	esp
 
 CODESEG
 
 START:
-	mov	ebp,esp				; create stack frame
+	mov	ebp,esp				;create stack frame
 
-	sub	esp,STACK_FRAME_SIZE
-	sys_brk
-	mov	dword [esp+BEG_DATA],eax	; save beg. of data
+	_sub	esp,STACK_FRAME_SIZE
+;	sys_brk
+	mov	dword [BEG_DATA],_end		;save beg. of data
 
 	sys_getuid
-	mov	dword [esp+UID],eax
+	mov	[UID],eax
 
-	sys_open	file,O_RDONLY
+	sys_open file,O_RDONLY
 	test	eax,eax
 	js	near .exit
-	mov	dword [esp+FD],eax		; save file descrp.
+	mov	[FD],eax			;save file descrp.
 	
-	sys_lseek	[esp+FD],0,SEEK_END
-	mov	dword	[esp+FSIZE],eax
+	sys_lseek [FD],0,SEEK_END
+	mov	[FSIZE],eax
 
-	sys_lseek	[esp+FD],0,SEEK_SET
+	sys_lseek [FD],0,SEEK_SET
 
-	mov	eax,dword [esp+BEG_DATA]
-	add	eax,dword [esp+FSIZE]
+	mov	eax,[BEG_DATA]
+	add	eax,[FSIZE]
 	inc	eax
 	sys_brk	eax
-	mov	eax,dword [esp+BEG_DATA]
-	mov	byte [eax],0xa
+	mov	eax,[BEG_DATA]
+	mov	byte [eax],__n
 
-	mov	eax,[esp+BEG_DATA]
+	mov	eax,[BEG_DATA]
 	inc	eax
-	sys_read	[esp+FD],eax,[esp+FSIZE]
+	sys_read [FD],eax,[FSIZE]
 						;  FIXME FIXME FIXME
 						; have we read all???
 	
-	sys_close	[esp+FD]
+	sys_close [FD]
 
 	; search for name
 	cld
-	mov	edi,[esp+BEG_DATA]
-	mov	ecx,[esp+FSIZE]
+	mov	edi,[BEG_DATA]
+	mov	ecx,[FSIZE]
 
 .outro:
-	_mov	eax,':'
+	mov	al,':'
 times 2	repne	scasb
 	mov	esi,edi
 	repne	scasb
 	dec	edi
 	mov	byte [edi],0
 	call	ascii2uint
-	cmp	eax,[esp+UID]
+	cmp	eax,[UID]
 	je	.encontrado
-	_mov	eax,0xa
+	mov	al,__n
 	repne	scasb
-	jmp	short	.outro
+	jmps	.outro
 
 .encontrado:
 	std
-	_mov	eax,0xa
+	mov	al,__n
 	mov	edi,esi
 	repne	scasb
 	inc	edi
 	inc	edi
 	push	edi
-	_mov	eax,':'
+	mov	al,':'
 	cld
 	repne	scasb
 	dec	edi
@@ -95,10 +96,10 @@ times 2	repne	scasb
 
 	call	strlen
 
-	sys_write	STDOUT,esi,eax
+	sys_write STDOUT,esi,eax
 .exit:
 	mov	esp,ebp				; destroy stack frame
-	sys_exit	0
+	sys_exit 0
 
 ;--------------------------------------------------
 ; Function    : ascii2uint
@@ -112,16 +113,16 @@ ascii2uint:
 	_mov	eax,0			; initialize sum
 	_mov	ebx,0			; zero digit
 .repete:
-	_mov	bl,byte [esi]		; get digit
+	mov	bl,[esi]		; get digit
 	test	bl,bl
 	jz	.exit			; are we done ?
 	and	bl,~0x30		; ascii digit -> bin digit
 	imul	eax,10			; prepare next conversion
 	add	eax,ebx
 	inc	esi			; next digit
-	jmp	short .repete
+	jmps	.repete
 .exit:
-	mov	dword[esp+28],eax	;save eax
+	mov	[esp+28],eax		; save eax
 	popa
 	ret
 
@@ -142,10 +143,9 @@ strlen:
 	_mov	eax,MAXSTRLEN
 	sub	eax,ecx
 	dec	eax
-	mov	dword [esp+28],eax
+	mov	[esp+28],eax
 	popa
 	ret
-
 
 file	db	"/etc/passwd",0
 
