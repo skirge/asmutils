@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.6 2001/08/14 18:53:31 konst Exp $
+; $Id: os_linux.inc,v 1.7 2001/08/28 06:38:50 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 14-Aug-2001
+; modified      : 27-Aug-2001
 ; version       : 0.15
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
@@ -879,6 +879,54 @@ endstruc
 %assign SYS_GETSOCKOPT	15	; sys_getsockopt
 %assign SYS_SENDMSG	16	; sys_sendmsg
 %assign SYS_RECVMSG	17	; sys_recvmsg
+
+; 
+;	linux/sockios.h
+;
+
+%assign SIOCADDRT	0x890B		; add routing table entry	
+%assign SIOCDELRT	0x890C		; delete routing table entry	
+%assign SIOCRTMSG	0x890D		; call to routing system	
+
+
+%assign SIOCGIFNAME	0x8910		; get iface name		
+%assign SIOCSIFLINK	0x8911		; set iface channel		
+%assign SIOCGIFCONF	0x8912		; get iface list		
+%assign SIOCGIFFLAGS	0x8913		; get flags			
+%assign SIOCSIFFLAGS	0x8914		; set flags			
+%assign SIOCGIFADDR	0x8915		; get PA address		
+%assign SIOCSIFADDR	0x8916		; set PA address		
+%assign SIOCGIFDSTADDR	0x8917		; get remote PA address	
+%assign SIOCSIFDSTADDR	0x8918		; set remote PA address	
+%assign SIOCGIFBRDADDR	0x8919		; get broadcast PA address	
+%assign SIOCSIFBRDADDR	0x891a		; set broadcast PA address	
+%assign SIOCGIFNETMASK	0x891b		; get network PA mask		
+%assign SIOCSIFNETMASK	0x891c		; set network PA mask		
+%assign SIOCGIFMETRIC	0x891d		; get metric			
+%assign SIOCSIFMETRIC	0x891e		; set metric			
+%assign SIOCGIFMEM	0x891f		; get memory address (BSD)	
+%assign SIOCSIFMEM	0x8920		; set memory address (BSD)	
+%assign SIOCGIFMTU	0x8921		; get MTU size			
+%assign SIOCSIFMTU	0x8922		; set MTU size			
+%assign SIOCSIFNAME	0x8923		; set interface name 
+%assign	SIOCSIFHWADDR	0x8924		; set hardware address 	
+%assign SIOCGIFENCAP	0x8925		; get/set encapsulations       
+%assign SIOCSIFENCAP	0x8926		
+%assign SIOCGIFHWADDR	0x8927		; Get hardware address		
+%assign SIOCGIFSLAVE	0x8929		; Driver slaving support	
+%assign SIOCSIFSLAVE	0x8930
+%assign SIOCADDMULTI	0x8931		; Multicast address lists	
+%assign SIOCDELMULTI	0x8932
+%assign SIOCGIFINDEX	0x8933		; name -> if_index mapping	
+%assign SIOGIFINDEX	SIOCGIFINDEX	; misprint compatibility :-)	
+%assign SIOCSIFPFLAGS	0x8934		; set/get extended flags set	
+%assign SIOCGIFPFLAGS	0x8935
+%assign SIOCDIFADDR	0x8936		; delete PA address		
+%assign	SIOCSIFHWBROADCAST	0x8937	; set hardware broadcast addr	
+%assign SIOCGIFCOUNT	0x8938		; get number of devices 
+
+
+
 
 ;
 ;system calls

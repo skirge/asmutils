@@ -1,10 +1,10 @@
 ; Copyright (C) 2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_libc.inc,v 1.1 2001/08/21 12:58:17 konst Exp $
+; $Id: os_libc.inc,v 1.2 2001/08/28 06:38:50 konst Exp $
 ;
 ; file          : os_libc.inc
 ; created       : 20-Aug-2001
-; modified      : 21-Aug-2001
+; modified      : 27-Aug-2001
 ; version       : 0.15
 ; assembler     : nasm 0.98
 ; description   : libc defined constants (from includes)
@@ -31,7 +31,7 @@ endstruc
 ;stat.h
 ;
 
-struc Stat
+struc Stat			;guess why?
 .st_dev		ULONG	2
 .st_ino		ULONG	1
 .st_mode	USHORT	1
@@ -82,6 +82,7 @@ struc dirent
 .d_ino		ULONG	1
 .d_off		ULONG	1
 .d_reclen	USHORT	1
+.d_type		UCHAR	1
 .d_name		CHAR	256
 endstruc
 

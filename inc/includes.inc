@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.5 2001/03/18 07:08:25 konst Exp $
+; $Id: includes.inc,v 1.6 2001/08/28 06:38:50 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 27-Feb-2001
-; version       : 0.14
+; modified      : 28-Aug-2001
+; version       : 0.15
 ; assembler     : nasm 0.98
 ; description   : generic constants and structures from header files (libc)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -195,6 +195,20 @@
 
 %define MS_RDONLY	1
 %define MS_MGC_VAL	0xc0ed0000
+
+;
+;sys/ptrace.h
+;
+
+%assign PT_TRACEME 0
+%assign PT_PEEKDATA 2
+%assign PT_GETREGS 012
+%assign PT_SETREGS 013
+%assign PT_POKEDATA 5
+%assign PT_CONT 7
+%assign PT_KILL 8
+%assign PT_DETACH 0x11
+%assign PT_SINGLESTEP 9
 
 ;
 ;sys/socket.h
