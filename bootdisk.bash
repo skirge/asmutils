@@ -4,7 +4,7 @@
 #
 # Copyright (C) 2001	Karsten Scheibler <karsten.scheibler@bigfoot.de>
 #
-# $Id: bootdisk.bash,v 1.1 2001/05/16 09:50:12 konst Exp $
+# $Id: bootdisk.bash,v 1.2 2002/02/27 17:57:44 konst Exp $
 
 
 TMP_DIR=/tmp/bootdisk-$$
@@ -12,7 +12,7 @@ LOG_FILE="$TMP_DIR"/cmdlog
 MOUNT_POINT="$TMP_DIR"/mnt
 BOOTDISK_IMAGE="$TMP_DIR"/bootdisk
 ROOT_IMAGE="$TMP_DIR"/rootraw
-ROOT_IMAGE_SIZE=2048
+ROOT_IMAGE_SIZE=1024
 
 
 
@@ -56,7 +56,20 @@ function check2
 	fi
 	}
 
+function create_rc
+{
+cat <<EOF >"$MOUNT_POINT/etc/rc" 
+#!/bin/sh
 
+echo -e "mounting /proc..\c"
+mount -t proc none /proc
+&& echo -e "done"
+
+echo -e "\033[2J\033[2;1H\t\033[1;37mWelcome to the \033[34masmutils\033[37m bootdisk! [\033[32mhttp://linuxassembly.org\033[0;37m]\n"
+
+EOF
+chmod 555 "$MOUNT_POINT/etc/rc"
+}
 
 
 if [ `id -u` -ne 0 -o `uname` != "Linux" ]; then
@@ -136,6 +149,7 @@ mknod -m 600 "$MOUNT_POINT"/dev/mem c 1 1 &&
 mknod -m 600 "$MOUNT_POINT"/dev/audio c 14 4 &&
 mknod -m 600 "$MOUNT_POINT"/dev/dsp c 14 3 &&
 mknod -m 600 "$MOUNT_POINT"/dev/fb0 c 29 0 &&
+create_rc &&
 echo "/dev/ram0 / minix rw 0 0" > "$MOUNT_POINT"/etc/mtab &&
 ( cd "$ASMUTILS_PATH"; ls -1 | while read FILE; do if [ -x "$FILE" ]; then
   cp -a "$FILE" "$MOUNT_POINT"/bin/; fi; done;
