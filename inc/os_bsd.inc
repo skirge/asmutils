@@ -1,10 +1,10 @@
 ; Copyright (C) 2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_bsd.inc,v 1.4 2001/12/09 15:12:54 konst Exp $
+; $Id: os_bsd.inc,v 1.5 2001/12/10 17:10:16 konst Exp $
 ;
 ; file          : os_bsd.inc
 ; created       : 12-Nov-2000
-; modified      : 09-Dec-2001
+; modified      : 10-Dec-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : common BSD defines
@@ -69,9 +69,36 @@ __syscall_gate:
 %assign	MNT_WAIT	1
 %assign MNT_NOWAIT	2
 
+;
+;sys/mount.h
+;
+
+%assign	MNT_RDONLY	0x00000001	;read only filesystem
+%assign	MNT_SYNCHRONOUS	0x00000002	;file system written synchronously
+%assign	MNT_NOEXEC	0x00000004	;can't exec from filesystem
+%assign	MNT_NOSUID	0x00000008	;don't honor setuid bits on fs
+%assign	MNT_NODEV	0x00000010	;don't interpret special files
+%assign	MNT_UNION	0x00000020	;union with underlying filesystem
+%assign	MNT_ASYNC	0x00000040	;file system written asynchronously
+%assign	MNT_SUIDDIR	0x00100000	;special handling of SUID on dirs
+%assign	MNT_SOFTDEP	0x00200000	;soft updates being done
+%assign	MNT_NOSYMFOLLOW	0x00400000	;do not follow symlinks
+%assign	MNT_NOATIME	0x10000000	;disable update of file access time
+%assign	MNT_NOCLUSTERR	0x40000000	;disable cluster read
+%assign	MNT_NOCLUSTERW	0x80000000	;disable cluster write
+
+%assign	MNT_UPDATE	0x0001000
+
+%assign	MS_RDONLY	MNT_RDONLY
+%assign	MS_SYNCHRONOUS	MNT_SYNCHRONOUS
+%assign	MS_NOEXEC	MNT_NOEXEC
+%assign	MS_NOSUID	MNT_NOSUID
+%assign	MS_NODEV	MNT_NODEV
+%assign	MS_NOATIME	MNT_NOATIME
+%assign	MS_REMOUNT	MNT_UPDATE
+
 %assign	MFSNAMELEN	16	;length of fs type name, including null
 %assign	MNAMELEN	90	;length of buffer for returned name
-
 
 struc statfs
 .f_spare2	LONG	1	;placeholder
@@ -255,28 +282,6 @@ endstruc
 %define	TCGETS	TIOCGETA
 %define	TCSETS	TIOCSETA
 %define	TCSETSW	TIOCSETAW
-
-;
-;sys/mount.h
-;
-
-%assign	MS_RDONLY	0x00000001	;read only filesystem
-%assign	MS_SYNCHRONOUS	0x00000002	;file system written synchronously
-%assign	MS_NOEXEC	0x00000004	;can't exec from filesystem
-%assign	MS_NOSUID	0x00000008	;don't honor setuid bits on fs
-%assign	MS_NODEV	0x00000010	;don't interpret special files
-%assign	MS_UNION	0x00000020	;union with underlying filesystem
-%assign	MS_ASYNC	0x00000040	;file system written asynchronously
-%assign	MS_SUIDDIR	0x00100000	;special handling of SUID on dirs
-%assign	MS_SOFTDEP	0x00200000	;soft updates being done
-%assign	MS_NOSYMFOLLOW	0x00400000	;do not follow symlinks
-%assign	MS_NOATIME	0x10000000	;disable update of file access time
-%assign	MS_NOCLUSTERR	0x40000000	;disable cluster read
-%assign	MS_NOCLUSTERW	0x80000000	;disable cluster write
-
-%assign	MNT_UPDATE	0x0001000
-
-%assign	MS_REMOUNT	MNT_UPDATE
 
 ;
 ;utmp.h

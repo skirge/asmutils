@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: mount.asm,v 1.5 2001/12/09 15:12:15 konst Exp $
+;$Id: mount.asm,v 1.6 2001/12/10 17:09:36 konst Exp $
 ;
 ;hackers' mount/umount
 ;
@@ -12,12 +12,12 @@
 ;
 ;0.01: 04-Jul-1999	initial release
 ;0.02: 19-Feb-2001      added options support & listing of mounted devices (RM)
-;0.03: 09-Dec-2001	rewritten to resemble usual mount, *BSD port (KB)
+;0.03: 10-Dec-2001	rewritten to resemble usual mount, *BSD port (KB)
 ;
 ;NOTES:
-;1) mount arguments must be exactly in above written order
-;2) BSD version requires -t argument
-;3) only generic mount options are implemented, you may add your own if needed
+;- mount arguments must be exactly in above written order
+;- BSD version requires -t argument
+;- only generic mount options are implemented (no fs-specific options)
 
 %include "system.inc"
 

@@ -1,7 +1,7 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-;$Id: libc.asm,v 1.10 2001/11/24 09:47:32 konst Exp $
+;$Id: libc.asm,v 1.11 2001/12/10 17:11:07 konst Exp $
 ;
 ;hackers' libc
 ;
@@ -33,6 +33,7 @@
 ;			to prepare main() arguments (argc, argv, envp),
 ;			PIC fixes (KB)
 ;0.07: 25-Feb-2001	added __VERBOSE__, memcmp(), getenv() (KB)
+;0.08: 10-Dec-2001	random fixes (KB)
 
 %undef __ELF_MACROS__
 
@@ -90,7 +91,7 @@
 ;
 
 %define	__EXT_VAR(x) [ebx + (x) wrt ..got]
-%define	__INT_VAR(x) ebx + (x) wrt ..gotpc
+%define	__INT_VAR(x) ebx + (x) wrt ..gotoff
 
 %macro __GET_GOT 0
 	call	%%get_GOT
@@ -153,6 +154,19 @@
 %define	__edi	esp+4*0
 
 CODESEG
+
+START:
+%ifdef __PIC__
+	__GET_GOT
+	lea	ecx,[__INT_VAR(__libc_banner)]
+%else
+	mov	ecx,__libc_banner
+%endif
+	sys_write STDOUT,EMPTY,__LIBC_BANNER_LEN
+	sys_exit 0
+
+__libc_banner		db	"a r e   y o u   s i c k ?", __n
+__LIBC_BANNER_LEN	equ	$ - __libc_banner
 
 extern _GLOBAL_OFFSET_TABLE_
 

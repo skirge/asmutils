@@ -1,10 +1,10 @@
-; Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_beos.inc,v 1.4 2001/11/14 16:01:42 konst Exp $
+; $Id: os_beos.inc,v 1.5 2001/12/10 17:10:16 konst Exp $
 ;
 ; file          : os_beos.inc
 ; created       : 21-Feb-2000
-; modified      : 14-Nov-2001
+; modified      : 10-Dec-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : BeOS kernel constants (R4.5+)
@@ -13,18 +13,19 @@
 ;
 ;IMPORTANT NOTES:
 ;
-;Now that BeOS is dead, it doesn't really matter. This stuff is kept here just
-;for history, so if your's 'date' shows something like "Mon Aug 7 2541 10:23",
-;you may read on and marvel at what ancient people did.
+;Now that Be and BeOS are dead, it doesn't really matter.
+;This stuff is kept here only for history.. so if yours 'date'
+;shows something like "Mon Aug 7 2541 10:23", you may read on
+;and marvel at what those ancient crazy humans did.
 ;
-;BeOS port is in alpha stage (yes, it works sometimes),
+;BeOS port is eternally in alpha stage (yes, it works sometimes),
 ;mostly because of weird BeOS kernel bugs.
 ;
 ;Be kernel developers did not want to share any information on syscalls,
 ;so I had to figure out these constants and system call convention
 ;manually by disassembling libroot.so (of course BIEW helped a lot).
 ;As BeOS source code is closed, do not even think of blaming me
-;if these few numbers will destroy your hard disk data,
+;if these little digits will destroy your hard disk data,
 ;my BeOS hanged dozens times when I was playing with them.
 ;
 ;***
@@ -53,7 +54,7 @@
 ;R5.0 has 0xC7 syscalls
 ;(according to libroot-obj.tgz, src/kernel/kit/obj.i586.dyn/scalls.o)
 ;
-;BeOS kernel hackers, if you exist, HELP ME !!!
+;BeOS kernel hackers, do you hear me?!
 
 %ifndef __SYSTEM_INC
 %error "this file must be included internally from system.inc !"
@@ -62,7 +63,7 @@
 %ifndef __BEOS_INC
 %define __BEOS_INC
 
-;%error "Hey, are you crazy? Never play with fire!"
+%error "Hey, are you crazy?"
 
 %macro DO_SYSCALL 0
 %if __OPTIMIZE__=__O_SIZE__

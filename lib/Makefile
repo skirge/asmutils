@@ -2,7 +2,7 @@
 #
 # Makefile for libc (GNU make is required)
 #
-# $Id: Makefile,v 1.10 2001/08/20 18:38:06 konst Exp $
+# $Id: Makefile,v 1.11 2001/12/10 17:11:07 konst Exp $
 
 # Target CPU (386,486,586,686)
 
@@ -16,7 +16,7 @@ BUILD_LIB = y
 
 include ../MCONFIG
 
-BUILD_STATIC = y
+#BUILD_STATIC = y
 BUILD_SHARED = y
 
 LIBCRYPTO_OBJS = md5.o rc6.o rmd.o
@@ -70,7 +70,7 @@ ifdef	BUILD_STATIC
 		-o $@-static-fastcall $< $(STUB_OBJS) $(LIBC_A)
 endif
 
-all:	libc testc crypto libm testm
+all:	check libc testc crypto libm testm
 
 libc:	$(LIBC_OBJS) $(STUB_OBJS)
 ifdef BUILD_STATIC
@@ -127,3 +127,11 @@ install:
 
 clean:
 	rm -f *.o *.a *.so* $(TESTS) *-shared* *-static*
+
+check:
+ifneq ("$(ASVER)", "$(CORRECT_ASVER)")
+	@echo
+	@echo "$(AS) $(ASVER) may miscompile asmutils, please use only clean $(AS) $(CORRECT_ASVER)!"
+	@echo
+	@false
+endif
