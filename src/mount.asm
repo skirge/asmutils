@@ -1,23 +1,25 @@
-;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: mount.asm,v 1.6 2001/12/10 17:09:36 konst Exp $
+;$Id: mount.asm,v 1.7 2002/06/24 16:51:55 konst Exp $
 ;
 ;hackers' mount/umount
 ;
-;syntax: mount [-o options] [-t type] device mountpoint
+;syntax: mount [-o options,[...]] [-t type] device mountpoint
 ;	 umount mountpoint
 ;
 ;example: mount -o ro,noexec -t vfat /dev/hda1 /c
 ;	  umount /mnt
 ;
+;NOTES:
+;(1) mount arguments must be exactly in above written order
+;(2) BSD version requires -t argument
+;(3) only generic mount options are implemented (no fs-specific options)
+;(4) if it still doesn't work, check command line syntax again and goto (1)
+;
 ;0.01: 04-Jul-1999	initial release
 ;0.02: 19-Feb-2001      added options support & listing of mounted devices (RM)
 ;0.03: 10-Dec-2001	rewritten to resemble usual mount, *BSD port (KB)
-;
-;NOTES:
-;- mount arguments must be exactly in above written order
-;- BSD version requires -t argument
-;- only generic mount options are implemented (no fs-specific options)
+;0.04: 24-Jun-2002	try to mount ro/nodev if rw fails (KB)
 
 %include "system.inc"
 
@@ -28,7 +30,7 @@ CODESEG
 START:
 	pop	ecx		;argc
 	dec	ecx
-	jz	.list_mounted
+	jz	list_mounted
 
 	pop	esi
 	pop	ebx
@@ -38,39 +40,37 @@ START:
 	or 	al,al
 	jnz	.n1
 	cmp	byte [esi-7],'u'
-	jnz	.mount
+	jnz	mount
 
 	xor	ecx,ecx
 	sys_umount
 
-.exit:  
+do_exit:  
 	sys_exit eax
 
 ;
 ;display /proc/mounts or /etc/mtab
 ;
 
-.list_mounted:
+list_mounted:
 
 	sys_open lname1,O_RDONLY
 	test	eax,eax
 	jns	.l0
 	sys_open lname2
 	test	eax,eax
-	js	.exit
+	js	do_exit
 .l0:
 	sys_read eax,buf,BUFSIZE
 	sys_write STDOUT,EMPTY,eax
-	xor 	eax,eax   		;good end 
-	jmps	.exit
+	xor 	eax,eax
+	jmps	do_exit
 
 ;
-;
-;
 
-.mount:
+mount:
 	cmp	cl,2
-	jb	.list_mounted
+	jb	list_mounted
 
 	cmp	word [ebx],"-o"
 	jnz	.m1
@@ -85,7 +85,7 @@ START:
 	or	al,al
 	jnz	.o0
 
-	inc	byte [buf]	;indicate that this is the last option
+	inc	byte [buf]	;indicate the last option
 
 .o1:
 	mov	ebx,esi
@@ -117,6 +117,7 @@ START:
 .m0:
 	pop	ebx
 .m1:	
+	mov	edx,buf
 	cmp	word [ebx],"-t"
 	jnz	.do_mount
 
@@ -126,21 +127,33 @@ START:
 .do_mount:
 	pop	ecx		;mountpoint
 
+	call	do_mount
+
+	or	dword [flag],MS_RDONLY
+	call	do_mount
+	and	dword [flag],~MS_RDONLY
+	or	dword [flag],MS_NODEV
+	call	do_mount
+	or	dword [flag],MS_RDONLY
+	call	do_mount
+	jmp	do_exit
+
+do_mount:
 %ifdef	__BSD__
 	mov	[buf],ebx	;void *data points to structure, where char* is the first
 	mov	ebx,edx		;fstype
 	mov	esi,buf		;data
 	mov	edx,[flag]	;flags
 %else
+;for pre 0.97 version of mount there should be in high word of flags
+;magic MSC_MGC_VAL dont know which kernel need this 
 	mov	esi,[flag]
 	xor	edi,edi
 %endif
-
-;for pre 0.97 version of mount there should be in high word of flags
-;magic MSC_MGC_VAL dont know which kernel need this 
-
 	sys_mount
-	jmp	.exit
+	test	eax,eax
+	jns	near do_exit
+	ret
 
 mount_options:
 
