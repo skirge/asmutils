@@ -1,11 +1,12 @@
-;Copyright (C) 2000-2002 Alexandr Gorlov <ct@mail.ru>
+;Copyright (C) 2000-2003 Alexandr Gorlov <ct@mail.ru>
 ;			 Karsten Scheibler <karsten.scheibler@bigfoot.de>
 ;			 Rudolf Marek <marekr2@fel.cvut.cz>
 ;       		 Joshua Hudson <joshudson@hotmail.com>
 ;       		 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;       		 Konstantin Boldyshev <konst@linuxassembly.org>
+;       		 Nick Kurshev <nickols_k@mail.ru>
 ;
-;$Id: sh.asm,v 1.23 2003/02/13 18:24:51 konst Exp $
+;$Id: sh.asm,v 1.24 2003/06/07 06:32:15 nickols_k Exp $
 ;
 ;hackers' shell
 ;
@@ -69,6 +70,7 @@
 ;0.09  08-Mar-2002	added clear internal (KB)
 ;0.10  26-Sep-2002	Fixed tab-filling (RM)
 ;0.11  11-Feb-2003	Improved Jobs, added umask (merged another tree) (JH)
+;0.12  06-Jun-2003	added: help, enable, pushd, popd, dirs (NK)
 
 %include "system.inc"
 
@@ -93,6 +95,7 @@
 %assign CMDLINE_MAX_ARGUMENTS		(CMDLINE_BUFFER1_SIZE / 2)
 %assign CMDLINE_MAX_ENVIRONMENT		50
 %assign MAX_PID				10 ;how many background processes we can handle
+%assign PATH_MAX			0x1000 ;; according on <linux/limits.h>
 
 %assign ENTER 		0x0a
 %assign BACKSPACE 	0x08
@@ -1471,18 +1474,22 @@ serve_casualties:
 ;****************************************************************************
 cmdline_execute:
 execute_builtin:
-	xor	ebx, ebx
-	dec	ebx
+	mov	ebx, builtin_cmds.table
 .next:
-	inc	ebx
 	mov	edi,[cmdline.arguments]
-	mov	esi,[builtin_cmds.table + 8 * ebx]
+	mov	esi,[ebx+builtin_cmds_s.name]
 	test	esi,esi
 	jz	.end
 	call	string_compare
 	test	ecx,ecx
-	jnz	.next
-	jmp	[builtin_cmds.table + 8 * ebx + 4]
+	jz	.do_exec
+	add	ebx,builtin_cmds_s_size
+	jmp	.next
+.do_exec:
+	mov	eax, [ebx+builtin_cmds_s.flags]
+	test	eax, eax
+	jz	.end
+	jmp	[ebx+builtin_cmds_s.cmd]
 .end:
 	;----    |
 	;fork    |
@@ -1827,6 +1834,7 @@ cmd_exit:
 ;****************************************************************************
 cmd_cd:
 	mov	ebx,[cmdline.arguments + 4]
+.has_arg:
 	sys_chdir
 	test	eax,eax
 	jns	.end
@@ -2099,6 +2107,140 @@ cmd_clear:
 .cls	db	0x1b,"[H",0x1b,"[J",0
 
 ;****************************************************************************
+; cmd_enable:
+; Implements the following behaviour:
+; enable -n         -    disables all builtin commands
+; enable -n cmd     -    disables builtin 'cmd'
+; enable -a	    -    enables all builtin commands
+; enable cmd        -    enables given builtin 'cmd'
+; Note! You may not disable 'enable' cmd except fixing sources
+;****************************************************************************
+cmd_enable:
+	mov	ebx,[cmdline.arguments + 4]
+	xor	eax, eax
+	cmp	word [ebx], '-n'
+	je	.disable_it
+	cmp	word [ebx], '-a'
+	je	.all_cmds
+	inc	eax
+	jmp	.proceed
+.all_cmds:
+	inc	eax
+	xor	ebx, ebx
+	jmp	.proceed
+.disable_it:
+	mov	ebx,[cmdline.arguments+8]
+	jmp	.proceed
+	
+.proceed:
+; ebx - cmd name (0 - for all)
+; eax - flags to be set
+
+	mov	edx,builtin_cmds.table
+.next:
+	mov	edi,[edx+builtin_cmds_s.name]
+	mov	esi,[edx+builtin_cmds_s.flags] ;; PPro optimization ;)
+	test	edi,edi
+	jz	.end
+	cmp	esi, -1 ;; don't disable 'enable'
+	je	.skip
+	test	ebx, ebx
+	jz	.do_it   ;; for all
+	mov	edi, ebx
+	mov	esi,[edx+builtin_cmds_s.name]
+	push	eax
+	call	string_compare
+	pop	eax
+	test	ecx, ecx
+	jne	.skip
+.do_it:
+	mov	[edx+builtin_cmds_s.flags], eax
+.skip:
+	add	edx,builtin_cmds_s_size
+	jmp	.next
+.end:
+	ret
+
+;****************************************************************************
+;* cmd_help *****************************************************************
+;****************************************************************************
+cmd_help:
+	WRITE_STRING text.hlp_prompt
+	mov	ebx, builtin_cmds.table
+.next:
+	mov	esi,[ebx+builtin_cmds_s.name]
+	test	esi,esi
+	jz	.end
+	mov	eax,[ebx+builtin_cmds_s.flags]
+	test	eax, eax
+	jnz	.pr_normal
+	WRITE_STRING text.cmd_disabled
+.pr_normal:
+	WRITE_STRING esi
+	WRITE_STRING text.space
+	add	ebx,builtin_cmds_s_size
+	jmp	.next
+.end:
+	WRITE_STRING text.eol
+	ret
+
+;****************************************************************************
+;* cmd_pushd ****************************************************************
+;* Note: currently doesn't support <noargs> and +/-n
+;****************************************************************************
+cmd_pushd:
+	mov	eax, [pushd_top]
+	mov	ebx, [cmdline.arguments + 4] ;; PPro optimization ;)
+	cmp	eax, 4095
+	jae	.end
+	shl	eax, 12 ;; == mul eax, 4096
+	test	ebx, ebx
+	jz	.end
+	lea	edi, [pushd_mem+eax]
+	sys_getcwd edi,PATH_MAX
+	inc	dword [pushd_top]
+	jmp	near cmd_cd
+.end:
+	ret
+
+;****************************************************************************
+;* cmd_popd *****************************************************************
+;* Note: currently doesn't support +/-n
+;****************************************************************************
+cmd_popd:
+	mov	eax, [pushd_top]
+	test	eax, eax
+	jz	.end
+	dec	eax
+	mov	[pushd_top], eax
+	shl	eax, 12 ;; == mul eax, 4096
+	lea	ebx, [pushd_mem+eax]
+	jmp	near cmd_cd.has_arg
+.end:
+	ret
+
+;****************************************************************************
+;* cmd_dirs *****************************************************************
+;* Note: currently doesn't support +/-n -l
+;****************************************************************************
+cmd_dirs:
+	mov	eax, [pushd_top]
+	test	eax, eax
+	jz	.end
+	xor	ecx, ecx
+.loop:
+	mov	eax, ecx
+	shl	eax, 12
+	lea	ebx, [pushd_mem+eax]
+	WRITE_STRING ebx
+	mov	ebx, text.eol
+	WRITE_STRING ebx
+	inc	ecx
+	cmp	ecx, [pushd_top]
+	jb	.loop
+.end:
+	ret
+;****************************************************************************
 ;****************************************************************************
 ;*
 ;* PART 5: read only data
@@ -2107,7 +2249,8 @@ cmd_clear:
 ;****************************************************************************
 
 text:
-.welcome:			db	"asmutils shell", __n, EOL
+.welcome:			db	"asmutils shell"
+.eol				db	__n, EOL
 .prompt_user:			db	"$ ", EOL
 .prompt_root:			db	"# ", EOL
 .prompt_ptrace:			db	"+ ", EOL
@@ -2121,26 +2264,40 @@ text:
 .stopped:			db 	"Stopped id: ", EOL
 .nosuchjob			db	"No such job", __n, EOL
 .nosuchpid			db	"Child is 0xDEAD. I'm sorry", __n, EOL
+.hlp_prompt			db	"These shell commands are defined internally",__n,"A star (*) next to a name means that the command is disabled",__n,__n,EOL
 %ifdef DEBUG
 .break:				db	__n,">>SIGINT received<<,sending SIGTERM", __n, EOL
 %endif
+.space				db	' ', EOL
+.cmd_disabled			db	"*",EOL
+
+STRUC builtin_cmds_s
+.name:		resd	1
+.cmd:		resd	1
+.flags:		resd	1
+ENDSTRUC
 
 builtin_cmds:
 		align	4
 .table:
-		dd	.exit, cmd_exit
-		dd	.logout, cmd_exit
-		dd	.cd, cmd_cd
-		dd      .export, cmd_export
-		dd	.and, cmd_and
-		dd	.or, cmd_or
-		dd	.colon, cmd_colon
-		dd	.fg, cmd_fg
-		dd	.bg, cmd_bg
-		dd	.jobs, cmd_jobs
-		dd	.clear, cmd_clear
-		dd	.umask, cmd_umask
-		dd	0, 0
+		dd	.exit,		cmd_exit,	1
+		dd	.logout,	cmd_exit,	1
+		dd	.cd,		cmd_cd,		1
+		dd	.pushd,		cmd_pushd,	1
+		dd	.popd,		cmd_popd,	1
+		dd	.dirs,		cmd_dirs,	1
+		dd      .enable,	cmd_enable,	-1 ;; 'enable' can't be disabled
+		dd      .export,	cmd_export,	1
+		dd	.and,		cmd_and,	1
+		dd	.or,		cmd_or,		1
+		dd	.colon,		cmd_colon,	1
+		dd	.fg,		cmd_fg,		1
+		dd	.bg,		cmd_bg,		1
+		dd	.jobs,		cmd_jobs,	1
+		dd	.clear,		cmd_clear,	1
+		dd	.umask,		cmd_umask,	1
+		dd	.help,		cmd_help,	1
+		dd	0,		0,		0
 
 .and		db	"&&", 0
 .or		db	"||", 0
@@ -2148,13 +2305,31 @@ builtin_cmds:
 .exit		db	"exit", 0
 .logout		db	"logout", 0
 .cd		db	"cd", 0
+.pushd		db	"pushd", 0
+.popd		db	"popd", 0
+.dirs		db	"dirs", 0
+.enable		db      "enable", 0
 .export		db      "export", 0
 .fg		db	"fg", 0
 .bg		db 	"bg", 0
 .jobs		db	"jobs", 0
 .clear		db	"clear", 0
 .umask		db	"umask", 0
-
+.help		db	"help", 0
+;TODO:
+; ==============================================================
+; variables
+; = (variable=value)
+;===============================================================
+; alias, bind, break, builtin, case, command,
+; continue, declare, eval, exec, fc, function
+; for, getopts, hash, history, if, kill, let, local,
+; read, readonly, return, set, shift, source,
+; suspend, times, trap, type, typeset, ulimit, umask, unalias,
+; unset, until, wait, while
+;===============================================================
+; test ??? 
+;===============================================================
 .paths		db	"/bin", 0
 		db	"/sbin", 0
 		db	"/usr/bin", 0
@@ -2166,6 +2341,7 @@ erase_line      db	0x1b,"[2K",0xd
 insert_char 	db	0x1b,"[1@]"
 delete_one_char db	0x8,0x1b,"[1P"
 beep   		db	0x07
+pushd_top	dd	0
 
 ;****************************************************************************
 ;****************************************************************************
@@ -2237,5 +2413,7 @@ pid_array		resd	MAX_PID
 rtn			resd	1	;return code
 script_fd		resd	1	;script handle
 cur_pid			resd	1
+
+pushd_mem:		resb	PATH_MAX*4096
 
 END
