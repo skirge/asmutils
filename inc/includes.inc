@@ -1,6 +1,6 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.16 2002/03/05 16:38:41 konst Exp $
+; $Id: includes.inc,v 1.17 2002/03/08 19:11:49 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
@@ -362,15 +362,17 @@ struc timeval
 endstruc
 
 struc tm
-.sec		ULONG 1
-.min		ULONG 1
-.hour		ULONG 1
-.mday		ULONG 1
-.mon		ULONG 1
-.year		ULONG 1
-.wday		ULONG 1
-.yday		ULONG 1
-.isdst		ULONG 1
+.tm_sec		INT	1
+.tm_min		INT	1
+.tm_hour	INT	1
+.tm_mday	INT	1
+.tm_mon		INT	1
+.tm_year	INT	1
+.tm_wday	INT	1
+.tm_yday	INT	1
+.tm_isdst	INT	1
+.tm_gmtoff	LONG	1	;Seconds east of UTC
+.tm_zone	PCHAR	1	;Timezone abbreviation
 endstruc
 
 ;

@@ -9,7 +9,7 @@
 ;; to be your timezone's offset from UTC/GMT if you're
 ;; picky about "current month".
 
-;; $Id: cal.asm,v 1.2 2002/03/08 18:58:41 konst Exp $
+;; $Id: cal.asm,v 1.3 2002/03/08 19:10:14 konst Exp $
 
 %include "system.inc"
 
@@ -129,7 +129,7 @@ set_tm_wday:
 	_mov	edx, NULL
 	_mov	ecx, DAYS_PER_WEEK
 	div	ecx
-	_mov	[tm_struct.wday], edx
+	_mov	[tm_struct.tm_wday], edx
 
 set_tm_year:
 	_mov	eax, edi	; days
@@ -138,7 +138,7 @@ set_tm_year:
 	div	ecx
 	_mov	esi, eax
 	_add	esi, 1970
-	_mov	[tm_struct.year], esi
+	_mov	[tm_struct.tm_year], esi
 
 	_mov	ebx, edx
 set_tm_yday:
@@ -171,16 +171,16 @@ set_tm_mon:
 .found_mon_yday:
 	cld
 	dec	ecx
-	_mov	[tm_struct.mon], ecx
+	_mov	[tm_struct.tm_mon], ecx
 
 set_tm_mday:
 	sub	bx, ax
 	inc	ebx
-	_mov	[tm_struct.mday], ebx
+	_mov	[tm_struct.tm_mday], ebx
 
 	;; put month in top row
 	_mov	esi, months
-	_mov	ecx, [tm_struct.mon]
+	_mov	ecx, [tm_struct.tm_mon]
 	inc	ecx
 	rep	lodsd
 	_mov	edi, month_buf.month_year
@@ -188,7 +188,7 @@ set_tm_mday:
 	stosd
 
 	;; put year in top row
-	_mov	eax, [tm_struct.year]
+	_mov	eax, [tm_struct.tm_year]
 	_add	edi, 3		; end of year
 	_mov	ebx, 3		; num of digits - 1
 	call	int2str
@@ -198,12 +198,12 @@ set_tm_mday:
 	;; so we divide mday by 7 (days per week) and subtract the
 	;; remainder (minus one) from the wday (and make sure it's positive).
 	;; (maybe instead subtract 7 till mday <= 7)
-	_mov	eax, [tm_struct.mday]
+	_mov	eax, [tm_struct.tm_mday]
 	_mov	edx, NULL
 	_mov	ecx, DAYS_PER_WEEK
 	div	ecx
 	dec	edx
-	_mov	ecx, [tm_struct.wday]
+	_mov	ecx, [tm_struct.tm_wday]
 	sub	ecx, edx	; subtract remainder from mday
 	_cmp	ecx, 0		; make sure it isn't negative
 	jge	.wday_nonnegative
@@ -231,7 +231,7 @@ set_tm_mday:
 	jnz	.not_leap_year2
 	_add	esi, mon_yday_len
 .not_leap_year2:
-	_mov	ecx, [tm_struct.mon]
+	_mov	ecx, [tm_struct.tm_mon]
 	_xor	eax, eax
 	_xor	edx, edx
 	lodsw			; load the 1st zero
@@ -308,17 +308,8 @@ UDATASEG
 timeval_struct B_STRUC timeval, .tv_sec, .tv_usec
 	timeval_struct_len	equ	$ - timeval_struct
 
-tm_struct:
-.sec		ULONG 1
-.min		ULONG 1
-.hour		ULONG 1
-.mday		ULONG 1
-.mon		ULONG 1
-.year		ULONG 1
-.wday		ULONG 1
-.yday		ULONG 1
-.isdst		ULONG 1
-tm_struct_len	equ	$ - tm_struct
+tm_struct B_STRUC tm, .tm_mday, .tm_mon, .tm_year,  .tm_wday
+	tm_struct_len	equ	$ - tm_struct
 
 is_leap_year	resd	1
 
