@@ -1,8 +1,10 @@
 ;Copyright (C) 2000-2002 Alexandr Gorlov <ct@mail.ru>
 ;			 Karsten Scheibler <karsten.scheibler@bigfoot.de>
 ;			 Rudolf Marek <marekr2@fel.cvut.cz>
+;			 Joshua Hudson <joshudson@hotmail.com>
+;			 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;
-;$Id: sh.asm,v 1.9 2002/02/14 13:38:15 konst Exp $
+;$Id: sh.asm,v 1.10 2002/02/19 07:15:06 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -40,6 +42,8 @@
 ;0.04: 30-Jan-2002	Added and/or internals and scripting (JH)
 ;0.05: 10-Feb-2002      Added pipe mania & redir support, 
 ;			shell inherits parent's env if any (RM)
+;0.06: 18-Feb-2002      Added $environment variable handling and
+;			some control-characters (TO)
 
 %include "system.inc"
 
@@ -74,6 +78,8 @@
 %assign DEL 		7fh
 %assign TABULATOR 	09h
 %assign ESC 		01bh
+%assign CTRL_D		04h
+%assign CTRL_L		0ch
 %assign file_buff_size 	0512
 
 
@@ -461,6 +467,10 @@ cmdline_get:
 			jz	near .back_space
 			cmp     al,DEL
 			jz	near .back_space
+			cmp     al,CTRL_D
+			jz  near cmd_exit
+			cmp     al,CTRL_L
+			jz  near .clear
 			sys_write STDOUT,getchar,1
 			mov 	al,[getchar]
 			cmp 	al,ENTER
@@ -500,6 +510,15 @@ cmdline_get:
 			xor 	eax,eax			    ;if EAX==1 =>eax=0 
 .ok_end:
 			ret				;bye bye ...
+
+;; copied/stolen from clear.asm ;;
+.clstr   db  0x1b,"[H",0x1b,"[J"
+clstrlen equ $ - .clstr
+
+.clear:
+				sys_write STDOUT, .clstr, clstrlen
+				jmp get_cmdline
+
 .back_space:	
 			cmp 	edi,cmdline.buffer1    ;check outer limits
  			jz   near .beep
@@ -903,6 +922,8 @@ cmdline_parse_restart:
 			jz	near  .end      ;we are done
 			test	dword ebx, cmdline_parse_flags.seperator ;are we in argument or between ?
 			jnz	.check_seperator
+			cmp byte  al, '$'
+			je  near .get_env
 			cmp	byte  al, 0x09		;between
 			je	.skip_character
 			cmp	byte  al, 0x0a
@@ -1016,7 +1037,56 @@ cmdline_parse_restart:
 			mov	dword [cmdline.arguments_offset], ebp
 
 			ret ;leave parser
-    
+			
+.get_env:
+			push edi
+			push ecx
+			push edx
+			push esi
+			mov  edi, esi
+			mov  esi, cmdline.environment
+			mov  ecx, [edi]
+			mov  edx, ecx
+.env_loop:
+			lodsd
+			or eax, eax
+			jz .Lnope
+			cmp [eax], edx
+			jnz .env_loop
+			push esi
+			push edi
+			mov esi, eax
+			repz cmpsb
+			cmp byte [esi-1], '='
+			jz .Lout_first
+			pop esi
+			pop edi
+			jmp .env_loop
+.Lout_first:
+			pop edx
+			pop edx
+.Lout:
+			mov long [cmdline.arguments + ebp*4], esi
+			inc ebp
+			mov esi, edi
+			pop edx
+			pop edx
+			inc edx
+			jmp .Lnext
+.Lnope:
+			pop esi
+.Lnope_loop:
+			lodsb
+			or  al, al
+			jz .Lyet_another_label
+			cmp al, ' '
+			jg .Lnope_loop
+.Lyet_another_label:
+			pop edx
+.Lnext:
+			pop ecx
+			pop edi
+			jmp .next_character
 
 .pipe:
 			push 	ecx ;how many chars left ??? Decrease by one ?
