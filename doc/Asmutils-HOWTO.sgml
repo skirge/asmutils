@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.5 2001/01/21 15:18:46 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.6 2001/01/21 16:30:15 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -23,10 +23,10 @@
 </author>
 
 <releaseinfo>Version 0.5</releaseinfo>
-<pubdate role="cvs">$Date: 2001/01/21 15:18:46 $</pubdate>
+<pubdate role="cvs">$Date: 2001/01/21 16:30:15 $</pubdate>
 
 <copyright>
-<year>1999-2000</year><holder>Konstantin Boldyshev</holder>
+<year>1999-2001</year><holder>Konstantin Boldyshev</holder>
 </copyright>
 
 <legalnotice><para>
@@ -544,9 +544,11 @@ memory, and thus can be used within an ELF_DATA section.
 <section id="s-debug">
 <title>Debugging your code</title>
 
+<para>
 First, you must enable debugging information by setting
 <function>DEBUG = y</function> in <filename>MCONFIG</filename>.
 Then rebuild your code, and try one of the available debuggers:
+</para>
 
 <section><title>ald</title>
 
@@ -1001,7 +1003,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.5 2001/01/21 15:18:46 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.6 2001/01/21 16:30:15 konst Exp $
 </literal></para>
 </appendix>
 
