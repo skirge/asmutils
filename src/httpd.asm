@@ -1,6 +1,8 @@
-;Copyright (C) 1999 Indrek Mandre <indrek@mare.ee>
+;Copyright (C) 1999-2002 Indrek Mandre <indrek@mare.ee>
+;			 Konstantin Boldyshev <konst@linuxassembly.org>
+;			 Rudolf Marek <marekr2@fel.cvut.cz>
 ;
-;$Id: httpd.asm,v 1.16 2002/03/07 06:16:39 konst Exp $
+;$Id: httpd.asm,v 1.17 2002/03/14 07:45:12 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -45,7 +47,8 @@
 ;			added extension-content type table,
 ;			fixed infinite loop if err404file is missing,
 ;			size improvements (KB)
-;0.11  03-Mar-2002      added initial cgi support (SL)
+;0.11  14-Mar-2002      added initial cgi support (SL),
+;			'%' support in filenames (IM)
 
 %include "system.inc"
 
@@ -76,9 +79,11 @@
 ;%define	LOG
 ;%define	ERR404
 ;%define	CGI
+;%define	PROC_HANDLE	;%
 
 %ifdef	LOG
 %define	LOG_HEADER
+%define	LOG_DEBUG
 %endif
 
 CODESEG
@@ -210,7 +215,7 @@ acceptloop:
 	push	edi
 	mov	edi,filebuf+020
 	mov	esi,edi
-	xchg	ah,al	
+	xchg	ah,al		
 	ror	eax,16
 	xchg	ah,al
 	call	i2ip
@@ -259,24 +264,31 @@ acceptloop:
 
 	mov	ecx,filebuf+4	;past "GET "
 .loopme:
-	mov	al,[ecx]
-	mov	[ebx],al
-	cmp	word [ecx],".."
+	cmp	word [ebx-2],".."
 	jz	near endrequest	;security error, can't have '..' in request
 .endrequestnot:
-	inc	ebx
-	inc	ecx
 	mov	dl,[ecx]
+%ifdef	PROC_HANDLE
+	cmp	dl,'%'
+	jnz	.not_proc
+	call	convert_into_dl
+.not_proc:
+%endif
+	mov	[ebx],dl
 	or	dl,dl
 	je	.loopout
 	cmp	dl,' '
+	jb	endrequest
 	jz	.loopout
 	cmp	dl,'?'
 	jz	.loopout
 	cmp	dl,0xd
 	jz	.loopout
 	cmp	dl,0xa
-	jnz	.loopme
+	jz	.loopout
+	inc	ebx
+	inc	ecx
+	jmps 	.loopme
 .loopout:
 	mov	byte [ebx],0
 	cmp	byte [ebx-1],'/'
@@ -288,6 +300,12 @@ acceptloop:
 ;	mov	dword [ebx+4],"x.ht"
 ;	mov	word [ebx+8],"ml"
 index:
+%ifdef LOG_DEBUG
+	mov	ecx,finalpath
+	sub	ebx,ecx
+	sys_write [logfd],EMPTY,ebx
+%endif
+
 	sys_open finalpath,O_RDONLY
 	test	eax,eax
 %ifdef	ERR404
@@ -510,6 +528,40 @@ execcgi:
 	;; Hopefully we don't get here
 	popa
 	ret
+%endif		
+
+%ifdef PROC_HANDLE
+;ecx - source % in our case
+convert_into_dl:
+		push 	eax
+		inc 	ecx
+		xor 	eax,eax
+		xor	edx,edx
+		mov 	al,[ecx]
+		call	.check_b
+		mov 	dl,al		
+		shl	dl,4
+		inc 	ecx
+		mov 	al,[ecx]
+		call	.check_b		
+		add	edx,eax
+		pop	eax
+		ret
+.check_b:
+	    	sub	al,'0'
+		jb	endrequest_jmp
+		cmp 	al,010
+		jb	.ok
+    		and     al,0dfh                 ;force upper case
+		cmp	al,010h
+		jz	endrequest_jmp
+		cmp	al,'F'-'0'
+		ja	endrequest_jmp
+    		add     al,9                    ;ok, add 9 for strip
+.ok:
+    		and     al,0fh                  ;strip high 4 bits
+		ret
+endrequest_jmp:	jmp 	endrequest
 %endif
 
 UDATASEG
@@ -521,6 +573,9 @@ err404		resd	1	;pointer
 %ifdef	LOG
 logfd	resd	1
 %endif
+%ifdef	CGI
+execve_argv	resd	2	;two ptrs, argv[0] and NULL
+%endif
 
 arg1	resb	0xff
 arg2	resb	0xff
@@ -528,8 +583,6 @@ arg2	resb	0xff
 root	resd	1
 
 bindsockstruct	resd	4
-
-execve_argv	resd	2	;two ptrs, argv[0] and NULL
 
 finalpath	resb	0x1010	;10 is for safety
 filebuf		resb	0x1010
