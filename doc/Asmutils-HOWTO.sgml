@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.12 2002/01/05 08:38:18 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.13 2002/01/28 08:34:14 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -23,7 +23,7 @@
 </author>
 
 <releaseinfo>Version 0.8</releaseinfo>
-<pubdate role="cvs">$Date: 2002/01/05 08:38:18 $</pubdate>
+<pubdate role="cvs">$Date: 2002/01/28 08:34:14 $</pubdate>
 
 <copyright>
 <year>1999-2002</year><holder>Konstantin Boldyshev</holder>
@@ -182,8 +182,9 @@ have their own additional configuration in the source code.
 </para></note>
 
 <note><para>
-You can easily cross-compile <application>asmutils</application>, at least
-if executable format on target OS is the same (it depends on linker).
+You can easily cross-compile <application>asmutils</application>.
+With <function>ELF_MACROS</function> you will even not need a linker,
+without them linker must support target OS executable format.
 </para></note>
 
 <note><para>
@@ -259,7 +260,8 @@ END
 
 <para>
 This file is vital and MUST be included into program code to do anything else;
-without this file you'll have to write in usual boring way.
+it provides the framework and macros described here,
+without it you have to write in usual boring way.
 </para>
 
 <para>
@@ -431,7 +433,7 @@ use sys_syscallname as macro name.
 <section id="inc-elf"><title>elf.inc</title>
 
 <para>
-<emphasis>Currently this file applies only to Linux.</emphasis>
+<emphasis>This file applies only to ELF systems.</emphasis>
 ELF macros are defined here.
 These macros can be (and are, by default) used to reduce the final size
 of an executable. Almost all of them (except <function>ELF_AT</function>)
@@ -1011,7 +1013,7 @@ Seek, and you may find more..
 <para><revhistory>
 
 <revision>
-<revnumber>0.8</revnumber><date>05 Jan 2002</date><authorinitials>konst</authorinitials>
+<revnumber>0.8</revnumber><date>28 Jan 2002</date><authorinitials>konst</authorinitials>
 <revremark>more notes on contributions, cleanups</revremark>
 </revision>
 
@@ -1084,7 +1086,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.12 2002/01/05 08:38:18 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.13 2002/01/28 08:34:14 konst Exp $
 </literal></para>
 </appendix>
 
