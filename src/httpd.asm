@@ -2,7 +2,7 @@
 ;			 Konstantin Boldyshev <konst@linuxassembly.org>
 ;			 Rudolf Marek <marekr2@fel.cvut.cz>
 ;
-;$Id: httpd.asm,v 1.20 2002/09/09 15:50:50 konst Exp $
+;$Id: httpd.asm,v 1.21 2002/10/01 15:53:11 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -51,7 +51,7 @@
 ;			'%' support in filenames (RM),
 ;			send default mimetype for unknown extensions (KB)
 ;0.12  30-Aug-2002	no longer runs as root if UID defined (JH)
-;			fixed cgi build problem
+;			fixed cgi build problem, sendfile support (saved 21 bytes) (RM)
 
 %include "system.inc"
 
@@ -87,7 +87,13 @@
 
 %ifdef	LOG
 %define	LOG_HEADER
-%define	LOG_DEBUG
+;%define	LOG_DEBUG
+%endif
+
+%ifdef  __LINUX__
+    %if __KERNEL__ >=22
+    %define USE_SENDFILE
+    %endif
 %endif
 
 CODESEG
@@ -354,6 +360,12 @@ sendnoncgi:
 	mov	ebx,eax
 	mov	esi,eax
 	mov	ecx,filebuf
+%ifdef USE_SENDFILE
+;sendfile(int out_fd, int in_fd, off_t *offset, size_t count);
+        push byte 0 ;we can leave this on stack
+        sys_sendfile edi,eax,esp,0xffffffff  ;Linux 2.2+ support this
+        sys_close ecx
+%else
 .writeloop:
 	sys_read EMPTY,EMPTY,0xfff
 	test	eax,eax
@@ -366,7 +378,7 @@ sendnoncgi:
 	jns	.writeloop
 .endread:
 	sys_close
-
+%endif
 ;due the stupidity of netscape we need to send another packet newline \n,
 ;so it can handle one line data but I'm afraid it might break something,
 ;so watch this code carefully in the future
