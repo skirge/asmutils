@@ -1,203 +1,239 @@
-;Copyright (C) 2001, Tiago Gasiba (ee97034@fe.up.pt)
+;Copyright (C) 2001 Tiago Gasiba <ee97034@fe.up.pt>
 ;
-;$Id: less.asm,v 1.5 2002/02/02 08:49:25 konst Exp $
+;$Id: less.asm,v 1.6 2002/03/14 06:08:37 konst Exp $
 ;
-;hackers' less
+;hackers' less/more
 ;
-;syntax:
-;	less file
-; or    less < file
+;syntax: less [filename]
+;
+;example: less /etc/passwd
+;	  ls -l | more
 ;
 ;TODO:
 ;	- add "/" (search)
-;	- optimize source code
+;	- view multiply files
 ;
-;known bugs:
-;	- lines numbers reported may not correspond to true line numbers
-; 
-;
-;0.01    24/08/01     initial release
-;0.02    08/09/01     some bug fixes
+;0.01:	24-Aug-2001	initial release
+;0.02:	08-Sep-2001	some bug fixes
+;0.03:	14-Mar-2002	dynamic window size, redirection check, 
+;			enter & space keys, optimization (KB)
 
 %include "system.inc"
 
-LineWidth		equ	80
-NumLines		equ	24
+%assign	LineWidth	80	;default values
+%assign	NumLines	24	;
+
+%assign	BUFF_IN_LEN	8192
+%assign	MEM_RESERV	1024
 
 KEY_DOWN		equ	0x00425b1b
 KEY_UP			equ	0x00415b1b
-KEY_Q			equ	0x00000051
-KEY_q			equ	0x00000071
 KEY_PGDOWN		equ	0x7e365b1b
 KEY_PGUP		equ	0x7e355b1b
 KEY_HOME		equ	0x7e315b1b
 KEY_END			equ	0x7e345b1b
 
-BUFF_IN_LEN		equ	8192
-MEM_RESERV		equ	1024
-
-TAB			equ	9
+KEY_ENTER		equ	0xa
+KEY_SPACE		equ	" "
+KEY_b			equ	"b"
+KEY_q			equ	"q"
+KEY_Q			equ	"Q"
 
 CODESEG
 
+key_table:
+	dd	KEY_q,		terminate
+	dd	KEY_Q,		terminate
+	dd	KEY_UP,		event_key_up
+	dd	KEY_DOWN,	event_key_down
+	dd	KEY_ENTER,	event_key_down
+	dd	KEY_SPACE,	event_key_pgdown
+	dd	KEY_PGDOWN,	event_key_pgdown
+	dd	KEY_PGUP,	event_key_pgup
+	dd	KEY_b,		event_key_pgup
+	dd	KEY_END,	event_key_end
+	dd	KEY_HOME,	event_key_home
+key_table_end:
+
+write_nl:
+		sys_write STDOUT,nl,1
+		ret
+
+terminate:
+		sys_ioctl STDERR,TCSETS,oldtermios
+		call	write_nl
+do_exit:
+		sys_exit 0
+
 START:
+
 begin:
-		push	byte STDIN
-		pop	dword [fd]
+;		_mov	eax,STDIN
+;		mov	[fd],eax
 
 		pop	ebx
 		dec	ebx
 		pop	ebx
 		jz	.entrada
 		pop	ebx
-		_mov	ecx,O_RDONLY
-		sys_open
-		mov	dword [fd],eax
+		sys_open EMPTY,O_RDONLY
+		mov	[fd],eax
 .entrada:
-		sys_ioctl	STDERR,TCGETS,oldtermios
-		sys_ioctl	STDERR,EMPTY,newtermios
+		sys_ioctl [fd],TCGETS,oldtermios	;redirection check
+		test	eax,eax
+		jns	do_exit
+
+		sys_ioctl STDOUT,TIOCGWINSZ,window	;get window size
+		dec	word [edx]			;exclude one row
+		or	eax,eax
+		jz	.set_stderr
+
+		mov	dword [edx], LineWidth << 16 | NumLines	;defaults
+		
+.set_stderr:
+		sys_ioctl STDERR,TCGETS,oldtermios
+		sys_ioctl STDERR,EMPTY,newtermios
 		and	dword [newtermios+termios.c_lflag],~(ICANON|ECHO|ISIG)
-		sys_ioctl	STDERR,TCSETS,newtermios
+		sys_ioctl STDERR,TCSETS,newtermios
+
 		call	ler_ficheiro
 		call	init_lines
 
-		push	byte 0
-		pop	dword [pos]		; set position = 0 (TOP)
+;		xor	eax,eax
+;		mov	[pos],eax		; set position = 0 (TOP)
 
 .reescreve:
-		sys_write	STDOUT,clear,clearlen
+		sys_write STDOUT,clear,clear_len
 		call	write_lines
-		sys_write	STDOUT,rev_on,rev_on_len
-		mov	eax,dword [pos]
+		sys_write STDOUT,rev_on,rev_on_len
+		mov	eax,[pos]
 		mov	edi,msg
 		call	itoa
 		inc	edx
 		push	edx
 		mov	byte [edi],'/'
 		inc	edi
-		mov	eax,dword [nlines]
+		mov	eax,[nlines]
 		call	itoa
 		pop	eax
 		add	edx,eax
-		sys_write	STDOUT,msg
-		sys_write	STDOUT,rev_off,rev_off_len
+		sys_write STDOUT,msg
+		sys_write STDOUT,rev_off,rev_off_len
 .outra_vez:
-		push	byte 0
-		pop	dword [key_pressed]
-		sys_read	STDERR,key_pressed,4
-		mov	eax,[key_pressed]
+		mov	ecx,key_pressed
+		xor	eax,eax
+		mov	[ecx],eax
 
-		cmp	eax,KEY_q		; KEY_q event
-		je	.terminar
+		sys_read STDERR,EMPTY,4
 
-		cmp	eax,KEY_Q		; KEY_Q event
-		je	.terminar
+		mov	eax,[ecx]
+		mov	ebx,key_table
+.check:
+		cmp	eax,[ebx]
+		jz	.call
+		add	ebx,byte 8
+		cmp	ebx,key_table_end
+		jz	.outra_vez
+		jmps	.check
+.call:
 
-		cmp	eax,KEY_UP		; KEY_UP event
-		je	near event_key_up
+%define	POS	ecx
+%define	NLINES	edx
+%define	HEIGHT	ebp
 
-		cmp	eax,KEY_PGDOWN		; KEY_PGDOWN event
-		je	near event_key_pgdown
-
-		cmp	eax,KEY_PGUP		; KEY_PGUP event
-		je	near	event_key_pgup
-
-		cmp	eax,KEY_END		; KEY_END event
-		je	near	event_key_end
-
-		cmp	eax,KEY_HOME		; KEY_HOME event
-		je	near	event_key_home
-
-		cmp	eax,KEY_DOWN		; KEY_DOWN event
-		je	event_key_down
-
-		jmp	short	.outra_vez
-.terminar:
-		sys_ioctl	STDERR,TCSETS,oldtermios
-		sys_write	STDOUT,NL,1
-		sys_exit	0
+		mov	POS,[pos]
+		mov	NLINES,[nlines]
+		movzx	HEIGHT,word [window.ws_row]
+		call	[ebx + 4]
+		mov	[pos],POS
+		mov	[nlines],NLINES
+		jmp	begin.reescreve
 
 
 ;=====================================================
 ;                  event_key_up
 ;=====================================================
+
 event_key_up:
-	cmp	dword [pos],0
-	je	near bell
-	cmp	dword [nlines],NumLines
-	jl	near	bell
-	dec	dword [pos]
-	jmp	near begin.reescreve
+	test	POS,POS
+	je	bell
+	cmp	NLINES,HEIGHT
+	jl	bell
+	dec	POS
+	ret
 
 ;=====================================================
 ;                  event_key_down
 ;=====================================================
 event_key_down:
-	cmp	dword [nlines],NumLines
-	jl	near bell
-	mov	eax,dword [nlines]
-	sub	eax,NumLines
-	cmp	dword [pos],eax
-	je	near bell
-	inc	dword [pos]
-	jmp	near begin.reescreve
+	cmp	NLINES,HEIGHT
+	jl	bell
+	mov	eax,NLINES
+	sub	eax,HEIGHT
+	cmp	POS,eax
+	je	bell
+	inc	POS
+	ret
 
 ;=====================================================
 ;                  event_key_pgdown
 ;=====================================================
 event_key_pgdown:
-	cmp	dword [nlines],NumLines
+	cmp	NLINES,HEIGHT
 	jl	bell
-	mov	eax,dword [nlines]
-	sub	eax,NumLines
-	mov	ebx,dword [pos]
-	add	ebx,NumLines
+	mov	eax,NLINES
+	sub	eax,HEIGHT
+	mov	ebx,POS
+	add	ebx,HEIGHT
 	cmp	eax,ebx
-	jg	.lbl1
-	mov	dword [pos],eax
-	jmp	short	bell
+	jg	bell.lbl1
+	mov	POS,eax
+bell:
+	pusha
+	sys_write STDOUT,bell_str,1	;bell_str_len
+	popa
+	ret
+
 .lbl1:
-	mov	dword [pos],ebx
-	jmp	near begin.reescreve
+	mov	POS,ebx
+	ret
 
 ;=====================================================
 ;                  event_key_pgup
 ;=====================================================
 event_key_pgup:
-	cmp	dword [nlines],NumLines
+	cmp	NLINES,HEIGHT
 	jl	bell
-	mov	eax,dword [pos]
-	sub	eax,NumLines
+	mov	eax,POS
+	sub	eax,HEIGHT
 	jns	.lbl1
-	push	byte 0
-	pop	dword [pos]
-	jmp	short bell
+	xor	POS,POS
+	jmps	bell
 .lbl1:
-	mov	dword [pos],eax
-	jmp	near begin.reescreve
+	mov	POS,eax
+	ret
 
 ;=====================================================
 ;                  event_key_end
 ;=====================================================
 event_key_end:
-	mov	eax,dword [nlines]
-	cmp	eax,NumLines
+	mov	eax,NLINES
+	cmp	eax,HEIGHT
 	jl	bell
-	sub	eax,NumLines
-	push	eax
-	pop	dword [pos]
-	jmp	short bell
+	sub	eax,HEIGHT
+	mov	POS,eax
+	jmps	bell
 
 ;=====================================================
 ;                  event_key_home
 ;=====================================================
 event_key_home:
-	push	byte	0
-	pop	dword	[pos]
-bell:
-	sys_write	STDOUT,bell_str,bell_str_len
-	jmp	near begin.reescreve
+	xor	POS,POS
+	jmps	bell
 
+%undef	POS
+%undef	NLINES
+%undef	HEIGHT
 
 ;-----------------------------------------------------
 ; function    : ler_ficheiro
@@ -209,8 +245,9 @@ bell:
 ler_ficheiro:
 	pusha
 	_mov	ebp,filebuffer
+	push	ebp
 .lbl1:
-	sys_read	[fd],buffin,BUFF_IN_LEN
+	sys_read [fd],buffin,BUFF_IN_LEN
 
 	test	eax,eax
 	jz	.fim
@@ -219,15 +256,15 @@ ler_ficheiro:
 	push	eax
 	sys_brk
 	_mov	esi,buffin
-	_mov	edi,ebp
+	mov	edi,ebp
 	cld
 	pop	ecx
 	rep	movsb
 	mov	ebp,edi
-	jmp	short	.lbl1
+	jmps	.lbl1
 .fim:	
-	mov	dword [lines],ebp
-	mov	dword [ebp],filebuffer
+	mov	[lines],ebp
+	pop	dword [ebp]	;mov	dword [ebp],filebuffer
 	popa
 	ret
 
@@ -242,34 +279,32 @@ init_lines:
 	pusha
 	cld
 	mov	esi,filebuffer
-	mov	ebp,dword [lines]
+	mov	ebp,[lines]
 	mov	ecx,ebp
 	sub	ecx,esi
 	_mov	edx,0
 	mov	edi,ebp
 .lbl1:
 	lodsb
-	cmp	al,0xa
+	cmp	al,__n
 	je	.lbl3
-	cmp	al,TAB
+	cmp	al,__t
 	jne	.lbl2
-	or	edx,0x7
+	or	edx,byte 7
 .lbl2:
-;	inc	edx
-;	cmp	edx,LineWidth
-	inc	dx			; hope this can do
-	cmp     dx,LineWidth		; this one too
+	inc	edx
+	cmp	dx,[window.ws_col]
 	jl	.lbl5
 .lbl3:
-	add	ebp,4
+	add	ebp,byte 4
 	cmp	edi,ebp
 	jg	.lbl4
-	add	edi,MEM_RESERV
+	_add	edi,MEM_RESERV
 	sys_brk	edi
 .lbl4:
-	mov	dword [ebp],esi
+	mov	[ebp],esi
 	inc	dword [nlines]
-	mov	edx,0
+	_mov	edx,0
 .lbl5:
 	loop	.lbl1
 .fim:
@@ -284,32 +319,33 @@ init_lines:
 ; destroys    : -
 ;-----------------------------------------------------
 write_lines:
-	mov	ebp,dword [lines]
-	mov	edx,dword [pos]
-	mov	eax,dword [nlines]
+	mov	ebp,[lines]
+	mov	edx,[pos]
+	mov	eax,[nlines]
 	sub	eax,edx
 	mov	ecx,eax
 
 	shl	edx,2
 	add	ebp,edx
-	cmp	eax,NumLines
+	movzx	ebx,word [window.ws_row]
+	cmp	eax,ebx
 	jle	.lbl1
-	mov	ecx,NumLines
+	mov	ecx,ebx
 .lbl1:
 	push	ecx
 	push	edx
-	mov	ecx,dword [ebp]
-	mov	edx,dword [ebp+4]
+	mov	ecx,[ebp]
+	mov	edx,[ebp+4]
 	push	edx
 	sub	edx,ecx
-	sys_write	STDOUT
+	sys_write STDOUT
 	pop	edx
 	dec	edx
-	cmp	byte	[edx],0xa
+	cmp	byte [edx],__n
 	je	.lbl2
-	sys_write	STDOUT,NL,1
+	call	write_nl
 .lbl2:
-	add	ebp,4
+	add	ebp,byte 4
 	pop	edx
 	pop	ecx
 	loop	.lbl1
@@ -332,7 +368,7 @@ itoa:
 	jne	.lbl1
 	push	byte 0x30
 	inc	ecx
-	jmp	short .lbl2
+	jmps	.lbl2
 .lbl1:
 	test	eax,eax
 	jz	.lbl2
@@ -341,36 +377,37 @@ itoa:
 	or	dl,0x30
 	push	edx
 	inc	ecx
-	jmp	short .lbl1
+	jmps	.lbl1
 .lbl2:
 	mov	edx,ecx
 .fim:	
 	pop	eax
 	stosb
 	loop	.fim
-	mov	dword [esp+20],edx
+	mov	[esp+20],edx
 	ret
 
-DATASEG
+nl		db	__n
 
-fd		dd	0
 clear		db	0x1b,"[2J",0x1b,"[1H"
-clearlen	equ	$-clear
+clear_len	equ	$-clear
 bell_str	db	7
 bell_str_len	equ	$-bell_str
 rev_on		db	0x1b,"[7m["
 rev_on_len	equ	$-rev_on
 rev_off		db	"]",0x1b,"[27m"
 rev_off_len	equ	$-rev_off
-NL		db	0xa
 
 UDATASEG
 
+fd			resd	1
 msg			resb	LineWidth
-oldtermios:
-	B_STRUC termios,.c_iflag,.c_oflag
-newtermios:
-	B_STRUC termios,.c_iflag,.c_oflag
+
+window		B_STRUC winsize, .ws_row, .ws_col
+
+oldtermios	B_STRUC termios,.c_iflag,.c_oflag
+newtermios	B_STRUC termios,.c_iflag,.c_oflag
+
 key_pressed		resd	1
 lines			resd	1			; pnt to lines struct
 nlines			resd	1			; nr. of lines
