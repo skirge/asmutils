@@ -1,6 +1,6 @@
 ;Copyright (C) 2003 Nick Kurshev <nickols_k@mail.ru>
 ;
-;$Id: ksyms.asm,v 1.2 2003/05/26 05:07:56 konst Exp $
+;$Id: ksyms.asm,v 1.3 2003/05/26 15:25:21 nickols_k Exp $
 ;
 ;hackers' ksyms
 ;
@@ -15,6 +15,7 @@
 ;0.01: 25-May-2003	initial release (note: some code was borrowed from other sources of this project)
 ;
 ; TODO: auto update of symbol 'vers'
+;	dynamic allocation of 'stmp' instead of reserving 130K in UDATASEG.
 ;
 
 %include "system.inc"
@@ -40,8 +41,7 @@ START:
 	jne	.no_ver
 	mov	esi, vers
 	call	printS
-	xor	eax, eax
-	jmp	.do_exit
+	jmps	.success_exit
 .no_ver:
 	cmp	word [esi], '-h'	;; skip column header
 	je	.no_header
@@ -51,14 +51,15 @@ START:
 	mov	esi, [ebp+12]		;; argv[1]
 	cmp	word [esi], '-o'	;; given module only
 	jne	.do
-	xor	eax, eax
-	dec	eax
 	cmp	[ebp+4], byte 3
-	jl	.do_exit		;; not enough arguments
+	jge	.get_mod_name		;; not enough arguments
+	xor	esi, esi
+	call	print_modsym
+	jmps	.success_exit
+.get_mod_name:
 	mov	esi,	[ebp+16]	;; argv[3]
 	call	print_modsym
-	xor	eax, eax
-	jmp	.do_exit
+	jmps	.success_exit
 .do:
 	sys_query_module NULL, QM_MODULES, buf, BUFSIZE, qret
 	test	eax,eax
@@ -82,6 +83,8 @@ START:
 	xor	esi, esi
 	call	print_modsym
 .do_next:
+.success_exit:
+	xor	eax, eax
 .do_exit:
 	sys_exit eax
 	
@@ -244,13 +247,11 @@ obr		db	'[',0
 cbr		db	']',0
 
 UDATASEG
-qret	resd	1
 buf	resb	BUFSIZE
 tmp	resb	BUFSIZE
-itmp	resb	BUFSIZE
-iqret	resd	1
 stmp	resb	BUFSIZE
 sqret	resd	1
+qret	resd	1
 
 
 END
