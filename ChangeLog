@@ -9,8 +9,6 @@
 	  with Linux kernel and asmutils binaries (KS)
         - libm: fixed minor bugs, improved optimizations and test suite,
 		support for different IA-CPUs (preferedly pentium pro) (NK)
-        - heap.asm: heap manager for Linux (RM)
-
 
 
 18-Mar-2001:	asmutils 0.14
