@@ -11,7 +11,7 @@
 ; Version          :     0.8
 ; Created          :     03/15/02
 ;
-; $Id: scons.asm,v 1.1 2002/03/21 08:43:36 konst Exp $
+; $Id: scons.asm,v 1.2 2002/08/16 15:07:08 konst Exp $
 
 %include "system.inc"
 
@@ -37,8 +37,12 @@ START:
 		js near .open_error
 		mov [fd], eax
 		sys_ioctl eax, TCGETS, esp
+%ifdef	__LINUX__
 		and long [esp+termios.c_cflag], ~(CBAUD | CBAUDEX);~B38400
 		or long [esp+termios.c_cflag], B9600	;B38400
+%else
+		mov dword [esp+termios.c_cflag], B9600
+%endif
 		sys_ioctl [fd], TCSETS, esp
 		sys_ioctl STDIN, TCGETS, term
 		sys_ioctl STDIN, TCGETS, esp
@@ -47,7 +51,7 @@ START:
 		xor eax, eax
 		repnz stosb
 		mov byte [esp+termios.c_cc+VQUIT], 0x1c
-		and byte [esp+termios.c_lflag], ~(ECHO | ICANON)
+		and dword [esp+termios.c_lflag], ~(ECHO | ICANON)
 		sys_ioctl STDIN, TCSETS, esp
 		sys_write [fd], init, 2
 .Lread_write:

@@ -1,6 +1,6 @@
 ;Copyright (C) 2002 Attila Monoses <ata@email.ro>
 ;                   Rudolf Marek <marekr2@cs.felk.cvut.cz>, <r.marek@sh.cvut.cz>
-;$Id: ftpd.asm,v 1.4 2002/08/14 16:50:30 konst Exp $
+;$Id: ftpd.asm,v 1.5 2002/08/16 15:07:08 konst Exp $
 ;
 ;hackers' ftpd
 ;
@@ -727,11 +727,11 @@ START:
     test dword [config_flags],ALLOW_MODIFY
     
     cmp ax,'MK'
-    je .mkd
+    je near .mkd
     cmp ax,'RM'
     je  near .rmd
     cmp ax,'DE'
-    je .dele
+    je near .dele
     cmp ax,'CW'
     je .cwd
     cmp eax,'SIZE'

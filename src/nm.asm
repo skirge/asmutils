@@ -17,7 +17,7 @@
 ; SuSV2-Compliant   :       no
 ; GNU-compatible    :       no
 ;
-; $Id: nm.asm,v 1.5 2002/06/16 09:51:22 konst Exp $
+; $Id: nm.asm,v 1.6 2002/08/16 15:07:08 konst Exp $
 
 %include "system.inc"
 %include "elfheader.inc"
@@ -52,7 +52,7 @@ START:
 .n2:
 	dec	ecx
 	mov	[argc],ecx
-	jnz	argv_loop
+	jnz	near argv_loop
 	mov	ebx,aout
 
 do_open:
@@ -78,7 +78,7 @@ do_error:
 argv_loop:
 	pop	ebx
 	or	ebx,ebx
-	jnz	do_open
+	jnz	near do_open
 do_exit:
 	sys_exit [err]
 

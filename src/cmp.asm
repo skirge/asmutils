@@ -1,6 +1,6 @@
 ; Copyright (C) 2002 Thomas M. Ogrisegg
 ;
-; $Id: cmp.asm,v 1.2 2002/03/15 06:17:22 konst Exp $
+; $Id: cmp.asm,v 1.3 2002/08/16 15:07:08 konst Exp $
 ;
 ; cmp - compare two files
 ;
@@ -146,7 +146,7 @@ START:
 		mov [map1+ebp*4], ecx
 		mov [len1+ebp*4], eax
 		or ebp, ebp
-		jz .Lloop2
+		jz near .Lloop2
 		
 		push long map1
 		mov esi, [map1]
