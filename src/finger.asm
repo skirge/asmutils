@@ -2,28 +2,37 @@
 ;
 ; finger - user information lookup program
 ;
+; fingerd - remote user information server
+;
 ; usage:
-;      finger
+;      finger [username] / fingerd
 ;
 ; License          :     GNU General Public License
 ; Author           :     Thomas Ogrisegg
 ; E-Mail           :     tom@rhadamanthys.org
 ; Created          :     12/02/01
-; Last Updated     :     03/17/02
+; Last Updated     :     03/25/02 03/17/02
 ; Version          :     0.6
 ; Processor        :     i386+
 ; SusV2-compliant  :     no
 ; GNU-compatible   :     no
 ; Feature-Complete :     no
 ;
+; 03/17/02 - added individual user lookup (TO)
+; 03/22/02 - added fingerd (TO)
+;
 ; BUGS: 
 ;      probably many
 ;
-; $Id: finger.asm,v 1.4 2002/03/21 08:45:58 konst Exp $
+; $Id: finger.asm,v 1.5 2002/03/26 05:21:41 konst Exp $
 
 %include "system.inc"
 
 %assign UTMP_RECSIZE 384
+
+%ifdef __LINUX__
+%assign ERESTART 85
+%endif
 
 CODESEG
 
@@ -44,6 +53,13 @@ START:
 	pop ecx
 	dec ecx
 	jnz near lookup_user
+	;;; NEW ;;;
+	pop edi
+	xor eax, eax
+	dec ecx
+	repnz scasb
+	cmp byte [edi-2], 'd'
+	jz near start_fingerd
 	sys_write STDOUT, banner, bannerlen
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 read_next_utmp:
@@ -162,6 +178,60 @@ nidle:
 	add edi, 8
 	jmp end_idle
 
+sigchld:
+	sys_signal SIGCHLD, sigchld
+	sys_wait4	-1, 0, 0, 0
+	ret
+
+start_fingerd:
+	sys_signal SIGCHLD, sigchld
+	sys_socket AF_INET, SOCK_STREAM, IPPROTO_IP
+	mov [sockfd], eax
+	push byte 0x0
+	push word 0x4f00
+	push word AF_INET
+	mov edi, esp
+	sys_bind   [sockfd], edi, 0x10
+	or eax, eax
+	js near .Lno_bind
+	sys_listen [sockfd], 5
+	sys_close STDOUT
+	push byte 0x0
+.Laccept:
+	pop eax
+	sys_accept [sockfd], NULL, NULL
+	push eax
+	or eax, eax
+	js .Laccept
+	sys_fork
+	or eax, eax
+	jnz .Laccept
+	pop eax
+	sys_dup2 eax, STDOUT
+	sub esp, 0x100
+	sys_read STDOUT, esp, 0x100
+	mov byte [esp+eax], 0x0
+	lea esi, [esp+eax]
+	std
+.Lloop:
+	lodsb
+	cmp al, ' '
+	jng .Lloop
+	cld
+	mov byte [esi+2], 0
+	mov esi, esp
+	add esp, 0x100
+	push esi
+	push long 0x0
+	sys_lseek [utmpfd], 0, SEEK_SET ;FIXME;
+	jmp lookup_user
+.Lno_bind:
+	sys_write STDOUT, nobind, nobindlen
+	sys_exit 0x0
+
+nobind	db	"Could not bind socket to port", __n
+nobindlen	equ	$ - nobind
+
 %macro strcpy 3
 	mov ecx, %2
 	mov esi, %1
@@ -273,6 +343,10 @@ lookup_user:
 	jmp .Lsrch_utmp
 .Lerror:
 	sys_write STDOUT, nouser, nouserlen
+	cmp long [sockfd], 0x0
+	jz .Lreal_exit
+	sys_shutdown STDOUT, 0x2
+.Lreal_exit:
 	sys_exit 0x1
 
 
@@ -330,9 +404,9 @@ rn_nextline:
 rn_fc_match:
 	mov edx, ecx
 	dec esi
-	mov edi, [esp+4]
+	push edi
 	repz cmpsb
-	mov edi, [esp+4]
+	pop edi
 	or ecx, ecx
 	jnz rn_prep_sl
 	cmp byte [esi], ':'
@@ -371,6 +445,10 @@ rn_ret:
 	ret
 
 do_exit:
+	cmp long [sockfd], 0x0
+	jz .Lreal_exit
+	sys_shutdown STDOUT, 0x2
+.Lreal_exit:
 	sys_exit 0x0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -398,6 +476,7 @@ nouserlen	equ	$ - nouser
 
 UDATASEG
 
+sockfd	LONG	1
 ctime	LONG	1
 utmpfd  LONG    1
 pwdfd   LONG    1
