@@ -1,10 +1,10 @@
 ; Copyright (C) 2001-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_bsd.inc,v 1.11 2002/03/14 17:40:13 konst Exp $
+; $Id: os_bsd.inc,v 1.12 2002/08/17 08:13:39 konst Exp $
 ;
 ; file          : os_bsd.inc
 ; created       : 12-Nov-2001
-; modified      : 14-Mar-2002
+; modified      : 14-Aug-2002
 ; version       : 0.17
 ; assembler     : nasm 0.98
 ; description   : common BSD defines
@@ -172,6 +172,26 @@ endstruc
 ;sys/termios.h
 ;
 
+%assign	VEOF		0	;ICANON
+%assign	VEOL		1	;ICANON
+%assign	VEOL2		2	;ICANON together with IEXTEN
+%assign	VERASE		3	;ICANON
+%assign VWERASE 	4	;ICANON together with IEXTEN
+%assign VKILL		5	;ICANON
+%assign	VREPRINT 	6	;ICANON together with IEXTEN
+%assign VERASE2 	7	;ICANON
+%assign VINTR		8	;ISIG
+%assign VQUIT		9	;ISIG
+%assign VSUSP		10	;ISIG
+%assign VDSUSP		11	;ISIG together with IEXTEN
+%assign VSTART		12	;IXON, IXOFF
+%assign VSTOP		13	;IXON, IXOFF
+%assign	VLNEXT		14	;IEXTEN
+%assign	VDISCARD	15	;IEXTEN
+%assign VMIN		16	;!ICANON
+%assign VTIME		17	;!ICANON
+%assign VSTATUS		18	;ICANON together with IEXTEN
+
 %assign NCCS 20
 struc termios
 .c_iflag	UINT	1	; input flags
@@ -195,6 +215,52 @@ endstruc
 %assign EXTPROC         0x00000800
 %assign TOSTOP		0x00400000
 %assign	NOFLSH		0x80000000
+
+;old tty
+;%assign B0	0
+;%assign B50	1
+;%assign B75	2
+;%assign B110	3
+;%assign B134	4
+;%assign B150	5
+;%assign B200	6
+;%assign B300	7
+;%assign B600	8
+;%assign B1200	9
+;%assign	B1800	10
+;%assign B2400	11
+;%assign B4800	12
+;%assign B9600	13
+;%assign EXTA	14
+;%assign EXTB	15
+;%assign B57600  16
+;%assign B115200 17
+
+%assign B0	0
+%assign B50	50
+%assign B75	75
+%assign B110	110
+%assign B134	134
+%assign B150	150
+%assign B200	200
+%assign B300	300
+%assign B600	600
+%assign B1200	1200
+%assign	B1800	1800
+%assign B2400	2400
+%assign B4800	4800
+%assign B9600	9600
+%assign B19200	19200
+%assign B38400	38400
+%assign B7200	7200
+%assign B14400	14400
+%assign B28800	28800
+%assign B57600	57600
+%assign B76800	76800
+%assign B115200	115200
+%assign B230400	230400
+%assign EXTA	19200
+%assign EXTB	38400
 
 ;
 ;sys/iocomm.h

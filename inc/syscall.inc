@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.21 2002/06/11 08:29:34 konst Exp $
+; $Id: syscall.inc,v 1.22 2002/08/17 08:13:39 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 10-Jun-2002
+; modified	: 14-Aug-2002
 ; version	: 0.17
 ; assembler	: nasm 0.98
 ; description	: system call macros
@@ -593,6 +593,10 @@ extern %{1}
 
 %macro	sys_getsockopt 0-5
 	__syscall getsockopt, 5, %0, %1, %2, %3, %4, %5
+%endmacro
+
+%macro	sys_getsockname 0-3
+	__syscall getsockname, 3, %0, %1, %2, %3
 %endmacro
 
 %macro	sys_shutdown 0-2

@@ -2,7 +2,7 @@
 			       asmutils
 			       ********
 
-			    (version 0.16)
+			    (version 0.17)
 
 			http://linuxassembly.org
 
@@ -72,17 +72,21 @@ How to install
 
  WARNING:
  
- Before using any utility first DO LOOK AT ITS SYNTAX; some utils may work
- not as you expected. Syntax can be obtained from appropriate source from
- src directory (do not expect any answer from program on --help switch).
+ Before using any utility first DO LOOK AT ITS SYNTAX; some utils may
+ work not as you have expected. Syntax can be found in the appropriate
+ source file (.asm) from the src directory (do not expect any answer
+ from program on --help switch).
  
  For details on compilation process examine doc/Asmutils-HOWTO,
  then edit MCONFIG, run '[g]make' and hopefully all will be done.
 
  '[g]make install' creates bin directory in the source tree and stores
- compiled files there (do not be afraid, it doesn't copy files elsewhere,
- neither to /bin or /usr/bin, nor to /usr/local/bin).
+ compiled files there (it doesn't copy files elsewhere, neither to /bin
+ or /usr/bin, nor to /usr/local/bin).
 
+ You may also want to examine a-Linux -- a floppy-based mini-distribution
+ consisting of Linux kernel and asmutils; it is available for download
+ from the asmutils homepage as well.
 
 Feedback
 ========
@@ -91,4 +95,4 @@ Feedback
  please read the Asmutils-HOWTO in the doc directory.
  At least send a bugreport or a success story :)
 
- $Id: README,v 1.15 2002/03/02 20:23:14 konst Exp $
+ $Id: README,v 1.16 2002/08/17 08:14:35 konst Exp $

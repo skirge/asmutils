@@ -1,10 +1,45 @@
+17-Aug-2002:	asmutils 0.17
+
+	- free, getty, scons, truss, uptime, wget (TO)
+	- cal, netstat (SL)
+	- du, mkfs.minix (JH)
+	- ftpd (AM, RM)
+	- proxy (IM)
+	- uuencode (CB)
+	- sha1sum (JB)
+	- nm: size extension (TO, KB)
+	- finger: fingerd extenstion (TO)
+	- swapon: added mkswap extension (TO)
+	- sleep: added usleep extension (IM)
+	- sh: added clear internal (KB)
+	- httpd: added initial cgi support (SL),
+	  '%' support in filenames (RM),
+	  send default mimetype for unknown extension (KB)
+	- less: added dynamic window size, stdin redirection check,
+	  new keyboard keys support, optimization (KB)
+	- finger: added individual user lookup (TO)
+	- pwd: bugfixes, syscall optimization, and portability fixes
+	  in stat-based version (KB)
+	- cmp: bugfixes and size improvements (KB)
+	- yes: size improvements (KB)
+	- ifconfig: exit code fixes (KB)
+	- mount: try to mount ro when rw fails (KB)
+	- init: wait for rc script to finish (KB)
+	- tar: added contiguous (append) files,
+	  prefix processing,  "tar -xf -" for stdin, chown/grp,
+	  selection of only certain filenames for "tar -x" (JH)
+	- tail: added support for -n CHARSc (JH)
+	- tr: fixed null character processing (JH)
+	- libc: fixed __start_main/fastcall bug (KB)
+	- special bonus: fbcon intro mandelbrot.asm (SW)
+
 03-Mar-2002:	asmutils 0.16
 
 	- cmp, finger, killall/killall5/pidof, mesg, nice, nm, nohup,
 	  rot13, sysctl, test, write (TO)
 	- fdisk, host, tar, telnet (RM)
 	- cut, m_inetd (JH)
-	- pop3 (MM)
+	- pop3d (MM)
 	- scan (SR)
 	- kldload/kldunload/kldstat (KB)
 	- sh: added && and || internals and scripting (JH),
