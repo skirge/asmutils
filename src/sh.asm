@@ -5,7 +5,7 @@
 ;       		 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;       		 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: sh.asm,v 1.21 2002/10/01 15:54:16 konst Exp $
+;$Id: sh.asm,v 1.22 2002/10/09 18:06:05 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -825,9 +825,9 @@ cmdline_get:
 	push 	edi
 	jmps	.skip
 .we_have_not_printed_last:
-	push 0
-	push esi
-	jmps .have_more
+	push	byte 0
+	push	esi
+	jmps	.have_more
     
 .finish_lookup:		;restore promt
 	mov	esi,file_name
