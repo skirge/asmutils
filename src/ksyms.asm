@@ -1,7 +1,6 @@
-;
 ;Copyright (C) 2003 Nick Kurshev <nickols_k@mail.ru>
 ;
-;$Id:
+;$Id: ksyms.asm,v 1.2 2003/05/26 05:07:56 konst Exp $
 ;
 ;hackers' ksyms
 ;

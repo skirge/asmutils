@@ -10,10 +10,10 @@
 ;    IDEA algorithm is patented by Ascom-Tech AG but free of
 ;               charge for non-commercial users
 ;
-;  (c) 2003.02(03) Maciej Hrebien with dedication
+;  (c) 2003.03(01) Maciej Hrebien with dedication
 ;           to Dominika Ferenc (miss You all the time!)
 ;
-;  $Id: idea.asm,v 1.3 2003/02/10 16:22:36 konst Exp $
+;  $Id: idea.asm,v 1.4 2003/05/26 05:10:20 konst Exp $
 
 %include "system.inc"
 
@@ -316,29 +316,37 @@ CODESEG
  idea:
 	push	eax			; some space for buffer..
 	push	eax
-
-	mov	ecx,esp
  i_lp:
 	_mov	eax,7
  i_pad:
-	mov	[ecx+eax],byte PADchr
+	mov	[esp+eax],byte PADchr
 	dec	eax
 	jns	i_pad
 
-	sys_read edi,ecx,8
+	_mov	edx,8
+	mov	ecx,esp
+ i_read:				; read in loop cause of STDIN..
+	sys_read edi,ecx,edx
 
-	cmp	eax,0
-	jle	short i_ret
+	add	ecx,eax
+	sub	edx,eax
+
+	or	eax,eax
+	js	short i_ret
+	jnz	short i_read
+
+	cmp	edx,8
+	je	short i_ret
 
 	push	edi
-	mov	edi,ecx
+	lea	edi,[esp+4]
 
 	call	do_idea
 
-	sys_write STDOUT,ecx,8
+	sys_write STDOUT,edi,8
 
 	pop	edi
-	jmp	i_lp
+	jmp	short i_lp
  i_ret:
 	pop	ecx
 	pop	ecx
@@ -426,7 +434,7 @@ CODESEG
 	call	idea
 
 ;	push	eax
-;	sys_close esi
+;	sys_close edi
 ;	pop	eax
 
 	or	eax,eax

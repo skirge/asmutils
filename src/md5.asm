@@ -4,9 +4,9 @@
 ;
 ;  USAGE: $ md5 [file(s)]
 ;
-;  (c) 2003.02(03) Maciej Hrebien
+;  (c) 2003.03(01) Maciej Hrebien
 ;
-;  $Id: md5.asm,v 1.1 2003/02/10 16:22:36 konst Exp $
+;  $Id: md5.asm,v 1.2 2003/05/26 05:07:07 konst Exp $
 
 %include "system.inc"
 
@@ -139,7 +139,8 @@ CODESEG
 	add	edi,eax
 
 	or	eax,eax
-	jnz	near read_lp
+	js	near err
+	jnz	short read_lp
 
 	pop	edi
 	sub	edx,64
