@@ -1,6 +1,6 @@
 ;Copyright (C) 2001,2002 Rudolf Marek <marekr2@fel.cvut.cz>, <r.marek@sh.cvut.cz>, <ruik@atlas.cz>
 ;
-;$Id: telnet.asm,v 1.1 2002/02/19 12:33:43 konst Exp $
+;$Id: telnet.asm,v 1.2 2002/02/20 15:30:32 konst Exp $
 ;
 ;hacker's telnet
 ;
@@ -164,7 +164,7 @@ START:
 	ja	.done
 	imul	ebx,byte 10
 	add	ebx,eax
-	_jmp	.next_digit
+	jmps	.next_digit
 .done:
 	
 	mov		dword[edi], AF_INET | (IPPROTO_IP << 16);fill in sin_family and sin_port
@@ -172,7 +172,7 @@ START:
 	sys_socket	PF_INET, SOCK_STREAM, IPPROTO_IP		;create raw socket
 	test		eax,eax									
 .ex_help:
-	js		 .exit
+	js near		.exit
 
 	mov		ebp, eax	;save socket descriptor
 	push byte       0x10
@@ -197,27 +197,27 @@ START:
 ;	js		near .exit
 	sys_write STDOUT,connected,connected_len
 .fd_setup:
-	mov 	dword [poll.fd1],ebp
+	mov 	dword [tpoll.fd1],ebp
 	mov	ax,POLLIN|POLLPRI
-	mov	 word [poll.e1],ax
-	mov 	dword [poll.fd2],STDIN
-	mov 	 word [poll.e2],ax
+	mov	 word [tpoll.e1],ax
+	mov 	dword [tpoll.fd2],STDIN
+	mov 	 word [tpoll.e2],ax
 	
-	sys_poll poll,2,060000
-	test 	word [poll.re1],POLLIN|POLLPRI
+	sys_poll tpoll,2,060000
+	test 	word [tpoll.re1],POLLIN|POLLPRI
 	jnz 	.we_have_mail
-	test 	word [poll.re2],POLLIN|POLLPRI
+	test 	word [tpoll.re2],POLLIN|POLLPRI
 	jnz 	.user_is_writing
 	jmps .fd_setup
 
 
 .user_is_writing:
 	sys_read STDIN,buffer,BUFF_SIZE
-	sys_send ebp,buffer,eax,NULL
-	jmps .fd_setup
+	sys_write ebp,buffer,eax
+	jmp	.fd_setup
 .we_have_mail:
 	mov 	esi,buffer
-        sys_recv ebp,esi,BUFF_SIZE,NULL
+        sys_read ebp,esi,BUFF_SIZE
 	or 	eax,eax
 	jz 	near .exit
 	mov	edx,eax
@@ -254,7 +254,7 @@ START:
 	mov 	byte [esi-2],al
 	jmps .command
 .send_cmds_back:
-	sys_send ebp,buffer,edx,NULL
+	sys_write ebp,buffer,edx
 	jmp .fd_setup
 .cmd_end:
 	push 	esi
@@ -262,7 +262,7 @@ START:
 	sub 	esi,buffer
 	push 	esi
 	dec 	esi
-	sys_send ebp,buffer,esi,NULL ;to send
+	sys_write ebp,buffer,esi ;to send
 	pop 	ebx
 	pop 	edx
 	pop 	esi
@@ -298,26 +298,24 @@ START:
 	ret	
 
 tty_init:
-			mov	edx, termattrs
-			sys_ioctl STDIN, TCGETS
-			mov	eax,[termattrs.c_lflag]
-			push 	eax
-			and	eax, byte ~(ECHO|ICANON)
-			mov	[termattrs.c_lflag], eax
-			sys_ioctl STDIN, TCSETS
-			pop	dword [termattrs.c_lflag]
-			ret
-
-
-tty_restore:
- 	    sys_ioctl STDIN, TCSETS,termattrs
+	mov	edx, termattrs
+	sys_ioctl STDIN, TCGETS
+	mov	eax,[termattrs.c_lflag]
+	push 	eax
+	and	eax, ~(ECHO|ICANON)
+	mov	[termattrs.c_lflag], eax
+	sys_ioctl STDIN, TCSETS
+	pop	dword [termattrs.c_lflag]
 	ret
 
 
+tty_restore:
+	sys_ioctl STDIN, TCSETS,termattrs
+	ret
 
 UDATASEG
 
-poll:
+tpoll:
 .fd1 resd 1
 .e1  resw 1
 .re1 resw 1
