@@ -5,11 +5,11 @@
 ;       		 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;       		 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: sh.asm,v 1.16 2002/02/27 17:55:40 konst Exp $
+;$Id: sh.asm,v 1.17 2002/03/01 17:20:16 konst Exp $
 ;
 ;hackers' shell
 ;
-;syntax: sh
+;syntax: sh [filename]
 ;
 ; Command syntax:
 ;	[[relative]/path/to/]program [argument ...]
@@ -33,16 +33,16 @@
 ;
 ; echo asm??ils*.*.* rulez
 ;
-; Comment (may not be in conditional):
-;	: text without shell special characters
-;
 ; Job control:
 ;
 ; ctrl+z works as expected, shell will return the job id.
 ; via fg id, bg id you can put job for/back-ground
 ; jobs - will list jobs
 ;
-;example: sh
+; Comments:
+;
+; Parser skips everything after '#' character when it is not quoted,
+; so you can use usual #!path/to/asmutils/shell construction in scripts.
 ;
 ; Note: 
 ;	if shell receives SIGTRAP it means it has run out of some
@@ -50,7 +50,7 @@
 ;	to handle such situation by signal handler (RM)
 ;
 ;
-;0.01: 07-Oct-2000	initial release (AG + KS)
+;0.01: 07-Oct-2000	initial release (AG, KS)
 ;0.02: 26-Jul-2001      added char-oriented commandline, tab-filename filling,
 ;			partial export support, 
 ;			partial CTRL+C handling (RM)
@@ -64,7 +64,7 @@
 ;                     	and some control-characters (TO)
 ;0.07  23-Feb-2002	added ctrl+z handling, fg, bg, jobs 
 ;			internal commands, some bugfixes (RM)
-;0.08  27-Feb-2002	'#' comments, improved scripting, misc fixes,
+;0.08  01-Mar-2002	'#' comments, improved scripting, misc fixes,
 ;			cleanup, WRITE_* macros (KB)
 
 %include "system.inc"
