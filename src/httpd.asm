@@ -1,33 +1,28 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.8 2001/02/23 12:39:29 konst Exp $
+;$Id: httpd.asm,v 1.9 2002/01/04 17:25:21 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
-;syntax: httpd document-root port
+;syntax: httpd document-root port [logfile [err404file]]
 ;
 ;example:	httpd /htdocs/ 8888
 ;		lynx http://localhost:8888/
+;
+;		httpd /htdocs/ 8888 /htdocs/httpd.log /htdocs/404.html
 ;
 ; when / is the last symbol in request, appends index.html
 ; in case of error just closes connection
 ; takes 16kb + 16kb for every request in memory, forks on every request,
 ; good enough to serve basic documentation.
 ; I tried to make it as secure as possible, there should be no buffer overflows
-; I at least tryed not to make any. It ignores requests with '..' in.
+; I at least tried not to make any. It ignores requests with '..' in.
 ; please, pelase send me e-mail and tell what you think
 ; this is my fifth assembler program (on x86 & nasm), the first I wrote
 ; yesterday
 ;
 ; Here I did a bit testing and it served about 214.8688524590 pages
 ; a second ;) maybe I'm wrong though, but this was the statistics
-;
-; Changelog:
-;     added shutdown and read of socket before closing
-;     quick filled structs in CODESEG, saved some space
-;     now the process forks and exits with code 0 (in other cases with 1)
-;     fixed one return status bug
-;     netscape old fool wants an ending newline to data, he gets it now
 ;
 ;0.01: 17-Jun-1999	initial release (IM)
 ;0.02: 04-Jul-1999	fixed bug with 2.0 kernel, minor changes (KB)
@@ -36,81 +31,77 @@
 ;0.05: 25-Feb-2000	heavy rewrite of network code, size improvements,
 ;			portability fixes (KB)
 ;0.06: 05-Apr-2000	finally works on FreeBSD! (KB)
-;0.07: 30-Jun-2000	added support for custom 404 error message
-;			(by default in /etc/httpd/404.html),
+;0.07: 30-Jun-2000	added support for custom 404 error message,
 ;			enabled by %define ERR404 (KB)
 ;			thanks to Mooneer Salem <mooneer@earthlink.net>
 ;0.08: 10-Sep-2000	squeezed few more bytes (KB)
 ;0.09: 16-Jan-2001	added support for "Content-Type: text/plain"
 ;			for .text, .txt, .log and no-extension files,
 ;			enabled by %define SENDHEADER (KB)
-
-;WARNING:
-;NN6 is awful - it doesnot show images.
-;I guess it wants "Content-Type" for them.
+;0.10  04-Jan-2002      added logging (IP||HEADER),
+;			added err404file command line argument,
+;			more content types (RM),
+;			added extension-content type table (KB)
 
 %include "system.inc"
 
-;%define	ERR404
+;Most useful option is SENDHEADER. It could be implemented using external file
+;(like usual http servers do), but static implementation has advantages too.
+;
+;when both LOG and ERR404 are enabled:
+;	logfile is 3rd command-line argument and err404file is 4th
+;when only one of {LOG,ERR404} is enabled:
+;	corresponding filename is 3rd command-line argument
+;so, you must know compile-time configuration; weird, but better than nothing.
+
 ;%define	SENDHEADER
+;%define	LOG
+;%define	ERR404
+
+%ifdef	LOG
+%define	LOG_HEADER
+%endif
 
 CODESEG
 
-%ifdef	ERR404
-msg404	db	"/etc/httpd/404.html",EOL
-_len404	equ	$ - msg404
-%assign len404	_len404
-%endif
-
-%ifdef	SENDHEADER
-
-h1	db	"HTTP/1.1 200 OK",__n
-h2	db	"Server: asmutils httpd",__n
-h3	db	"Content-Type: text/plain",__n,__n
-_lenh1	equ	$ - h1
-%assign	lenh1 _lenh1
-
-sendheader:
-	pusha
-	mov	esi,finalpath
-	mov	ebx,esi
-.cc1:
-	lodsb
-	or	al,al
-	jnz	.cc1
-.cc2:
-	cmp	esi,ebx
-	jz	.cc3
-	dec	esi
-	cmp	byte [esi],'.'
-	jnz	.cc2
-	mov	eax,[esi + 1]
-	cmp	eax,"text"	;.text
-	jz	.cc3
-	cmp	eax,"txt"	;.txt
-	jz	.cc3
-	cmp	eax,"log"	;.log
-	jnz	.cc4
-.cc3:
-	sys_write edi,h1,lenh1
-.cc4:
-	popa
-	ret
-%endif
-
-nl	db	0xa
 setsockoptvals	dd	1
 
 START:
-	pop	esi
-	cmp	esi,byte 3		;3 arguments must be there
-	jnz	false_exit
+	pop	ebp
+	cmp	ebp,byte 3	;at least 2 arguments must be there
+	jb	false_exit
 
-	pop	esi ; our own name
+	pop	esi		;our own name
 
-	pop	dword [document]
+	pop	dword [root]	;document root
 	pop	esi		;port number
 
+%ifdef LOG
+	sub	ebp,byte 3
+	jz	.n1
+%elifdef ERR404
+	sub	ebp,byte 3
+	jz	.n1
+%endif
+
+%ifdef LOG
+	pop	eax
+	sys_open eax,O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR
+	test	eax,eax
+	js	.n0
+	mov	[logfd],eax
+.n0:
+%ifdef ERR404
+	dec	ebp
+	jz	.n1
+%endif
+%endif
+
+%ifdef ERR404
+	pop	dword [err404]
+%endif
+
+.n1:
 	xor	eax,eax
 	xor	ebx,ebx
 .next_digit:
@@ -121,7 +112,7 @@ START:
 	ja	.done
 	imul	ebx,byte 10
 	add	ebx,eax
-	_jmp	.next_digit
+	jmps	.next_digit
 .done:
 	push	ebx
 	sys_socket PF_INET,SOCK_STREAM,IPPROTO_TCP
@@ -172,11 +163,29 @@ acceptloop:
 	mov	edi,eax ; our descriptor
 
 ;wait4 ( pid, status, options, rusage )
+;there must be 2 wait4 calls! Without them zombies can stay on the system
 
 	sys_wait4	0xffffffff,NULL,WNOHANG,NULL
 	sys_wait4
 
-;there must be 2 wait4 calls! Without them zombies can stay on the system
+%ifdef LOG
+;	mov edx,arg3
+;        mov byte [edx],0x10
+;	sys_getpeername edi,filebuf,arg3
+	mov	eax,[arg1+4]
+	push	edi
+	mov	edi,filebuf+020
+	mov	esi,edi
+	xchg	ah,al	
+	ror	eax,16
+	xchg	ah,al
+	call	i2ip
+	sub	esi,edi
+	inc	edi
+	mov	ebx,eax
+	sys_write [logfd],edi,esi
+	pop edi
+%endif
 
 	sys_fork	;we now fork, child goes his own way, daddy goes back to accept
 	or	eax,eax
@@ -189,8 +198,11 @@ acceptloop:
 	jb	near endrequest
 .endrequestnot3:
 	push	eax
+%ifdef LOG_HEADER
+	sys_write [logfd],filebuf,eax
+%endif
 	mov	ebx,finalpath
-	mov	ecx,[document]
+	mov	ecx,[root]
 .back:
 ;at first copy the document root
 	mov	al,[ecx]
@@ -200,7 +212,7 @@ acceptloop:
 	cmp	byte [ecx],0
 	jne	.back
 
-	sub	ecx,[document]
+	sub	ecx,[root]
 	pop	eax
 	add	ecx,eax
 	cmp	ecx,0xfff
@@ -278,24 +290,152 @@ endrequest:
 ;	sys_close ebp
 	jmp	true_exit
 
+;nl	db	0xa
+
 %ifdef	ERR404
 error404:
 	pusha
-	_mov	ecx,len404
-	_mov	esi,msg404
+	mov	esi,[err404]
 	_mov	edi,finalpath
-	rep	movsb
+	cld
+.copy:
+	lodsb
+	stosb
+	or	al,al
+	jnz	.copy
 	popa
 	jmp	index
 %endif
 
+%ifdef	LOG
+i2ip:
+	std
+	;xchg ebx,eax
+	;mov al,__n
+	;stosb
+	;xchg ebx,eax 
+	mov	byte [edi],__n
+	dec	edi
+.next:	
+	mov	ebx,eax
+	call	.conv
+	xchg	eax,ebx
+	mov	al,'.'
+	stosb
+	shr	eax,8
+	jnz	.next
+	cld
+	inc	edi
+	mov	byte [edi],' '
+	ret
+.conv:
+	mov	cl,010
+.divide:
+	xor	ah,ah	
+	div	cl     ;ah=reminder
+	xchg	ah,al
+	add	al,'0'
+	stosb	
+	xchg	ah,al
+	or	al,al
+	jnz	.divide
+	ret
+%endif
+
+%ifdef	SENDHEADER
+
+h1	db	"HTTP/1.1 200 OK",__n
+	db	"Server: asmutils httpd",__n
+	db      "Content-Type: "
+_lenh1	equ	$ - h1
+%assign	lenh1 _lenh1
+
+c_plain	db	"text/plain",EOL
+c_html	db	"text/html",EOL
+c_jpeg	db	"image/jpeg",EOL
+c_png	db	"image/png",EOL
+c_gif	db	"image/gif",EOL
+
+ending	db	__n,__n
+
+extension_tab:
+	dd	"text", c_plain
+	dd	"txt", c_plain
+	dd	"log", c_plain
+	dd	"html", c_html
+	dd	"htm", c_html
+	dd	"jpeg", c_jpeg
+	dd	"jpg", c_jpeg
+	dd	"png", c_png
+	dd	0
+
+sendheader:
+	pusha
+
+	mov	esi,finalpath
+	mov	ebx,esi
+.cc1:
+	lodsb
+	or	al,al
+	jnz	.cc1
+.cc2:
+	cmp	esi,ebx
+	jz	.return
+	dec	esi
+	cmp	byte [esi],'.'
+	jnz	.cc2
+	mov	eax,[esi + 1]
+	mov	edx,extension_tab - 8
+.cc3:
+	add	edx,byte 8
+	mov	ecx,[edx]
+	or	ecx,ecx
+	jz	.return
+	cmp	eax,ecx
+	jnz	.cc3
+
+.write_content:
+
+	push	edx
+	sys_write edi,h1,lenh1
+	pop	edx
+
+	mov	ecx,[edx + 4]
+	mov	edx,ecx
+	dec	edx
+.cc5:
+	inc	edx
+	cmp	[edx],byte EOL
+	jnz	.cc5
+
+	sub	edx,ecx
+	
+	sys_write		;write content type
+	sys_write EMPTY,ending,2
+
+.return:
+	popa
+	ret
+
+%endif
+
 UDATASEG
+
+%ifdef	ERR404
+err404	resd	1
+%endif
+%ifdef	LOG
+logfd	resd	1
+%endif
 
 arg1	resb	0xff
 arg2	resb	0xff
-document	resb	0x04
+
+root	resd	1
+
+bindsockstruct	resd	4
+
 finalpath	resb	0x1010	;10 is for safety
 filebuf		resb	0x1010
-bindsockstruct	resd	4
 
 END
