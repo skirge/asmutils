@@ -1,6 +1,6 @@
 ;Copyright (C) 2001,2002 Rudolf Marek <marekr2@fel.cvut.cz>, <r.marek@sh.cvut.cz>, <ruik@atlas.cz>
 ;
-;$Id: host.asm,v 1.1 2002/03/01 17:23:25 konst Exp $
+;$Id: host.asm,v 1.2 2003/05/26 05:06:25 konst Exp $
 ;
 ;hacker's  host 
 ;
@@ -10,6 +10,7 @@
 ;
 ;See RFC1035 for futher info
 ;
+;0.02: 20-May-2003	added "-t" option (Willy Tarreau <wtarreau@yahoo.fr>)
 ;0.01: 01-Mar-2002	initial release
 
 %include "system.inc"
@@ -20,10 +21,11 @@
 %assign BUFF_SIZE    	0512
 %assign FIONBIO     	0x5421 
 %assign DNS_PORT 	053
+%assign TIMEOUT		60000
 				     
 CODESEG
 
- usage: 	db "Usage: host hostname [dns_server_ip]",__n
+ usage: 	db "Usage: host [ -t ms ] hostname [dns_server_ip]",__n
  usage_llen 	equ $ - usage
  refused: 	db "Connection refused to DNS server :(",__n
  refused_llen 	equ $ - refused
@@ -36,6 +38,7 @@ START:
         pop 	ebx
 	dec	ebx
 	jnz 	.ok
+.usage:
 	sys_write STDOUT,usage,usage_len
 	xor	eax,eax
 .exit:
@@ -48,8 +51,32 @@ START:
 	sys_close ebp
 	sys_exit 0
 .ok:
+	mov	dword [timeout], TIMEOUT
 	pop	eax					;arg 0 - program name
-	pop	dword [hostname]
+	pop	eax
+	cmp	byte [eax], '-'				;-t
+	jnz	.hostname
+	sub	ebx,2
+	jbe	.usage
+	pop	esi					;timeout in ms
+	push	ebx
+	xor		ebx,ebx
+	xor 		eax,eax
+.next_digit:
+	lodsb
+	sub	al,'0'
+	jb	.done
+	cmp	al,9
+	ja	.done
+	imul	ebx,byte 10
+	add	ebx,eax
+	jmps	.next_digit
+.done:
+	mov	dword [timeout], ebx
+	pop	ebx
+	pop	eax					;next arg (hostname)
+.hostname:
+	mov	dword [hostname], eax
 	dec	ebx
 	jz	.find_server_ip
 	pop	dword [server_ip]
@@ -59,7 +86,8 @@ START:
 	jnz	.has_server
 	call	find_server_ip				;result string in ESI
 	or	esi,esi
-	jz	.exit					;no server, give up
+	jnz	.has_server
+	jmp	.exit					;no server, give up
 .has_server:
 	call	parse_request				;fill in a DNS request
 	mov	edi,sockaddr_in
@@ -67,7 +95,8 @@ START:
 	mov	bl,DNS_PORT
 	mov	dword[edi], AF_INET | (IPPROTO_IP << 16);fill in sin_family and sin_port
 	mov 	byte [edi+3],bl
-	sys_socket	PF_INET, SOCK_STREAM, IPPROTO_IP		;create raw socket
+;	sys_socket	PF_INET, SOCK_STREAM, IPPROTO_IP		;create raw socket (TCP)
+	sys_socket	PF_INET, SOCK_DGRAM, IPPROTO_IP			;create raw socket (UDP)
 	test	eax,eax									
 .ex_help:
 	js	 near .exit
@@ -97,15 +126,17 @@ START:
 	xor	edx,edx
 	mov	dx,[dns_q.size]
 	xchg	dh,dl
-	inc	edx
-	inc	edx
-	sys_write ebp,dns_q,EMPTY
+;	inc	edx
+;	inc	edx
+;	sys_write ebp,dns_q,EMPTY		;in TCP, we send size + request
+	sys_write ebp,dns_q+2,EMPTY		;in UDP, we only send the request
 
 .fd_setup:
 	mov 	dword [poll.fd1],ebp
 	mov	ax,POLLIN|POLLPRI
-	mov	 word [poll.e1],ax
-	sys_poll poll,1,060000
+	mov	word [poll.e1],ax
+	mov	edx, dword [timeout]	; third arg is the timeout
+	sys_poll poll,1
 	test 	word [poll.re1],POLLIN|POLLPRI
 	jnz 	.we_have_mail
 	jmp 	.exit
@@ -323,6 +354,7 @@ UDATASEG
 
 hostname	resd	1
 server_ip	resd	1
+timeout		resd	1
 
 ipbuff resb 030
 
