@@ -1,10 +1,10 @@
-; Copyright (C) 2001 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 2001-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_bsd.inc,v 1.6 2001/12/30 17:18:47 konst Exp $
+; $Id: os_bsd.inc,v 1.7 2002/01/20 18:19:38 konst Exp $
 ;
 ; file          : os_bsd.inc
-; created       : 12-Nov-2000
-; modified      : 23-Dec-2001
+; created       : 12-Nov-2001
+; modified      : 02-Jan-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : common BSD defines
@@ -299,8 +299,8 @@ endstruc
 %assign	RB_RDONLY	0x080	;mount root fs read-only
 %assign	RB_DUMP		0x100	;dump kernel memory before reboot
 %assign	RB_MINIROOT	0x200	;mini-root present in memory at boot time
-%assign RB_CONFIG	0x400	;invoke user configuration routing
-%assign RB_VERBOSE	0x800	;print all potentially useful info
+%assign	RB_CONFIG	0x400	;invoke user configuration routing
+%assign	RB_VERBOSE	0x800	;print all potentially useful info
 %assign	RB_SERIAL	0x1000	;user serial port as console
 %assign	RB_CDROM	0x2000	;use cdrom as root
 %assign	RB_POWEROFF	0x4000	;if you can, turn the power off

@@ -1,13 +1,13 @@
-; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.16 2001/12/09 15:12:54 konst Exp $
+; $Id: os_linux.inc,v 1.17 2002/01/20 18:19:38 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 09-Dec-2001
+; modified      : 07-Jan-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
-; description   : linux kernel defined constants (from includes)
+; description   : linux kernel constants and structures (from headers)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
 ; comment       : included internally from system.inc
 
@@ -1005,6 +1005,12 @@ endstruc
 %assign MS_NOUSER	(1<<31)
 
 %assign	MS_MGC_VAL	0xc0ed0000
+
+;
+;linux/hdreg.h
+;
+
+%assign	HDIO_GETGEO	0x0301  ;get device geometry
 
 ;
 ;utmp.h
