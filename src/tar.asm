@@ -1,12 +1,12 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@fel.cvut.cz>, <ruik@atlas.cz>
 ;
-;$Id: tar.asm,v 1.3 2002/08/06 17:57:56 konst Exp $
+;$Id: tar.asm,v 1.4 2002/09/09 15:53:34 konst Exp $
 ;
 ;hackers' tar
 ;
 ;Syntax tar [OPT] FILENAME
 ;OPT: -t list archive
-;     -x extracet archive 
+;     -x extracet archive
 ;Note: no owner change yet, no time/date update yet
 
 ;All comments/feedback welcome.
@@ -15,17 +15,18 @@
 ;0.2	04-Aug-2002	added contiguous (append) files, chown/grp,
 ;			prefix processing,  "tar -xf -" for stdin,
 ;			selection of only certain filenames for "tar -x" (JH)
+;0.3	02-Sep-2002	fixed bugs in TAR_CHOWN, octal_to_int, empty file
+;			initial archive creation code: only self compat for now
 
 
 %include "system.inc"
 
 ;------ Build configuration
-%define TAR_PREFIX
+;%define TAR_CONTIG
+;%define TAR_PREFIX
 %define TAR_CHOWN
 %define TAR_MATCH
-;%define TAR_CREAT           ; Not yet implemented
-			     ; Will be someday
-
+%define TAR_CREATE
 
 ;A tar archive consists of 512-byte blocks.
 ;  Each file in the archive has a header block followed by 0+ data blocks.
@@ -112,7 +113,7 @@
 %define TVERSION	" ",0
 %assign TVERSLEN	2
 
-%assign BUFF_DIV  011
+%assign BUFF_DIV  011q
 %assign BUFF_SIZE 2<<(BUFF_DIV-1)
 
 %ifdef TAR_PREFIX
@@ -121,19 +122,25 @@
  %define FILENAME tar.name
 %endif
 
+direntbufsize	equ	1024		; Reduce to use less RAM
+					; I need tar in a 200K
+					; free RAM situation.
 CODESEG
 
 START:
 	pop     ebx
 	pop	ebx
-.next_arg:
 	pop 	ebx
 	or 	ebx,ebx
 	jz .usage
 	cmp 	word [ebx],'-t'
 	jz .list_archive
 	cmp 	word [ebx],'-x'
-	jz .extract_archive	
+	jz .extract_archive
+%ifdef TAR_CREATE
+	cmp	word [ebx],'-c'
+	jz near create_archive
+%endif
 .usage:
 	sys_write STDOUT,use,use_len
 	sys_exit 0	
@@ -144,7 +151,7 @@ START:
 	call tar_list_files
 	call tar_archive_close
 	xor  	ebx,ebx
-	jmps .exit
+	jmps dexit
 .extract_archive:
 	pop 	ebx
 	call tar_archive_open
@@ -155,7 +162,7 @@ START:
 	push 	ebx
 	call tar_archive_close
 	pop 	ebx
-.exit:
+dexit:
 	sys_exit EMPTY
 
 ;*************************************************
@@ -164,8 +171,8 @@ START:
 
 octal_to_int:             ;stolen from chmod.asm
 	push   	esi
-	mov    	edi,esi
-	add 	edi,012
+	;mov    	edi,esi
+	;add 	edi,012
 	xor 	ecx,ecx
 	xor 	eax,eax
 	_mov	ebx,8         ;esi ptr to str
@@ -173,7 +180,7 @@ octal_to_int:             ;stolen from chmod.asm
 	mov	cl,[esi]
 	or	cl,cl
 	jz	.done_ok
-	cmp 	cl,' ' 
+	cmp 	cl,' '
 	jz	.add
 	sub	cl,'0'
 	jb	.done_err
@@ -193,25 +200,33 @@ octal_to_int:             ;stolen from chmod.asm
 	ret	
 
 convert_size:
-	lea 	esi,[tar.size]
+	mov 	esi, tar.size
+	lea	edi, [esi + 12]
 	call 	octal_to_int
 	mov 	dword [esi],eax
 	jmps 	convert_numbers
 convert_block:
-	lea 	esi,[tar.devmajor]
+	mov 	esi, tar.devmajor
+	lea	edi, [esi + 8]
 	call 	octal_to_int
 	mov 	dword [esi],eax
-	lea 	esi,[tar.devminor]
+	mov	esi, edi
+	lea	edi, [esi + 8]
 	call 	octal_to_int
 	mov 	dword [esi],eax
 convert_numbers:
-	lea 	esi,[tar.mode]
+	mov 	esi, tar.mode
+	lea	edi, [esi + 8]
 	call 	octal_to_int
 	mov 	dword [esi],eax
-	lea 	esi,[tar.uid]
+	;lea 	esi,[tar.uid]
+	mov	esi, edi
+	lea	edi, [esi + 8]
 	call 	octal_to_int
 	mov 	dword [esi],eax
-	lea 	esi,[tar.gid]
+	;lea 	esi,[tar.gid]
+	mov	esi, edi
+	lea	edi, [esi + 8]
 	call 	octal_to_int
 	mov 	dword [esi],eax
 	ret
@@ -243,7 +258,7 @@ pref_tran:
 ;*************************
 tar_list_files:
 .next:
-	sys_read [tar_handle],tar,0512 
+	sys_read [tar_handle],tar,0512
 	or 	eax,eax
 	jz 	.list_done
 	cmp 	dword [tar.magic],'usta'
@@ -252,14 +267,14 @@ tar_list_files:
 	call	pref_tran
 %endif
 	xor 	edx,edx
-	lea 	ecx,[FILENAME]
+	mov 	ecx, FILENAME
 .next_byte:
 	cmp 	byte [ecx+edx],1
 	inc 	edx
 	jnc 	.next_byte
 	mov 	word [ecx+edx-1],0x000a
 	sys_write STDOUT,EMPTY,EMPTY
-	lea 	edi,[tar.typeflag]
+	mov 	edi, tar.typeflag
 	cmp byte [edi],SYMTYPE
 	jz .prnlink
 	cmp byte [edi],LNKTYPE
@@ -283,15 +298,17 @@ tar_archive_open:
 	jns 	.ok
 	sys_exit 255
 .ok:
-	mov 	[tar_handle],eax   
+	mov 	[tar_handle],eax
 	ret
 tar_archive_close:
 	sys_close [tar_handle]
 	ret
 
 tar_archive_extract:
+	xor	ebx, ebx
+	sys_umask
 .read_next:
-	sys_read [tar_handle],tar,0512 
+	sys_read [tar_handle],tar,0512
 	;sys_write STDOUT, tar.name, 0100
 	xor 	eax,eax
 	cmp 	byte [tar.version],' '
@@ -343,7 +360,7 @@ tar_archive_extract:
 	xchg 	eax,ebx
 	js   	.error
 %ifdef TAR_CHOWN
-	sys_lchown tar.name,[tar.uid],[tar.gid]
+	sys_lchown FILENAME,[tar.uid],[tar.gid]
 %endif
 	jmp	.read_next	
 .error_magic:
@@ -358,7 +375,6 @@ tar_archive_extract:
 	call	convert_size
 	mov	ebp,	[tar.size]
 	add	ebp,	511
-	and	ebp,	~511
 	shr	ebp,	BUFF_DIV
 	jz	.rd
 	mov	ebx,	[tar_handle]
@@ -394,7 +410,7 @@ tar_archive_extract:
 	ret
 .create_fifo:
 	call convert_numbers
-	lea 	ecx,[tar.mode]
+	mov 	ecx, tar.mode
 	or 	dword [ecx],S_IFIFO
 	sys_mknod tar.name,[ecx],EMPTY
 	ret
@@ -406,28 +422,29 @@ tar_archive_extract:
 	call convert_block
 	or dword [tar.mode],S_IFBLK
 .create_nod:
-	mov ecx,[tar.devmajor]
-	shl ecx,8
-	mov edx,[tar.devminor]
-	or  edx,ecx
+	mov	edx,[tar.devmajor]
+	shl	edx,8
+	mov	dl, [tar.devminor]
 	sys_mknod FILENAME,[tar.mode],EMPTY
 	ret
 .create_file:
 	call convert_size
-	sys_open FILENAME, O_CREAT|O_WRONLY|O_TRUNC,[tar.mode]  ;todo: other flags   
+	sys_open FILENAME, O_CREAT|O_WRONLY|O_TRUNC,[tar.mode]  ;todo: other flags
 .crc	test 	eax,eax
 	js 	near .error_open
 	mov 	[file_handle],eax
 	xchg 	ebx,eax
 	mov 	edi,[tar.size]
 	mov 	edx,edi
+	add	edx, 511
 	xor 	dl,dl
 	and 	dh,11111110b
-	add 	edx,0x200
 	cmp 	edx,BUFF_SIZE
-	jbe 	.fit_whole
-	mov 	ecx,edi
+	jb	.empty_file
+	je 	.fit_whole
+	mov 	ecx,edx
 	shr 	ecx,BUFF_DIV
+	dec	ecx
 .copy_loop:
 	push 	ecx
 	sys_read [tar_handle],buffer,BUFF_SIZE
@@ -445,16 +462,337 @@ tar_archive_extract:
 .fit_whole:
 	sys_read [tar_handle],buffer,EMPTY
 	sys_write [file_handle],EMPTY,edi
+.empty_file:
 	sys_close EMPTY
 .error_open:
 	ret
 
 .lookup_table dd .create_file,.create_hardlink,.create_symlink,.create_char
               dd .create_block,.create_dir,.create_fifo,.create_contigous
-use: db "Usage: tar [OPT] FILENAME",__n
-     db "            -t list tar archive",__n
-     db "            -x extract tar arcive",__n
-use_len equ $-use  
+
+%ifdef TAR_CREATE
+;************************************************************
+; Initial version of create tar archive!
+; TODO: gather up hard links (any volunteers <g>)
+; TODO: anyone know what the checksum algorithm is?
+;************************************************************
+create_archive:
+	pop	ebx
+	or	ebx, ebx
+	jz	near	dexit
+	xor	eax, eax
+	inc	eax
+	cmp	[ebx], word '-'
+	je	.openarchok
+	sys_open	EMPTY, O_WRONLY|O_CREAT|O_TRUNC, 0666q
+	or	eax, eax
+	js	near	dexit
+.openarchok:	
+	mov	[tar_handle], eax
+.nextarg:
+	pop	esi
+	or	esi, esi
+	jz	.endlist
+	mov	edi, longbuf
+	call	.copy
+	call	.entry
+	jmps	.nextarg
+
+.endlist:
+	call	.null_record
+	sys_write	[tar_handle], tar, BUFF_SIZE
+	sys_write
+	call	tar_archive_close
+	jmp	dexit
+
+.itoa8:		; integer to octal
+		; EDI = buffer, EAX = NUM, ECX = SIZE, EDX = GARBAGE
+	push	dword 0
+	_mov	ebx, 8
+.i81	xor	edx, edx
+	div	ebx
+	add	dl, '0'
+	push	edx
+	loop	.i81
+.i82	pop	eax
+	or	eax, eax
+	jz	.ret1
+	stosb
+	jmps	.i82
+
+.null_record:
+	xor	eax, eax
+	xor	ecx, ecx
+	mov	cl, 128
+	mov	edi, tar
+	rep	stosd
+	ret
+
+.copy:	lodsb
+	stosb
+	or	al, al
+	jnz	.copy
+.ret1:	ret
+
+.entry:		; Everything is created through here.
+		; Arguments: longbuf = filename
+		; May trash ALL registers
+	mov	ebx, longbuf
+	sys_lstat	EMPTY, sts
+	or	eax, eax
+	jnz	.ret1		; Doesn't exist: skip it
+	call	.null_record
+	mov	edi, tar.mode
+	xor	ecx, ecx
+	mov	cl, 8
+	push	ecx		; +1
+	mov	eax, [sts.st_mode]
+	and	eax, 0177777q
+	call	.itoa8
+	mov	eax, [sts.st_uid]
+	pop	ecx		; 0
+	push	ecx		; +1
+	call	.itoa8
+	mov	eax, [sts.st_gid]
+	pop	ecx		; 0
+	call	.itoa8
+	mov	eax, [sts.st_mtime]
+	mov	cl, 012
+	add	edi, ecx	; Skip over size for now
+	call	.itoa8
+	mov	[edi + tar.magic - tar.chksum], dword 'usta'	; ID
+	mov	[edi + tar.magic - tar.chksum + 4], dword 'r  '
+	mov	esi, longbuf		; now filename into tar arch
+	mov	edi, tar.name		; IGNORING PREFIX!!!
+	call	.copy			; dangerous
+	mov	esi, tar.typeflag
+	mov	eax, [sts.st_mode]
+	shr	eax, 12
+	and	al, 15
+	cmp	al, 10
+	je	.symlink
+	cmp	al, 8
+	je	near	.file
+	cmp	al, 6
+	je	.block
+	cmp	al, 4
+	je	near	.dir
+	cmp	al, 2
+	je	.char
+	dec	eax
+	jnz	.ret2	; ABORT - UNKNOWN TYPE
+;.fifo:	
+	call	.sizezero
+	mov	[esi], byte FIFOTYPE
+	jmps	.entrydone
+.symlink:
+	call	.sizezero
+	mov	[esi], byte SYMTYPE
+	sys_readlink	longbuf, tar.linkname, 0100
+	jmps	.entrydone
+.block:	mov	[esi], byte BLKTYPE
+	jmps	.device
+.char:	mov	[esi], byte CHRTYPE
+.device:
+	call	.sizezero
+	mov	eax, [sts.st_rdev]
+	xor	ebx, ebx
+	mov	bl, al
+	;mov	ebx, eax
+	;and	ebx, 255	; Might be fixing for other OSes...
+	xor	eax, ebx	; Major in hand
+	shr	eax, 8
+	push	ebx	; +1
+	mov	edi, tar.devmajor
+	_mov	ecx, 08
+	push	ecx	; +2
+	call	.itoa8
+	pop	ecx	; +1
+	pop	eax	; +0	; Minor in hand
+	call	.itoa8
+.entrydone:
+	sys_write	[tar_handle], tar, BUFF_SIZE
+.ret2:	ret
+
+.sizezero:
+	xor	eax, eax
+.size:	mov	edi, tar.size
+	mov	ecx, 012
+	call	.itoa8
+	ret
+
+.file:	mov	eax, [sts.st_size]
+	call	.size
+	mov	[esi], byte REGTYPE
+	sys_open	longbuf, O_RDONLY
+	or	eax, eax
+	js	.ret2
+	xchg	ebp, eax
+	call	.entrydone	; convenient cheat
+	mov	esi, [sts.st_size]
+	add	esi, 511		; To end of buffer
+	and	esi, ~511		; BUFF_SIZE must be a power of 2
+	jz	.nowrite
+	mov	edi, [tar_handle]
+	_mov	ecx, buffer
+.copyloop:
+	sys_read	ebp, EMPTY, BUFF_SIZE
+	or	eax, eax
+	jna	.copydone
+	sub	esi, eax
+	js	.copyfix	; Fix growing file
+	xchg	eax, edx
+	sys_write	edi, buffer
+	jmps	.copyloop
+
+.copyfix:
+	add	esi, eax
+	jz	.nowrite
+.copydone:
+	call	.null_record	; Cheating
+	xchg	esi, edx
+	sys_write	[tar_handle], tar
+.nowrite:
+	sys_close	ebp
+.ret3:	ret
+
+;********* Code to descend directories, grabbing everythings ******
+.dir:	mov	[esi], byte DIRTYPE
+	call	.entrydone
+	; Open directory
+	sys_open	longbuf, 0
+	xchg	eax, ebx
+	or	ebx, ebx
+	js	.ret3	;failed: no descend directory
+	mov	edi, longbuf
+	xor	ecx, ecx
+%ifdef __BSD__
+	push	ecx
+%endif
+	mov	eax, ecx
+	dec	ecx
+	repnz	scasb
+	dec	edi		; Points to NULL terminator
+	mov	al, '/'		; for holing new files
+	stosb
+	mov	[edi], byte 0
+	push	ebx		; +1
+	call	allocdirentry
+	pop	ebx		; 0
+	push	ecx		; +1
+.requestmore:
+	pop	ecx		; 0
+%ifdef __BSD__
+	mov	esi, esp
+	sys_getdirentries	EMPTY, EMPTY, direntbufsize, esp
+%else
+	sys_getdents	EMPTY, EMPTY, direntbufsize
+%endif
+	or	eax, eax
+	jna	.lastentry
+	push	ecx		; +1
+.scanentry:
+%ifdef __BSD__
+	cdq		; Shorter version of xor edx, edx
+	cmp	[ecx + dirent.d_fileno], edx
+	je	.nextentry
+%endif
+	lea	esi, [ecx + dirent.d_name]
+	cmp	[esi], byte 0
+	je	.nextentry	; Skip no file
+	cmp	[esi], word 0x002E
+	je	.nextentry	; Skip .
+	cmp	[esi], word 0x2E2E
+	jne	.doentry
+	cmp	[esi + 2], byte 0
+	je	.nextentry	; Skip ..
+.doentry:		; Add this entry to the tar archive
+	push	eax	; Save count
+	push	ebx	; Save file handle
+	push	ecx	; Save entry #
+	push	edi	; Save longbuf position
+	call	.copy
+	cmp	edi, longbuf + 0100
+	ja	.skipit		; OOPS... need prefix code
+	call	.entry	; Recursive
+.skipit:
+	pop	edi	; restore longbuf
+	pop	ecx	; Restore entry #
+	pop	ebx	; Restore file handle
+	pop	eax	; Restore count
+.nextentry:
+	movzx	edx, word [ecx + dirent.d_reclen]
+;	or	edx, edx
+;	jz	.requestmore
+	add	ecx, edx
+	sub	eax, edx
+	jna	.requestmore
+	jmps	.scanentry
+.lastentry:
+	sys_close
+%ifdef __BSD__
+	pop	eax
+%endif
+	call	freedirentry
+	ret
+
+allocdirentry:
+	mov	ecx, [lastdirentry]
+	or	ecx, ecx
+	jz	.nospace
+	mov	eax, [ecx]
+	mov	[lastdirentry], eax
+.af:	xor	ebx, ebx	
+	mov	[ecx + direntbufsize], ebx
+	add	ecx, 4
+	ret
+.nospace:
+	_mov	ecx, direntbufsize + 4
+	call	allocator
+	xchg	eax, ecx
+	jmps	.af
+
+freedirentry:
+	sub	ecx, 4
+	mov	eax, [lastdirentry]
+	mov	[ecx], eax
+	mov	[lastdirentry], ecx
+	ret
+
+allocator:
+	mov	ebx, [.highwater]
+	add	ebx, ecx
+	sys_brk
+	or	eax, eax
+	jna	.nomemory
+	mov	eax, [.highwater]
+	mov	[.highwater], ebx
+	ret
+
+.nomemory:
+	sys_write	STDERR, .msg, 7
+	mov	bl, 250
+	sys_exit
+.msg	db	"No RAM", 10
+
+.highwater	dd	udata_end
+%endif
+
+;DEBUG:	pusha
+;	sys_write	2, .DEBUG, 6
+;	popa
+;	ret
+;.DEBUG	db	'DEBUG', 10
+
+;*********************************************
+; Misc. data
+use:	db "Usage: tar [OPT] FILENAME",__n
+%ifdef TAR_CREATE
+	db "		-c create tar archive",__n
+%endif	
+	db "		-t list tar archive",__n
+	db "		-x extract tar arcive",__n
+use_len equ $-use
 arrow db " |-> "
 
 UDATASEG
@@ -462,6 +800,15 @@ UDATASEG
 tar_handle resd 1
 file_handle resd 1
 
+%ifdef TAR_CREATE
+longbuf	resb	256		; If we overrun this, we are dead anyway
+sts:
+%ifdef __BSD__
+B_STRUC Stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_mtime,.st_size,.st_blocks
+%else
+B_STRUC Stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_size,.st_blocks,.st_mtime
+%endif
+%endif
 %ifdef TAR_PREFIX
  FILENAME	resb	256
 %endif
@@ -478,15 +825,21 @@ tar:
 .mtime		resb 0012
 .chksum		resb 0008
 .typeflag 	resb 0001
-.linkname	resb 0100		
-.magic		resb 0006		
-.version	resb 0002		
-.uname		resb 0032		
+.linkname	resb 0100
+.magic		resb 0006
+.version	resb 0002
+.uname		resb 0032
 .gname		resb 0032
 .devmajor	resb 0008
 .devminor	resb 0008
-.prefix		resb 0155		
+.prefix		resb 0155
 
 buffer resb BUFF_SIZE
+
+%ifdef TAR_CREATE
+.slop	resd 1
+lastdirentry	resd	1
+udata_end	resd	0
+%endif
 
 END

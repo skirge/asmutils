@@ -2,7 +2,7 @@
 ;			 Konstantin Boldyshev <konst@linuxassembly.org>
 ;			 Rudolf Marek <marekr2@fel.cvut.cz>
 ;
-;$Id: httpd.asm,v 1.19 2002/06/11 08:45:10 konst Exp $
+;$Id: httpd.asm,v 1.20 2002/09/09 15:50:50 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -50,6 +50,8 @@
 ;0.11  14-Mar-2002      added initial cgi support (SL),
 ;			'%' support in filenames (RM),
 ;			send default mimetype for unknown extensions (KB)
+;0.12  30-Aug-2002	no longer runs as root if UID defined (JH)
+;			fixed cgi build problem
 
 %include "system.inc"
 
@@ -81,6 +83,7 @@
 ;%define	ERR404
 ;%define	CGI
 ;%define	PROC_HANDLE	;%
+;%define UID	99
 
 %ifdef	LOG
 %define	LOG_HEADER
@@ -167,7 +170,7 @@ START:
 	test	eax,eax
 	js	false_exit
 
-	mov	ebp,eax		;socket descriptor
+	xchg	ebp,eax		;socket descriptor
 
 	sys_setsockopt ebp,SOL_SOCKET,SO_REUSEADDR,setsockoptvals,4
 	or	eax,eax
@@ -187,6 +190,10 @@ do_bind:
 	or	eax,eax
 	jnz	false_exit
 
+%ifdef UID
+	sys_setgid	UID
+	sys_setuid
+%endif
 	sys_fork			;fork after everything is done and exit main process
 	or	eax,eax
 	jz	acceptloop
@@ -200,7 +207,7 @@ acceptloop:
 	sys_accept ebp,arg1,arg2	;accept(s, struct sockaddr *arg1, int *arg2)
 	test	eax,eax
 	js	acceptloop
-	mov	edi,eax			;our descriptor
+	xchg	edi,eax			;our descriptor
 
 ;wait4(pid, status, options, rusage)
 ;there must be 2 wait4 calls! Without them zombies can stay on the system
@@ -279,7 +286,11 @@ acceptloop:
 	or	dl,dl
 	je	.loopout
 	cmp	dl,' '
+%ifdef CGI
+	jb	toentrequest
+%else
 	jb	endrequest
+%endif
 	jz	.loopout
 	cmp	dl,'?'
 	jz	.loopout
@@ -333,10 +344,11 @@ index:
 	pop	edi
 
 	cmp	dword [ebx],".cgi"
-	jnz	.sendnoncgi
+	jnz	sendnoncgi
 	call	execcgi
+toentrequest:
 	jmp	endrequest	;should log error instead
-.sendnoncgi:
+sendnoncgi:
 %endif
 
 	mov	ebx,eax

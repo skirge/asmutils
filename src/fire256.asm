@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Paul Furber <m@verick.co.za>
 ;
-;$Id: fire256.asm,v 1.6 2002/02/28 05:31:40 konst Exp $
+;$Id: fire256.asm,v 1.7 2002/09/09 15:53:27 konst Exp $
 
 ;;  This program is free software; you can redistribute it and/or modify
 ;;  it under the terms of the GNU General Public License as published by
@@ -79,8 +79,8 @@ START:
 	lea	ebx,	[ebp]		; point ebx to var
 	sys_ioctl eax, FBIOPUT_VSCREENINFO, ebp; set mode to our new parms
 
-	test	eax,	eax		; did we set the screen info?
-	js	near	my_exit		; nope :(
+;	test	eax,	eax		; did we set the screen info?
+;	js	near	my_exit		; nope :(
 
 	mov	[cmap.start],	dword 0
 	mov	[cmap.len],	dword 256

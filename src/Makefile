@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.55 2002/08/15 16:09:29 konst Exp $
+# $Id: Makefile,v 1.56 2002/09/09 15:53:23 konst Exp $
 
 #DEBUG = y
 
@@ -10,19 +10,20 @@ BUILD_SRC = y
 
 include ../MCONFIG
 
-FILES = basename cal cat chmod chroot chown cmp cpuinfo cut date dc dd dirname\
+FILES = basename cal cat chmod chroot chown cmp cpuinfo cut date dc dd deflate dirname\
 	echo env extname factor fromdos grep head hexdump hostname\
 	id init kill ln lzss mkdir mknod nice nm nohup od rot13 paste\
 	readelf readlink reboot renice scons sleep strings sync\
-	tail tar tee telnet tr true uname uuencode wc whoami yes\
+	tail tar tee tr true uname uuencode wc whoami yes\
 	md5sum rmdsum rc6crypt sha1sum\
 
 FILES += readkey less getty \
-	 ftpd host httpd m_inetd nc netstat ping pop3d proxy scan wget\
+	 ftpd host httpd m_inetd nc netstat ping pop3d proxy scan\
+	 telnet telnetd wget\
 	 cp du ls mount mv pwd rm sh test touch watch which write\
 
-LINKS = arch cpuspeed domainname false mkfifo more rmdir size sln todos\
-	umount usleep halt poweroff\
+LINKS = arch cpuspeed domainname false inflate mkfifo more rmdir size sln\
+	todos umount usleep halt poweroff\
 
 BONUS =	execve report asmutils
 
@@ -30,7 +31,7 @@ ifdef LINUX
 FILES += chvt dmesg df eject fdisk finger free ifconfig killall lsmod\
 	 mesg mkfs.minix ps softdog swapon sysctl truss tty update uptime 
 LINKS += ccd deallocvt fingerd killall5 pidof rmmod route swapoff mkswap
-BONUS += window leaves fire256 mandelbrot snake game
+BONUS += window leaves fire256 mandelbrot hdragon snake game
 endif
 
 ifdef FREEBSD
@@ -68,6 +69,7 @@ links:	$(FILES)
 	mkln less more;\
 	mkln nm size;\
 	mkln finger fingerd;\
+	mkln deflate inflate;\
 	)
 
 install:$(FILES)
