@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.9 2001/11/12 15:53:18 konst Exp $
+; $Id: os_linux.inc,v 1.10 2001/11/19 06:59:47 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 12-Nov-2001
+; modified      : 18-Nov-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
@@ -880,14 +880,13 @@ endstruc
 %assign SYS_SENDMSG	16	; sys_sendmsg
 %assign SYS_RECVMSG	17	; sys_recvmsg
 
-; 
-;	linux/sockios.h
+;
+;linux/sockios.h
 ;
 
 %assign SIOCADDRT	0x890B		; add routing table entry	
 %assign SIOCDELRT	0x890C		; delete routing table entry	
 %assign SIOCRTMSG	0x890D		; call to routing system	
-
 
 %assign SIOCGIFNAME	0x8910		; get iface name		
 %assign SIOCSIFLINK	0x8911		; set iface channel		
@@ -925,8 +924,34 @@ endstruc
 %assign	SIOCSIFHWBROADCAST	0x8937	; set hardware broadcast addr	
 %assign SIOCGIFCOUNT	0x8938		; get number of devices 
 
+;
+;utmp.h
+;
 
+%define _PATH_UTMP	"/var/run/utmp"
 
+%assign	UT_LINESIZE	32
+%assign	UT_NAMESIZE	32
+%assign	UT_HOSTSIZE	256
+
+struc exit_status
+.e_termination	SHORT	1	;Process termination status
+.e_exit		SHORT	1	;Process exit status
+endstruc
+
+struc utmp
+.ut_type	LONG	1		;Type of login
+.ut_pid		U32	1		;Process ID of login process
+.ut_line  	CHAR	UT_LINESIZE	;Devicename
+.ut_id		CHAR	4		;Inittab ID
+.ut_user	CHAR	UT_NAMESIZE	;Username
+.ut_host	CHAR	UT_HOSTSIZE	;Hostname for remote login
+.ut_exit	SHORT	2		;Exit status of a process marked as DEAD_PROCESS
+.ut_session	LONG	1		;Session ID, used for windowing
+.ut_tv		ULONG	2 		;Time entry was made
+.ut_addr_v6	U32	4		;Internet address of remote host
+.__unused	CHAR	20		;Reserved for future use
+endstruc
 
 ;
 ;system calls

@@ -1,10 +1,10 @@
 ; Copyright (C) 2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_bsd.inc,v 1.1 2001/11/14 16:01:42 konst Exp $
+; $Id: os_bsd.inc,v 1.2 2001/11/19 06:59:47 konst Exp $
 ;
 ; file          : os_bsd.inc
 ; created       : 12-Nov-2000
-; modified      : 14-Nov-2001
+; modified      : 18-Nov-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : common BSD defines
@@ -255,6 +255,25 @@ endstruc
 %define	TCGETS	TIOCGETA
 %define	TCSETS	TIOCSETA
 %define	TCSETSW	TIOCSETAW
+
+;
+;utmp.h
+;
+
+%define _PATH_UTMP	"/var/run/utmp"
+%define	_PATH_WTMP	"/var/log/wtmp"
+%define	_PATH_LASTLOG	"/var/log/lastlog"
+
+%assign	UT_NAMESIZE	16
+%assign	UT_LINESIZE	8
+%assign	UT_HOSTSIZE	16
+
+struc utmp
+.ut_line  	CHAR	UT_LINESIZE
+.ut_user	CHAR	UT_NAMESIZE	;.ut_name
+.ut_host	CHAR	UT_HOSTSIZE
+.ut_time	TIME_T	1
+endstruc
 
 ;
 ;BSD specific syscalls

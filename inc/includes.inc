@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.7 2001/11/17 17:56:09 konst Exp $
+; $Id: includes.inc,v 1.8 2001/11/19 06:59:47 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 17-Nov-2001
+; modified      : 18-Nov-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : generic constants and structures from header files (libc)
@@ -477,33 +477,6 @@ endstruc
 
 struc in_addr
 .s_addr		U32	1
-endstruc
-
-;
-;utmp.h
-;
-
-%assign	UT_LINESIZE	32
-%assign	UT_NAMESIZE	32
-%assign	UT_HOSTSIZE	256
-
-struc exit_status
-.e_termination	SHORT	1	;Process termination status
-.e_exit		SHORT	1	;Process exit status
-endstruc
-
-struc utmp
-.ut_type	SHORT	1		;Type of login
-.ut_pid		U32	1		;Process ID of login process
-.ut_line  	CHAR	UT_LINESIZE	;Devicename
-.ut_id		CHAR	4		;Inittab ID
-.ut_user	CHAR	UT_NAMESIZE	;Username
-.ut_host	CHAR	UT_HOSTSIZE	;Hostname for remote login
-.ut_exit	SHORT	2		;Exit status of a process marked as DEAD_PROCESS
-.ut_session	LONG	1		;Session ID, used for windowing
-.ut_tv		ULONG	2 		;Time entry was made
-.ut_addr_v6	U32	4		;Internet address of remote host
-.__unused	CHAR	20		;Reserved for future use
 endstruc
 
 %endif	;__INCLUDES_INC
