@@ -1,7 +1,5 @@
 ; Copyright (c) 2001 Thomas M. Ogrisegg
 ;
-; $Id: finger.asm,v 1.3 2002/02/14 13:38:15 konst Exp $
-;
 ; finger - user information lookup program
 ;
 ; usage:
@@ -11,6 +9,8 @@
 ; Author           :     Thomas Ogrisegg
 ; E-Mail           :     tom@rhadamanthys.org
 ; Created          :     12/02/01
+; Last Updated     :     03/17/02
+; Version          :     0.6
 ; Processor        :     i386+
 ; SusV2-compliant  :     no
 ; GNU-compatible   :     no
@@ -19,11 +19,11 @@
 ; BUGS: 
 ;      probably many
 ;
-; TODO: 
-;      add individual user lookup
-;
+; $Id: finger.asm,v 1.4 2002/03/21 08:45:58 konst Exp $
 
 %include "system.inc"
+
+%assign UTMP_RECSIZE 384
 
 CODESEG
 
@@ -41,10 +41,13 @@ init_data:
 
 START:
 	call init_data
+	pop ecx
+	dec ecx
+	jnz near lookup_user
 	sys_write STDOUT, banner, bannerlen
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 read_next_utmp:
-	sys_read [utmpfd], utmpbuf, 384
+	sys_read [utmpfd], utmpbuf, UTMP_RECSIZE
 	or eax, eax
 	jz near do_exit
 	cmp long [utmpbuf.ut_type], USER_PROCESS
@@ -159,6 +162,120 @@ nidle:
 	add edi, 8
 	jmp end_idle
 
+%macro strcpy 3
+	mov ecx, %2
+	mov esi, %1
+	repnz movsb
+	mov ecx, %3-%2
+%endmacro
+
+%macro strccpy 2
+	mov esi, %1
+	lodsb
+.Llabel%2:
+	dec ecx
+	stosb
+	lodsb
+	or al, al
+	jnz .Llabel%2
+%endmacro
+
+%macro skip1 2
+.Llabel%1:
+	lodsb
+	cmp al, %2
+	jnz .Llabel%1
+%endmacro
+
+strfcpy:
+	lodsb
+	cmp al, ':'
+	jz .Lret
+	cmp al, ','
+	jz .Lret
+	cmp al, __n
+	jz .Lret
+	or al, al
+	jz .Lret
+	dec ecx
+	stosb
+	jmp strfcpy
+.Lret:
+	ret
+
+lookup_user:
+	pop esi
+	mov esi, [pwptr]
+	pop edi
+	push edi
+	xor ecx, ecx
+	xor eax, eax
+	dec ecx
+	repnz scasb
+	not ecx
+	dec ecx
+	pop edi
+	push edi
+	call rn_search_loop
+	mov ebp, esi
+	or esi, esi ;ERROR!
+	jz near .Lerror
+	mov edi, buf
+	strcpy login, loginlen, 40
+	pop esi
+	push esi
+	strccpy esi, 33
+	mov al, ' '
+	repnz stosb
+	strcpy name, namelen, 40
+	mov ecx, 4
+	mov esi, ebp
+	skip1 1, ':'
+	dec ecx
+	jnz .Llabel1
+	push esi
+	call strfcpy
+	mov byte [edi+1], __n
+	sys_write STDOUT, buf, 80
+	mov edi, buf
+	strcpy hdir, hdirlen, 40
+	pop esi
+	skip1 2, ':'
+	push esi
+	call strfcpy
+	mov al, ' '
+	repnz stosb
+	strcpy shell, shellen, 40
+	pop esi
+	skip1 3, ':'
+	call strfcpy
+	mov byte [edi+1], __n
+	sys_write STDOUT, buf, 80
+.Lsrch_utmp:
+	sys_read [utmpfd], utmpbuf, UTMP_RECSIZE
+	or eax, eax
+	jz near do_exit
+	cmp long [utmpbuf.ut_type], USER_PROCESS
+	jnz .Lsrch_utmp
+	lea esi, [utmpbuf.ut_user]
+	pop edi
+	push edi
+	repz cmpsb
+	cmp byte [esi], 0
+	jnz .Lsrch_utmp
+	mov edi, buf
+	strcpy loggedin, loglen, 80
+	strccpy utmpbuf.ut_line, 23
+	sub ecx, 81
+	neg ecx
+	mov byte [edi], __n
+	sys_write STDOUT, buf, ecx
+	jmp .Lsrch_utmp
+.Lerror:
+	sys_write STDOUT, nouser, nouserlen
+	sys_exit 0x1
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;lstr;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Converts a long into a two-byte string
 ;; <- eax (long to convert)
@@ -178,33 +295,44 @@ lstr:
 	ret
 
 ;;;;;;;;;;;;;;;;;;;;;;getusername;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Parses /etc/passwd and copys the realname to the outbuffer
+;; Parses /etc/passwd and copys the realname to the outputbuffer
 ;; <- ecx (length of username)
 ;; -> ecx (length of Realname - 0 on error)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 getusername:
 	push edi
+	mov edi, utmpbuf.ut_user
 	mov esi, [pwptr]
 	xor eax, eax
+	call rn_search_loop
+	or esi, esi
+	jz .Lret
+	call rn_found_next
+.Lret:
+	pop eax
+	ret
 
 rn_search_loop:
 	lodsb
-	cmp al, [utmpbuf.ut_user]
+	cmp al, [edi]
 	jz rn_fc_match
-
 rn_nextline:
 	lodsb
 	cmp al, __n
 	jz rn_search_loop
 	or al, al
 	jnz rn_nextline
-	sys_exit 42                 ; Hopefully never reached
+	xor esi, esi
+	xor ecx, ecx
+	ret
 
 rn_fc_match:
 	mov edx, ecx
 	dec esi
-	mov edi, utmpbuf.ut_user
+	mov edi, [esp+4]
 	repz cmpsb
+	mov edi, [esp+4]
 	or ecx, ecx
 	jnz rn_prep_sl
 	cmp byte [esi], ':'
@@ -212,9 +340,11 @@ rn_fc_match:
 
 rn_prep_sl:
 	mov ecx, edx
-	jmp rn_search_loop
+	jmp rn_nextline
 
 rn_found:
+	ret
+rn_found_next:
 	mov ecx, 4
 rn_lloop:
 	lodsb
@@ -226,21 +356,18 @@ rn_lloop:
 	jnz rn_lloop
 	dec ecx
 
+	mov edi, [esp+4]
 rn_laloop:
-	lodsb
 	inc ecx
+	lodsb
 	cmp al, ':'
-	jz rn_copy
+	jz rn_ret
 	cmp al, ','
-	jnz rn_laloop
+	jz rn_ret
+	stosb
+	jmp rn_laloop
 
-rn_copy:
-	pop edi
-	sub esi, ecx
-	dec esi
-	push ecx
-	repnz movsb
-	pop ecx
+rn_ret:
 	ret
 
 do_exit:
@@ -253,6 +380,22 @@ banner db "Login      Name                  Tty         Idle    Where",__n
 bannerlen equ $ - banner
 devdir db "/dev",EOL
 
+login	db	"Login: "
+loginlen	equ	$ - login
+name	db	"Name: "
+namelen	equ	$ - name
+hdir	db	"Directory: "
+hdirlen	equ	$ - hdir
+shell	db	"Shell: "
+shellen	equ $ - shell
+office	db	"Office: "
+offlen	equ	$ - office
+phone	db	"Home Phone: "
+loggedin	db	"Logged in at "
+loglen	equ	$ - loggedin
+nouser	db	"This user doesnt exist", __n
+nouserlen	equ	$ - nouser
+
 UDATASEG
 
 ctime	LONG	1
@@ -263,10 +406,6 @@ pwptr   LONG    1
 statbuf B_STRUC Stat,.st_size,.st_atime
 utmpbuf B_STRUC utmp,.ut_type,.ut_line,.ut_user,.ut_host,.ut_tv
 
-buf	LONG    0x1000
+buf		UCHAR	80
 
 END
-
-%ifdef __VI__
-vi:syntax=nasm
-%endif
