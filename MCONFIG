@@ -2,7 +2,7 @@
 #
 # MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.18 2002/03/02 20:23:14 konst Exp $
+# $Id: MCONFIG,v 1.19 2002/03/14 17:42:46 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -57,7 +57,9 @@ ELF_MACROS = y
 
 #---------------------------------------------------------------#
 
-VERSION = 0.16
+VERSION = 0.17
+
+${OS} = y
 
 #
 # force reasonable defaults for some OSes
@@ -65,7 +67,6 @@ VERSION = 0.16
 
 ifdef OPENBSD
 EXECUTABLE = AOUT
-ELF_MACROS =
 endif
 
 #ifdef NETBSD
@@ -83,7 +84,6 @@ endif
 
 #
 
-${OS} = y
 ${EXECUTABLE} = y
 
 AS := nasm
