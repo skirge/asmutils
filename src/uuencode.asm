@@ -17,7 +17,12 @@
 ; or perror.
 ; This program is very similar to the C version from GNU Sharutils.
 ;
-; $Id: uuencode.asm,v 1.1 2002/07/13 18:47:40 konst Exp $
+; $Id: uuencode.asm,v 1.2 2002/07/24 16:27:38 konst Exp $
+
+; 0.01 initial release
+; 0.02. strcat replaced by my own version.  Many extraneous instructions
+; have been removed from loops.  The loop which reads input is far more
+; efficient.  Input data is loaded into registers using lodsd.
 
 %assign BUFSIZE 8190
 ; BUFSIZE must be divisible by 3 because we work with multiples of 3 bytes.
@@ -32,7 +37,7 @@
 %assign LASTGROUP 0x3f
 
 ; This is the trailer line for uuencoded files.  Consisting of 'end' + NL
-%assign TRAILER 0x0a646e65 ; in little endian format
+%assign TRAILERTEXT 0x0a646e65 ; in little endian format
 
 %include "system.inc"
 
@@ -43,8 +48,8 @@ START:
 	_mov [edi], dword "begi"
 	_mov [edi + 4], byte "n"
 	add edi, byte 5
-; All headers start with "begin", regardless of whether the program is using
-; standard uuencoding or base64 encoding.
+	; All headers start with "begin", regardless of whether the program is using
+	; standard uuencoding or base64 encoding.
 _processArgs:
 	pop eax
 	pop ebx
@@ -55,17 +60,17 @@ _processArgs:
 	cmp word [ebx], '-m'
 	; This only tests a word value.  Not very robust option processing.
 	jne _setStd
-	_mov dword [trans_ptr], uubase64 ; Pointer to the translation table.
+	_mov dword [trans_ptr], base64_table ; Pointer to the translation table.
 	_mov [edi], dword "-bas"
 	_mov [edi + 4], dword "e64 "
-; Standard uuencode starts with "begin ", but base64 uses begin-base64
+	; Standard uuencode starts with "begin ", but base64 uses begin-base64
 	add edi, byte 8
 	_mov [edi], byte 0
 	pop ebx ; Make sure processFiles has a string in ebx
 	dec eax ; and remove -m from argc
-	jmp _processFiles
+	jmp short _processFiles
 _setStd:
-	_mov dword [trans_ptr], uustd
+	_mov dword [trans_ptr], uu_table
 	_mov [edi], word 0x0020
 	inc edi
 _processFiles:
@@ -86,13 +91,12 @@ _processFiles:
 	call strcat
 	; header = "begin" + (" " || "-base64 ") + perms + outfilename
 	xor edx, edx
-	_mov ecx, O_RDONLY
-	sys_open
+	sys_open EMPTY, O_RDONLY
 	test eax, eax
 	js near _openError
 	_mov [filedes], eax
 	pop eax
-	jmp _endArgProc
+	jmp short _endArgProc
 _oneFile:
 	cmp eax, byte 1 ; eax (argc) might equal 0.
 	jne near _argError
@@ -106,7 +110,7 @@ _oneFile:
 _endArgProc:
 	mov esi, header
 	call strlen
-	mov [esi + edx], byte 0x0a
+	mov [esi + edx], byte __n
 	inc edx
 	sys_write STDOUT, header
 _topread:
@@ -120,51 +124,49 @@ _topread:
 		_mov ecx, buffer
 		add ecx, ebx
 		sys_read [filedes]
+		_mov [last_read], eax
 		test eax, eax
-		jz _process
 		js near _readError
 		_mov ebx, [to_read]
 		sub ebx, eax
-		jz _process
 		_mov [to_read], ebx
-		jmp readloop
+		test ebx, ebx
+		jz _process
+		test eax, eax
+jnz readloop
 	_process:
 		; First, calculate the input length.
 		_mov esi, buffer
 		_mov edi, outbuf
-		_mov [last_read], eax
-		_mov ebx, [to_read]
-		sub ebx, eax
-		_mov [to_read], ebx
 		_mov edx, BUFSIZE
 		sub edx, ebx
 		; End calculation to determine input length.
+		test edx, edx
+		jz near _uufinished ; special case, zero-length buffer
 		_mov [col], dword 0
 		_mov ebx, [trans_ptr]
-		cmp ebx, uubase64
+		cmp ebx, base64_table
 		je _uuloop
 		; Create the initial length byte of the first line for standard uuencoding
 		_mov eax, edx
 		cmp eax, byte 45
 		jb _firstLengthEndif
 		_mov al, byte 45
-; Lines of output can represent no more than 45 characters of input.
+		; Lines of output can represent no more than 45 characters of input.
 		_firstLengthEndif:
-		add al, byte 0x20
+		add al, ' '
 		stosb
 	_uuloop:
-		test edx, edx
-		jz near _uufinished ; while(edx)
 		cmp edx, byte 2 ; while(edx > 2) {
-		jna near _handleRemain
+		jna _handleRemain
 		cmp dword [col], byte 45
 			jl _loopNoNL
-			call _insert_newline
+				call _insert_newline
 		_loopNoNL: ; Slightly misnamed label.
-		lodsw
-		xchg ah, al
-		shl eax, 8
-		lodsb
+		lodsd
+		bswap eax
+		shr eax, 8
+		dec esi ; We loaded a dword, we only need 3 bytes
 		_mov ecx, eax ; Store our value away, so it isn't clobbered
 		and eax, FIRSTGROUP
 		shr eax, 18
@@ -185,12 +187,12 @@ _topread:
 		xlatb
 		stosb
 		sub edx, byte 3
-		_mov ecx, [col]
-		add ecx, byte 3
-		_mov [col], ecx
-		jmp _uuloop
+		add dword [col], byte 3
+		jmp short _uuloop
 ; This is jumped over if not needed.
 _handleRemain:
+	test edx, edx
+	jz _uufinished
 	cmp dword [col], byte 45
 		jl _remainderNoNL
 		call _insert_newline
@@ -215,16 +217,16 @@ _handleRemain:
 	and eax, LASTGROUP
 	xlatb
 	stosb
-	cmp ebx, uubase64
+	cmp ebx, base64_table
 	jne _twoBytesElse
 	_mov al, '='
-	jmp _twoBytesEndif
+	jmp short _twoBytesEndif
 _twoBytesElse:
 	_mov al, 0
 	xlatb
 _twoBytesEndif:
 	stosb
-	jmp _uufinished
+	jmp short _uufinished
 _oneByte:
 	lodsb
 	shl ax, 4
@@ -237,10 +239,10 @@ _oneByte:
 	and al, LASTGROUP
 	xlatb
 	stosb
-	cmp ebx, uubase64
+	cmp ebx, base64_table
 	jne _oneByteElse
 	_mov al, '='
-	jmp _oneByteEndif
+	jmp short _oneByteEndif
 _oneByteElse:
 	_mov al, 0
 	xlatb
@@ -249,6 +251,9 @@ _oneByteEndif:
 	stosw
 
 _uufinished:
+	cmp edi, outbuf
+	; This happens if the input file is empty.
+	je _trailerLine
 	_mov [edi], byte __n
 	inc edi
 	_mov esi, outbuf
@@ -258,17 +263,16 @@ _uufinished:
 	test eax, eax
 	jnz near _topread
 	_trailerLine:
-	; The label is unnecessary, but maybe it'll be needed in the future
 	_mov edi, outbuf
-	cmp dword [trans_ptr], uustd
+	cmp dword [trans_ptr], uu_table
 	jne _base64Trailer
 	; uuencode ends its output with a line containing one ` character, followed
 	; by a line containing the word end
 	_mov  word [edi], 0x0a60
-_mov dword [edi + 2], TRAILER
+	_mov dword [edi + 2], TRAILERTEXT
 	; Unfortunate that we can't use hex in char/string constants
 	sys_write STDOUT, outbuf, 6
-	jmp _exit
+	jmp short _exit
 	_base64Trailer:
 		; base64 uses a line containing 4 '=' characters as a trailer.
 		_mov [edi], dword '===='
@@ -281,16 +285,16 @@ _exit:
 _insert_newline:
 	_mov al, byte __n
 	stosb
-	cmp ebx, uubase64 ; No, we don't want a length byte when doing base64
+	cmp ebx, base64_table ; No, we don't want a length byte when doing base64
 	je _insertReturn
 	cmp edx, byte 45
 	jb _lengthByteElse
 	_mov al, byte 45
-	jmp _lengthByteEndif
+	jmp short _lengthByteEndif
 	_lengthByteElse:
 		_mov al, dl
 	_lengthByteEndif:
-		add al, byte 0x20
+		add al, ' '
 		stosb
 	_insertReturn:
 		_mov [col], dword 0
@@ -301,27 +305,21 @@ _insert_newline:
 ; Specifically written for uuencode.
 otoa:
 	push ebx
-	push ecx
 	_mov ebx, eax
 	and ebx, 700q
-	shr ebx, 6
-	or bl, 0x30
-	_mov cl, bl
-	_mov ebx, eax
-	and ebx, 070q
-	shr ebx, 3
-	or bl, 0x30
-	_mov ch, bl
-	_mov ebx, eax
-	and ebx, 007q
-	or bl, 0x30
-	shl ebx, 16
-	_mov bx, cx
+	shl ebx, 10
+	_mov bh, al
+	and bh, 070q
+	shr bh, 3
+	_mov bl, al
+	and bl, 7q
+	shl ebx, 8
+	or ebx, 0x30303000
 	; What we have here is a zero-terminated string, in little endian format
-	; in the ebx register.
+	; in the eax register.
 	; When written to memory, this reads left to right, as expected.
+	bswap ebx
 	_mov [edi], ebx
-	pop ecx
 	pop ebx
 	ret
 
@@ -338,26 +336,21 @@ strlen:
                 sub     edx,esi
                 ret
 
-; This strcat is borrowed from Dmitry Bakhvalov's cp utility.
 ; esi=source
 ; edi=dest
 strcat:
-		pushad
-
-		xchg	esi,edi
-		call	strlen
-		
-		xchg	esi,edi
-		add	edi,edx
-		
-		call	strlen
-		inc	edx		; copy NULL byte too
-		mov	ecx,edx
-		rep 	movsb		; copy
-dec edi
-
-		popad
-		ret
+	pushad
+	xchg esi, edi
+	call strlen
+	xchg esi, edi
+	add edi, edx
+	_strcatLoop:
+	lodsb
+	stosb
+	test al, al
+	jnz _strcatLoop
+	popad
+	ret
 
 ; source: esi
 ; dest: edi
@@ -366,14 +359,10 @@ strcpy:
 	push esi
 	push edi
 	_strcpyLoop:
-		; while((*dest = *source) && *dest != '\0')
-		; dest++, src++; 
 lodsb
 stosb
 		test al, al
-		jz _strcpyRet
-		jmp _strcpyLoop
-	_strcpyRet:
+		jnz _strcpyLoop
 		pop edi
 		pop esi
 		ret
@@ -419,8 +408,8 @@ _readError:
 
 DATASEG
 
-uustd db '`!"#', "$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_"
-uubase64 db "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+uu_table db '`!"#', "$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_"
+base64_table db "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 _argErrorMsg db "Usage: uuencode [-m] [infile] header", __n
 _argErrorSlen equ $-_argErrorMsg
 _openErrorMsg db "uuencode: unable to open ", 0x0
@@ -430,16 +419,18 @@ _readErrorSlen equ $-_readErrorMsg
 
 UDATASEG
 
+alignb 4
+
 errnum resd 1
 trans_ptr resd 1
 to_read resd 1
 last_read resd 1
 col resd 1
-buffer resb BUFSIZE
+filedes resd 1
+buffer resb BUFSIZE + 2
 outbuf resb OUTBUFSIZE
 statbuf B_STRUC Stat, .st_mode
 _errorStr resb 0x800
 header resb 0x800
-filedes resd 1
 
 END
