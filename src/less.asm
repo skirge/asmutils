@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Tiago Gasiba <ee97034@fe.up.pt>
 ;
-;$Id: less.asm,v 1.6 2002/03/14 06:08:37 konst Exp $
+;$Id: less.asm,v 1.7 2002/03/14 17:49:05 konst Exp $
 ;
 ;hackers' less/more
 ;
@@ -244,24 +244,30 @@ event_key_home:
 ;-----------------------------------------------------
 ler_ficheiro:
 	pusha
-	_mov	ebp,filebuffer
+	mov	ebp,filebuffer
 	push	ebp
 .lbl1:
 	sys_read [fd],buffin,BUFF_IN_LEN
 
 	test	eax,eax
 	jz	.fim
+
+	push	eax
+	push	eax
+
 	mov	ebx,eax
 	add	ebx,ebp
-	push	eax
 	sys_brk
-	_mov	esi,buffin
+
+	mov	esi,buffin
 	mov	edi,ebp
-	cld
 	pop	ecx
+	cld
 	rep	movsb
 	mov	ebp,edi
-	jmps	.lbl1
+	pop	eax
+	cmp	edx,eax		;end of file?
+	jz	.lbl1
 .fim:	
 	mov	[lines],ebp
 	pop	dword [ebp]	;mov	dword [ebp],filebuffer
@@ -413,6 +419,7 @@ lines			resd	1			; pnt to lines struct
 nlines			resd	1			; nr. of lines
 pos			resd	1			; current position
 buffin			resb	BUFF_IN_LEN
-filebuffer		resb	1			; file buffer
+
+filebuffer:		;resb	1			; file buffer
 
 END
