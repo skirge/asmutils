@@ -1,10 +1,8 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@fel.cvut.cz>, <ruik@atlas.cz>
 ;
-;$Id: tar.asm,v 1.2 2002/02/14 13:38:15 konst Exp $
+;$Id: tar.asm,v 1.3 2002/08/06 17:57:56 konst Exp $
 ;
 ;hackers' tar
-;
-;Version 0.1 - 2001-Sep-25
 ;
 ;Syntax tar [OPT] FILENAME
 ;OPT: -t list archive
@@ -13,7 +11,21 @@
 
 ;All comments/feedback welcome.
 
+;0.1	25-Sep-2001	initial release (RM)
+;0.2	04-Aug-2002	added contiguous (append) files, chown/grp,
+;			prefix processing,  "tar -xf -" for stdin,
+;			selection of only certain filenames for "tar -x" (JH)
+
+
 %include "system.inc"
+
+;------ Build configuration
+%define TAR_PREFIX
+%define TAR_CHOWN
+%define TAR_MATCH
+;%define TAR_CREAT           ; Not yet implemented
+			     ; Will be someday
+
 
 ;A tar archive consists of 512-byte blocks.
 ;  Each file in the archive has a header block followed by 0+ data blocks.
@@ -63,18 +75,18 @@
 ;  length can not be stored in a tar archive.  */
 
 ;/* The bits in mode: */
-%assign TSUID	04000
-%assign TSGID	02000
-%assign TSVTX	01000
-%assign TUREAD	00400
-%assign TUWRITE	00200
-%assign TUEXEC	00100
-%assign TGREAD	00040
-%assign TGWRITE	00020
-%assign TGEXEC	00010
-%assign TOREAD	00004
-%assign TOWRITE	00002
-%assign TOEXEC	00001
+%assign TSUID	04000q
+%assign TSGID	02000q
+%assign TSVTX	01000q
+%assign TUREAD	00400q
+%assign TUWRITE	00200q
+%assign TUEXEC	00100q
+%assign TGREAD	00040q
+%assign TGWRITE	00020q
+%assign TGEXEC	00010q
+%assign TOREAD	00004q
+%assign TOWRITE	00002q
+%assign TOEXEC	00001q
 
 ;/* The values for typeflag:
 ;   Values 'A'-'Z' are reserved for custom implementations.
@@ -103,8 +115,13 @@
 %assign BUFF_DIV  011
 %assign BUFF_SIZE 2<<(BUFF_DIV-1)
 
-CODESEG
+%ifdef TAR_PREFIX
+ %define FILENAME tarname
+%else
+ %define FILENAME tar.name
+%endif
 
+CODESEG
 
 START:
 	pop     ebx
@@ -131,6 +148,9 @@ START:
 .extract_archive:
 	pop 	ebx
 	call tar_archive_open
+%ifdef TAR_MATCH
+	mov	[tar_match], esp
+%endif
 	call tar_archive_extract
 	push 	ebx
 	call tar_archive_close
@@ -195,6 +215,31 @@ convert_numbers:
 	call 	octal_to_int
 	mov 	dword [esi],eax
 	ret
+
+%ifdef TAR_PREFIX
+pref_tran:
+	pusha
+	mov	edi, FILENAME
+	mov	esi, tar.prefix
+	xor	ecx, ecx
+	mov	cl, 0156		; Stop one byte AFTER end of prefix
+.prefc:	lodsb
+	stosb
+	or	al, al
+	loopnz	.prefc
+	dec	edi
+	mov	esi, tar.name
+	mov	cl, 100
+.main:	lodsb
+	stosb
+	or	al, al
+	loopnz	.main
+	mov	al, 0
+	stosb
+	popa
+	ret
+%endif
+
 ;*************************
 tar_list_files:
 .next:
@@ -203,8 +248,11 @@ tar_list_files:
 	jz 	.list_done
 	cmp 	dword [tar.magic],'usta'
 	jnz 	.next
+%ifdef TAR_PREFIX
+	call	pref_tran
+%endif
 	xor 	edx,edx
-	lea 	ecx,[tar.name]
+	lea 	ecx,[FILENAME]
 .next_byte:
 	cmp 	byte [ecx+edx],1
 	inc 	edx
@@ -227,6 +275,9 @@ tar_list_files:
   ret
 
 tar_archive_open:
+	xor	eax, eax
+	cmp	[ebx], word '-'
+	je	.ok
 	sys_open EMPTY,O_RDONLY
 	test 	eax,eax
 	jns 	.ok
@@ -241,7 +292,7 @@ tar_archive_close:
 tar_archive_extract:
 .read_next:
 	sys_read [tar_handle],tar,0512 
-	;sys_write STDOUT,tar.name,0100
+	;sys_write STDOUT, tar.name, 0100
 	xor 	eax,eax
 	cmp 	byte [tar.version],' '
 	jz 	.ver_ok
@@ -249,31 +300,35 @@ tar_archive_extract:
 	ret
 .ver_ok:
 	cmp 	dword [tar.magic],'usta'
-	jnz 	 .error_magic
+	jnz 	.error_magic
+%ifdef TAR_PREFIX
+	call	pref_tran
+%else
 	cmp	byte [tar.prefix],0
 	jz 	.ok
 	int 3 ;we dont handle the prefix extension yet
 .ok:
-;	mov 	eax,tar.typeflag
-;	cmp 	byte [eax],REGTYPE
-;	jz  	near .create_file
-;	cmp  	byte [eax],AREGTYPE
-;	jz 	near .create_file
-;	cmp  	byte [eax],DIRTYPE
-;	jz 	near .create_dir
-;	cmp  	byte [eax],LNKTYPE
-;	jz 	near .create_hardlink
-;	cmp  	byte [eax],SYMTYPE
-;	jz 	near .create_symlink
-;	cmp  	byte [eax],CHRTYPE
-;	jz 	near .create_char
-;	cmp  	byte [eax],BLKTYPE
-;	jz 	near .create_block
-;	cmp  	byte [eax],FIFOTYPE
-;	jz 	near .create_fifo
-;	cmp 	 byte [eax],CONTTYPE
-;	jz 	.create_contigous
-;	jmp  .error
+%endif
+%ifdef TAR_MATCH
+	mov	ebp, [tar_match]
+	mov	edi, [ebp]
+	or	edi, edi
+	jz	.gotmatch
+.trynext:
+	mov	esi, FILENAME
+	mov	edi, [ebp]
+	or	edi, edi
+	jz	.notmatch
+	add	ebp, byte 4
+.scmp:	lodsb
+	mov	cl, [edi]
+	inc	edi
+	cmp	al, cl
+	jnz	.notmatch
+	or	al, cl
+	jnz	.scmp
+.gotmatch:
+%endif
 	xor 	eax,eax
 	mov 	al,[tar.typeflag]
 	or 	al,al
@@ -287,8 +342,10 @@ tar_archive_extract:
 	test 	eax,eax
 	xchg 	eax,ebx
 	js   	.error
-;    sys_chown tar.name,[tar.uid],[tar.gid]
-	jmps 	.read_next	
+%ifdef TAR_CHOWN
+	sys_lchown tar.name,[tar.uid],[tar.gid]
+%endif
+	jmp	.read_next	
 .error_magic:
 	lea 	eax,[0xDEADDEAD]
 .error:
@@ -296,12 +353,34 @@ tar_archive_extract:
 .exit:
 	ret
 
+%ifdef TAR_MATCH
+.notmatch:
+	call	convert_size
+	mov	ebp,	[tar.size]
+	add	ebp,	511
+	and	ebp,	~511
+	shr	ebp,	BUFF_DIV
+	jz	.rd
+	mov	ebx,	[tar_handle]
+	mov	ecx,	buffer
+	_mov	edx,	512
+.readj	sys_read		; [tar_handle], buffer, 512
+	dec	ebp
+	jnz	.readj
+.rd	jmp	.read_next
+%endif
 
 .create_contigous:
-	int 3 ;NYI
+%ifdef TAR_CONTIG
+	call convert_size
+	sys_open FILENAME, O_CREAT|O_APPEND|O_WRONLY,[tar.mode]
+	jmp	.crc		; Reenter create file code!
+%else
+	int 3		; Disabled
+%endif
 .create_dir:
 	call convert_numbers
-	sys_mkdir tar.name,[tar.mode]
+	sys_mkdir FILENAME,[tar.mode]
 	xor eax,eax ;always OK
 	ret
 
@@ -331,12 +410,12 @@ tar_archive_extract:
 	shl ecx,8
 	mov edx,[tar.devminor]
 	or  edx,ecx
-	sys_mknod tar.name,[tar.mode],EMPTY
+	sys_mknod FILENAME,[tar.mode],EMPTY
 	ret
 .create_file:
 	call convert_size
-	sys_open tar.name, O_CREAT|O_WRONLY|O_TRUNC,[tar.mode]  ;todo: other flags   
-	test 	eax,eax
+	sys_open FILENAME, O_CREAT|O_WRONLY|O_TRUNC,[tar.mode]  ;todo: other flags   
+.crc	test 	eax,eax
 	js 	near .error_open
 	mov 	[file_handle],eax
 	xchg 	ebx,eax
@@ -382,6 +461,14 @@ UDATASEG
 
 tar_handle resd 1
 file_handle resd 1
+
+%ifdef TAR_PREFIX
+ FILENAME	resb	256
+%endif
+%ifdef TAR_MATCH
+ tar_match	resd	1
+%endif
+
 tar:
 .name		resb 0100
 .mode		resb 0008
