@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Karsten Scheibler <karsten.scheibler@bigfoot.de>
 ;
-;$Id: init.asm,v 1.2 2002/02/27 17:54:25 konst Exp $
+;$Id: init.asm,v 1.3 2002/06/24 16:54:38 konst Exp $
 ;
 ;simple init
 ;
@@ -10,6 +10,7 @@
 ;
 ;0.01: 03-Mar-2001	initial release
 ;0.02: 27-Feb-2002	execute rc script on startup (KB)
+;0.03: 19-Jun-2002	wait for rc script to finish (KB)
 
 %include "system.inc"
 
@@ -23,15 +24,15 @@ CODESEG
 
 START:
 			sys_fork
-			test	dword eax, eax
+			test	eax, eax
 			jnz	.skip
-			sys_execve  [arguments_rc], arguments_rc, environment
-			sys_exit  0
+			sys_execve [arguments_rc], arguments_rc, environment
+			sys_exit 0
 .skip:
+			sys_wait4  0xffffffff, NULL, WNOHANG, NULL
 			;---------------
 			;initialize ttys
 			;---------------
-
 			xor	dword ebp, ebp
 .init_loop		inc	dword ebp
 			call	tty_initialize
