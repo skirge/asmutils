@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 by Joshua Hudson
 ;
-;$Id: which.asm,v 1.3 2001/09/24 16:49:19 konst Exp $
+;$Id: which.asm,v 1.4 2001/09/24 16:56:21 konst Exp $
 ;
 ;hacker's which
 ;
@@ -101,11 +101,7 @@ START:
 .chwhich:				; For each path,
 	mov	esi, [ebp]
 	or	esi, esi
-%ifdef	__LONG_JUMPS__
 	jz	near .whdone
-%else
-	jz	.whdone
-%endif
 	mov	al, [esi]
 	or	al, al
 	jz	near .whdone
