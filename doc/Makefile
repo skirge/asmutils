@@ -1,23 +1,25 @@
 #
 #
-# $Id: Makefile,v 1.1 2000/12/10 08:20:36 konst Exp $
+# $Id: Makefile,v 1.2 2002/08/14 16:55:30 konst Exp $
 
 DSL=konst.dsl
 MAIN=Asmutils-HOWTO
 SGML=$(MAIN).sgml
+TEXI=sha1sum.texi
 HTMLDIR=html
 
 all:	html
 
-html:	$(SGML) $(DSL)
+html:	$(SGML) $(DSL) $(TEXI)
 	jade -t sgml -ihtml -d $(DSL)\#html $(SGML)
+	texi2html $(TEXI)
 	mkdir -p $(HTMLDIR)
 	mv *.htm* $(HTMLDIR)
 
-rtf:	$(SGML) $(DSL)
+rtf:	$(SGML) $(DSL) $(TEXI)
 	jade -t rtf -d $(DSL)\#print $(SGML)
 
-pdf:	$(SGML) $(DSL)
+pdf:	$(SGML) $(DSL) $(TEXI)
 	jade -t tex -d $(DSL)\#print $(SGML)
 #
 # three passes are needed to generate proper page numbers in toc
@@ -25,6 +27,8 @@ pdf:	$(SGML) $(DSL)
 	pdfjadetex $(MAIN).tex
 	pdfjadetex $(MAIN).tex
 	pdfjadetex $(MAIN).tex
+
+	texi2pdf $(TEXI)
 
 clean:
 	rm -rf $(HTMLDIR) *.htm* *.rtf *.tex *.pdf *.aux *.log

@@ -1,0 +1,294 @@
+\input texinfo @c -*-texinfo-*-
+@c %**start of header
+@set UPDATED 2002 July 25
+@set EDITION 1.0
+@set $Id: sha1sum.texi,v 1.1 2002/08/14 16:55:30 konst Exp $
+
+@setfilename sha1.info
+@settitle @emph{Hacker's SHA-1 Documentation}
+@setchapternewpage off
+@set smallbook
+@c %**end of header
+
+@titlepage
+@title @emph{Hacker's @code{SHA-1} Documentation}
+@subtitle Programmer's Guide (Edition @value{EDITION})
+@author Julius C. Duque
+
+@page
+@vskip 0pt plus 1filll
+Copyright @copyright{} 2002 Julius C. Duque
+
+Permission is granted to make and distribute verbatim copies of this
+Programmer's Guide, provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+Programmer's Guide under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this Programmer's
+Guide into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved by
+the Free Software Foundation.
+
+IN NO EVENT SHALL THE AUTHOR BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
+SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OF THIS
+PROGRAMMER'S GUIDE. FURTHERMORE, THE AUTHOR SPECIFICALLY DISCLAIMS ANY
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THIS PROGRAMMER'S GUIDE
+IS ON AN ``AS IS'' BASIS, AND THE AUTHOR HAS NO OBLIGATION TO PROVIDE
+MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+@end titlepage
+
+@headings double
+
+@iftex
+@headings off
+@oddheading @thischapter @| @| @thispage
+@evenheading @thispage @| @| @thischapter
+@end iftex
+
+@contents
+@page
+
+@node Acknowledgements
+@chapter Acknowledgements
+This program would not have been possible if not for Cecchinel Stephan, whose
+email address is @email{interzone@@pacwan.fr}. Some lines in @file{sha1sum.asm}
+were taken from @file{md5sum.asm} and @file{rmdsum.asm}, both written by
+Cecchinel.
+
+I would also like to thank the @emph{ASM Utils Team} and the @emph{NASM Team}
+for producing such fine pieces of utilities.
+
+@node Limitations
+@chapter Limitations
+@code{sha1sum} has only been tested on an Intel Pentium 4 (32-bit) machine,
+running @w{Linux 2.4.18}. This means that the maximum file size that can be
+hashed is only
+@tex
+$2^{31} - 1$
+@end tex
+(2147483647) bytes. Because of this, @code{sha1sum} has only been optimized to
+take advantage of this size limitation. It is very unlikely that @code{sha1sum}
+can still output correct message digests of files whose sizes exceed this limit.
+
+@file{sha1sum} uses the @command{bswap} instruction, which is available only
+on the 486 and later Intel machines. Therefore, you need at least a 486
+machine to run @file{sha1sum}.
+
+Unlike @file{md5sum.asm} and @file{rmdsum.asm}, @file{sha1sum.asm} does not read
+from STDIN; there must be at least one input file.
+
+@node MCONFIG
+@chapter @file{MCONFIG} Settings
+Modifying @file{MCONFIG} to use @samp{SYSCALL = LIBC} produces
+@code{Segmentation fault}, which is otherwise absent when
+@samp{SYSCALL = KERNEL}. To correct this, @samp{STARTUP = y} must also be set.
+
+Setting @samp{OS = FREEBSD} or @samp{OPTIMIZE = SPEED} or both, does not
+produce any error. Outputs from both settings are also the same.
+
+@page
+
+@node PrintFunc
+@chapter Print Functions
+@example
+@group
+    _mov   ecx, base_N
+    _mov   ebx, regSize
+
+  _PushStack:
+    xor    edx, edx
+    div    ecx
+    push   edx
+    dec    ebx
+    test   ebx, ebx
+    jz     short _PopStack
+    call   _PushStack
+
+  _PopStack:
+    pop    edx
+    _add   edx, '0'
+    cmp    edx, byte '9'
+    jbe    short _PrintChar
+    _add   edx, hexFormat
+
+  _PrintChar:
+    _mov   [t], edx
+    sys_write STDOUT, t, 1
+    ret
+@end group
+@end example
+
+@sp 1
+
+The @code{PrintNum} function prints the content of a 32-bit register in any
+base representation. By default, @code{PrintNum} prints in hexadecimal
+notation (base @code{16}).
+
+The idea behind the workings of @code{PrintNum} is to divide the original
+number by the desired base representation, and then store the resulting
+remainder.
+The integer part of the resulting quotient then becomes the new dividend. The
+division process is repeated until the quotient becomes @code{0}. When
+finished, the remainders are read in the reverse order that they were stored.
+The remainders represent the original number printed in the desired base.
+
+To use @code{PrintNum}, @code{eax} should already hold the number to be
+printed. @code{eax} is the dividend, and @code{ecx}, which has been previously
+initialized with @var{base_N}, is the divisor. When @code{eax} is divided by
+@code{ecx}, the integer part of the resulting quotient is stored in
+@code{eax}, overwriting its earlier content, and the remainder is stored in
+@code{edx}. @code{edx} is saved by @code{push}-ing it in the stack (by calling
+@code{_PushStack}). The division process is repeated until @code{eax} becomes
+@code{0}, at which time, the contents of the stack are @code{pop}-ped off
+(by calling _PopStack).
+
+If a different representation is desired, modify the variable @var{base_N}.
+
+Now, consider this. If the output should be in hexadecimal notation, 4 bits
+are needed to represent one hexadecimal digit. So, a 32-bit register can
+represent, at a maximum, 8 hexadecimal digits. If @code{PrintNum} must always
+print exactly 8 digits, the call to @code{_PushStack} must also be done
+exactly 8 times. In this case, @code{ebx}, which has been initialized with
+@var{regSize}, is used as a counter for calls to @code{_PushStack}. By
+default, @var{regSize} is set to @code{8}.
+
+The output can also be printed in either lowercase or uppercase. The variable
+@var{hexFormat} can be set to @code{0x27}, if lowercase hexadecimal notation
+is desired, or to @code{0x07}, if the uppercase form is desired.
+
+Also, notice that the contents of @var{W} are no longer needed during the
+printing of the final message digest. That is why it is safe to use @var{t} to
+also act as the last element of @var{W}.
+
+@node RoundFunc
+@chapter @code{SHA-1} Round Functions
+The original round functions, as specified in FIPS 180-1 (Secure Hash Standard),
+were replaced with their alternate forms to minimize code size. The round
+functions and their alternates are as follows:
+
+@tex
+$f_{1}(B,C,D) = (B \wedge C) \vee (\sim B \wedge D) = (D \oplus (B \wedge
+    (C \oplus D)))$
+@end tex
+
+@tex
+$f_{2}(B,C,D) = B \oplus C \oplus D$
+@end tex
+
+@tex
+$f_{3}(B,C,D) = (B \wedge C) \vee (B \wedge D) \vee (C \wedge D) = (B \wedge C)
+    \vee (D \wedge (B \vee C))$
+@end tex
+
+@tex
+$f_{4}(B,C,D) = B \oplus C \oplus D$
+@end tex
+
+@sp 1
+
+@tex
+$\vee$
+@end tex
+is bitwise OR,
+@tex
+$\wedge$
+@end tex
+is bitwise AND,
+@tex
+$\oplus$
+@end tex
+is bitwise exclusive OR, and
+@tex
+$\sim$
+@end tex
+is negation. Notice that the second and fourth round functions are the same, and
+hence, we can code @code{sha1sum} with only three round functions.
+
+@example
+@group
+F0:
+    _mov   ebx, [edi-16]  ; same as_mov ebx, [B]
+    _mov   ecx, [edi-12]  ; same as_mov ecx, [C]
+    _mov   edx, [edi-8]   ; same as_mov edx, [D]
+    ret
+
+F1:
+    call   F0
+    xor    ecx, edx
+    and    ebx, ecx
+    xor    edx, ebx       ; edx now holds result
+    ret
+
+F2:
+    call   F0
+    xor    edx, ecx
+    xor    edx, ebx       ; edx now holds result
+    ret
+
+F3:
+    call   F0
+    or     ebx, ecx
+    and    edx, ebx
+    _mov   ebx, [edi-16]  ; revive old B
+    and    ecx, ebx
+    or     edx, ecx       ; edx now holds result
+    ret
+@end group
+@end example
+
+@sp 1
+
+Procedure @code{F0} is executed first before actually executing the round
+functions. @code{F0} uses the following trick. Before calling the round
+functions, @code{edi} should already hold the address of @var{W}. Based
+from the arrangement of variables in @code{UDATASEG}, @var{E} is 4 bytes
+behind @var{W}, @var{D} is 8 bytes behind @var{W}, @var{C} is 12 bytes
+behind @var{W}, and so on.
+
+@node SHA1_TRANSFORM
+@chapter @code{SHA-1} Transformation
+@code{SHA1_TRANSFORM} does the bulk of the work in computing the message
+digest. As in the code used for the round functions (@ref{RoundFunc, ,
+@code{SHA-1} Round Functions}), the reference point is also @var{W}. The same
+strategy is also employed, accessing @var{A}, @var{B}, @var{C}, @var{D},
+and @var{E}, solely from their offset from @var{W}. In addition, the
+alternate method of computing the message digest, as stated in Section
+8 of FIPS 180-1, is used to further cut down on code size. However, this
+will likely lengthen the execution time due to the increased complexity of
+address computations.
+
+@node TRANSFER
+@chapter Byte Orientation Issues
+@example
+@group
+    call   INIT_W
+    sub    edi, byte BLOCKSIZE  ; same as _mov edi, W
+    _mov   ecx, BLOCKSIZE/4   ; transfer is done 4 bytes at a time
+    push   eax
+
+  BYTE_REVERSE:
+    lodsd
+    bswap  eax            ; store in big-endian orientation
+    stosd                 ; transfer contents of buffer to W
+    loop   BYTE_REVERSE
+    pop    eax
+    ret
+@end group
+@end example
+
+@sp 1
+
+@code{SHA-1}, by design, favors big-endian machines. For Intel machines,
+which are little-endian, it is, therefore, necessary to first reverse
+the byte orientation of data to be operated on, before actually doing
+any computation. The instruction @command{bswap} does the trick of converting
+big-endian to little-endian orientation, and vice versa. Note, however, that
+@command{bswap} is available only on the 486 and later Intel machines.
+
+@bye
+
