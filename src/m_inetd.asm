@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 by Joshua Hudson
 ;
-;$Id: m_inetd.asm,v 1.1 2001/10/16 15:44:03 konst Exp $
+;$Id: m_inetd.asm,v 1.2 2001/11/24 09:46:18 konst Exp $
 ;
 ;m_inetd by Joshua Hudson 08/09/2001
 ;
@@ -75,7 +75,7 @@ nopathreq:
 	sys_fork				; Start the program
 	or	eax, eax
 	jz	acceptloop
-	js	fail
+	js	near fail
 
 ; Display child pid to SDTOUT
 	mov	edi, address

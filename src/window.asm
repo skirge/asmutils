@@ -1,6 +1,6 @@
 ;Copyright (C) 1995-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: window.asm,v 1.9 2001/09/17 09:36:19 konst Exp $
+;$Id: window.asm,v 1.10 2001/11/24 09:46:18 konst Exp $
 ;
 ;text window example
 
@@ -245,21 +245,6 @@ open_screen:
 	mul	ah
 	mov	[sLen],eax
 	
-;prepare structure for mmap on the stack
-
-;	_push	0			;.offset
-;	push	dword [sHandle]		;.fd
-;	_push	MAP_SHARED		;.flags
-;	_push	PROT_READ|PROT_WRITE	;.prot
-;	_push	eax			;.len
-;	_push	0			;.addr
-;	mov	ebx,esp
-;	sys_mmap
-;	test	eax,eax		;have we mmaped file?
-;	js	near _exit
-
-;	mov	[sMem],eax
-
 	popa
 	ret
 
@@ -267,9 +252,6 @@ open_screen:
 close_screen:
 	pusha
 	sys_ioctl STDIN,TCSETS,sattr
-;	movzx	eax,byte [sMaxY]
-;	mul	byte [sMaxX]
-;	sys_munmap [sMem],eax
 	sys_close [sHandle]
 	popa
 	ret

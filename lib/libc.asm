@@ -1,7 +1,7 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-;$Id: libc.asm,v 1.9 2001/03/18 07:08:25 konst Exp $
+;$Id: libc.asm,v 1.10 2001/11/24 09:47:32 konst Exp $
 ;
 ;hackers' libc
 ;
@@ -917,12 +917,16 @@ LongToStr:
 	mov     al,dl
 
 ;dec convertion
-	add	al,'0'
+;	add	al,'0'
+;	add	al,0x90
+;	daa
+;	adc	al,0x40
+;	daa
+
 ;hex convertion
-	add	al,0x90
-	daa
-	adc	al,0x40
-	daa
+	cmp	al,10
+	sbb	al,0x69
+	das
 
         stosb
 	xor	eax,eax

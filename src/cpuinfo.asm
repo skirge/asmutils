@@ -1,7 +1,7 @@
 ;-====================================================================;
 ;- Copyright (C) 2000 H-Peter Recktenwald, Berlin <phpr@snafu.de>
 ;-
-;- $Id: cpuinfo.asm,v 1.2 2000/09/03 16:13:54 konst Exp $
+;- $Id: cpuinfo.asm,v 1.3 2001/11/24 09:46:18 konst Exp $
 ;-
 ;-  file  	: cpuinfo.asm
 ;-  created	: 18-jan-2000
@@ -404,10 +404,11 @@ p_num:			; 8 digits
     and al,dl
     shr edx,4
     dec ecx
-    add al,0x90
-    daa
-    adc al,0x40
-    daa
+
+    cmp	al,10
+    sbb	al,0x69
+    das
+
     mov [ecx],al
     dec ebx			;18;
     jg .p

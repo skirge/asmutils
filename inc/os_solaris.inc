@@ -1,11 +1,11 @@
 ; Copyright (C) 2001 Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
 ; 
-; $Id: os_solaris.inc,v 1.2 2001/11/14 16:01:42 konst Exp $
+; $Id: os_solaris.inc,v 1.3 2001/11/24 09:45:27 konst Exp $
 ;
 ; file		: os_solaris.inc
 ; created	: 04-Nov-2001
-; modified	: 14-Nov-2001
-; version	: 0.2
+; modified	: 24-Nov-2001
+; version	: 0.16
 ; assembler	: nasm
 ; author	: Thomas M. Ogrisegg
 ; comment	: included from system.inc
@@ -267,20 +267,10 @@ __syscall_gate:
 
 ; System constants (Solaris/2.7)
 
-%assign PROT_READ       1
-%assign PROT_WRITE      2
-%assign PROT_EXEC       0x4
-%assign PROT_NONE       0x0
-
-%assign MAP_SHARED      1
-%assign MAP_PRIVATE     2
-%assign MAP_TYPE        0xf
-%assign MAP_FIXED       0x10
-
-%assign SOL_SOCKET		0xffff
+%assign SOL_SOCKET	0xffff
 %assign SO_REUSEADDR	0x0004
 
-%assign F_DUP2FD		0x9
+%assign F_DUP2FD	0x9
 
 ;-----------------------------------------------------;
 ; Special Systemcall macros for Solaris/x86           ;

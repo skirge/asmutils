@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.9 2001/11/12 15:53:18 konst Exp $
+; $Id: system.inc,v 1.10 2001/11/24 09:45:27 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 12-Nov-2001
+; modified	: 24-Nov-2001
 ; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: generic (not OS specific) macros, sections, headers, etc.
@@ -33,7 +33,8 @@
 ;0.14: 11-Feb-2001	added B_STRUC macro (aka ELF_BSTRUC from elf.inc) (BR),
 ;			moved __syscall_gate to os_xxx.inc files (KB)
 ;0.15: 24-Sep-2001	fixed LIBC stuff, added __LONG_JUMPS__ (KB)
-;0.16: 12-Nov-2001	added SOLARIS, UNIXWARE, improved BeOS stub (KB)
+;0.16: 24-Nov-2001	added SOLARIS, UNIXWARE, improved BeOS stub,
+;			_push with 2 args (KB)
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
@@ -661,8 +662,12 @@ resb %{$strucname}_size - ($ - %%top_%$strucname)
 %endif
 %endmacro
 
-%macro _push 1
-%ifid %1
+%macro _push 1-2
+%ifidn	%1,EMPTY
+    %if %0>1
+	push	%2
+    %endif
+%elifid %1
 	push	dword %1
 %elifstr %1
 	push	dword %1

@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.10 2001/11/12 15:53:18 konst Exp $
+; $Id: syscall.inc,v 1.11 2001/11/24 09:45:27 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 12-Nov-2001
+; modified	: 24-Nov-2001
 ; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: system call macros
@@ -42,11 +42,7 @@
    %if %3>3
     %if %3>4
      %if %3>5
-%ifdef __LINUX__
-%if __KERNEL >= 24
 	_mov	ebp,%9
-%endif
-%endif
      %endif
 	_mov	edi,%8
     %endif
@@ -101,7 +97,7 @@
       %if P>6 && %3>6
 	push	dword %10
       %endif
-	push	dword %9	;push	ebp
+	push	ebp
      %endif
 	push	edi
     %endif

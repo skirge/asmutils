@@ -1,6 +1,6 @@
 ;Copyright (C) 1996-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: leaves.asm,v 1.6 2001/01/21 15:18:46 konst Exp $
+;$Id: leaves.asm,v 1.7 2001/11/24 09:46:18 konst Exp $
 ;
 ;leaves		-	Linux fbcon intro in 396 bytes
 ;
@@ -185,15 +185,13 @@ START:
 ;	js	exit
 
 ;prepare structure for mmap on the stack
-
 	_push	0			;.offset
 	_push	eax			;.fd
 	_push	MAP_SHARED		;.flags
 	_push	PROT_READ|PROT_WRITE	;.prot
 	_push	edi			;.len
 	_push	0			;.addr
-	mov	ebx,esp
-	sys_mmap
+	sys_oldmmap esp
 
 ;	test	eax,eax		;have we mmaped file?
 ;	js	exit

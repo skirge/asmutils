@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: execve.asm,v 1.4 2001/03/18 07:08:25 konst Exp $
+;$Id: execve.asm,v 1.5 2001/11/24 09:46:18 konst Exp $
 ;
 ;execve/regs
 ;
@@ -74,11 +74,15 @@ LongToStr:
 
 ;dec convertion
 ;	add	al,'0'
+;	add	al,0x90
+;	daa
+;	adc	al,0x40
+;	daa
+
 ;hex convertion
-	add	al,0x90
-	daa
-	adc	al,0x40
-	daa
+	cmp	al,10
+	sbb	al,0x69
+	das
 
         stosb
 	xor	eax,eax

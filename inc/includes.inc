@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.8 2001/11/19 06:59:47 konst Exp $
+; $Id: includes.inc,v 1.9 2001/11/24 09:45:27 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 18-Nov-2001
+; modified      : 24-Nov-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : generic constants and structures from header files (libc)
@@ -415,6 +415,21 @@ struc utsname
 .machine	CHAR	SYS_NMLN
 .domainname	CHAR	SYS_NMLN
 endstruc
+
+;
+;sys/mman.h
+;
+
+%assign PROT_READ	0x1
+%assign PROT_WRITE	0x2
+%assign PROT_EXEC	0x4
+%assign PROT_NONE	0x0
+
+%assign MAP_SHARED	0x01
+%assign MAP_PRIVATE	0x02
+%assign MAP_TYPE	0x0f
+%assign MAP_FIXED	0x10
+%assign MAP_ANONYMOUS	0x20
 
 ;
 ;sys/stat.h

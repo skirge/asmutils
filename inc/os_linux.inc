@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.11 2001/11/20 15:28:09 konst Exp $
+; $Id: os_linux.inc,v 1.12 2001/11/24 09:45:27 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 20-Nov-2001
+; modified      : 24-Nov-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
@@ -50,21 +50,6 @@ endstruc
 %assign	LINUX_REBOOT_CMD_CAD_OFF	0x00000000	;Ctrl-Alt-Del sequence sends SIGINT to init task.
 %assign	LINUX_REBOOT_CMD_POWER_OFF	0x4321FEDC	;Stop OS and remove all power from system, if possible.
 %assign	LINUX_REBOOT_CMD_RESTART2	0xA1B2C3D4	;Restart system using given command string.
-
-;
-;asm/mman.h
-;
-
-%assign PROT_READ	0x1
-%assign PROT_WRITE	0x2
-%assign PROT_EXEC	0x4
-%assign PROT_NONE	0x0
-
-%assign MAP_SHARED	0x01
-%assign MAP_PRIVATE	0x02
-%assign MAP_TYPE	0x0f
-%assign MAP_FIXED	0x10
-%assign MAP_ANONYMOUS	0x20
 
 %assign MAP_GROWSDOWN	0x0100
 %assign MAP_DENYWRITE	0x0800
@@ -571,19 +556,6 @@ struc statfs
 endstruc
 
 ;
-;arch/i386/kernel/sys_i386.c
-;
-
-struc	mmap_arg_struct
-.addr	ULONG	1
-.len	ULONG	1
-.prot	ULONG	1
-.flags	ULONG	1
-.fd	ULONG	1
-.offset	ULONG	1
-endstruc
-
-;
 ;asm/ptrace.h
 ;
 
@@ -958,9 +930,50 @@ endstruc
 ;system calls
 ;
 
-;--------------------------------------------------------------------------
-;net/
-;--------------------------------------------------------------------------
+%macro	__pushargs 2-8
+%if %1>0
+ %if %1>1
+  %if %1>2
+   %if %1>3
+    %if %1>4
+     %if %1>5
+	%if %2>5
+	_push	%8,ebp
+	%else
+	push	ebp
+	%endif
+     %endif
+	%if %2>4
+	_push	%7,edi
+	%else
+        push	edi
+	%endif
+    %endif
+	%if %2>3
+	_push	%6,esi
+	%else
+        push	esi
+	%endif
+   %endif
+	%if %2>2
+	_push	%5,edx
+	%else
+        push	edx
+	%endif
+  %endif
+	%if %2>1
+	_push	%4,ecx
+	%else
+        push	ecx
+	%endif
+ %endif
+	%if %2>0
+	_push	%3,ebx
+	%else
+        push	ebx
+	%endif
+%endif
+%endmacro
 
 ;
 ;net/socket.c
@@ -970,82 +983,85 @@ endstruc
         __syscall socketcall, 3, %0, %1, %2, %3
 %endmacro
 
-%macro	sys_socket 3
-	_push	%3
-	_push	%2
-	_push	%1
+%macro	sys_socket 0-3
+	__pushargs 3, %0, %1, %2, %3
 	sys_socketcall SYS_SOCKET,esp
-	_add	esp,(%0 * 4)
+	_add	esp,(3 * 4)
 %endmacro
 
-%macro	sys_accept 3
-	_push	%3
-	_push	%2
-	_push	%1
+%macro	sys_accept 0-3
+	__pushargs 3, %0, %1, %2, %3
 	sys_socketcall SYS_ACCEPT,esp
-	_add	esp,(%0 * 4)
+	_add	esp,(3 * 4)
 %endmacro
 
-%macro	sys_connect 3
-	_push	%3
-	_push	%2
-	_push	%1
+%macro	sys_connect 0-3
+	__pushargs 3, %0, %1, %2, %3
 	sys_socketcall SYS_CONNECT,esp
-	_add	esp,(%0 * 4)
+	_add	esp,(3 * 4)
 %endmacro
 
-%macro	sys_bind 3
-	_push	%3
-	_push	%2
-	_push	%1
+%macro	sys_bind 0-3
+	__pushargs 3, %0, %1, %2, %3
 	sys_socketcall SYS_BIND,esp
-	_add	esp,(%0 * 4)
+	_add	esp,(3 * 4)
 %endmacro
 
-%macro	sys_setsockopt 5
-	_push	%5
-	_push	%4
-	_push	%3
-	_push	%2
-	_push	%1
+%macro	sys_setsockopt 0-5
+	__pushargs 5, %0, %1, %2, %3, %4, %5
 	sys_socketcall SYS_SETSOCKOPT,esp
-	_add	esp,(%0 * 4)
+	_add	esp,(5 * 4)
 %endmacro
 
-%macro	sys_shutdown 2
-	_push	%2
-	_push	%1
+%macro	sys_shutdown 0-2
+	__pushargs 2, %0, %1, %2
 	sys_socketcall SYS_SHUTDOWN,esp
-	_add	esp,(%0 * 4)
+	_add	esp,(2 * 4)
 %endmacro
 
-%macro	sys_listen 2
-	_push	%2
-	_push	%1
+%macro	sys_listen 0-2
+	__pushargs 2, %0, %1, %2
 	sys_socketcall SYS_LISTEN,esp
-	_add	esp,(%0 * 4)
+	_add	esp,(2 * 4)
 %endmacro
 
-%macro	sys_sendto 6
-	_push	%6
-	_push	%5
-	_push	%4
-	_push	%3
-	_push	%2
-	_push	%1
+%macro	sys_sendto 0-6
+	__pushargs 6, %0, %1, %2, %3, %4, %5, %6
 	sys_socketcall SYS_SENDTO,esp
-	_add	esp,(%0 * 4)
+	_add	esp,(6 * 4)
 %endmacro
 
-%macro	sys_recvfrom 6
-	_push	%6
-	_push	%5
-	_push	%4
-	_push	%3
-	_push	%2
-	_push	%1
+%macro	sys_recvfrom 0-6
+	__pushargs 6, %0, %1, %2, %3, %4, %5, %6
 	sys_socketcall SYS_RECVFROM,esp
-	_add	esp,(%0 * 4)
+	_add	esp,(6 * 4)
+%endmacro
+
+;
+;arch/i386/kernel/sys_i386.c
+;
+
+struc	mmap_arg_struct
+.addr	ULONG	1
+.len	ULONG	1
+.prot	ULONG	1
+.flags	ULONG	1
+.fd	ULONG	1
+.offset	ULONG	1
+endstruc
+
+%macro sys_oldmmap 0-1
+	__syscall mmap, 1, %0, %1
+%endmacro
+
+%macro sys_mmap 0-6
+%if __KERNEL__ >= 24
+	__syscall mmap2, 6, %0, %1, %2, %3, %4, %5, %6
+%else
+	__pushargs 6, %0, %1, %2, %3, %4, %5, %6
+	sys_oldmmap esp
+	_add	esp,(6 * 4)
+%endif
 %endmacro
 
 ;
@@ -1097,14 +1113,6 @@ endstruc
 
 %macro sys_vm86 0-2
 	__syscall vm86, 2, %0, %1, %2
-%endmacro
-
-;
-;arch/i386/kernel/sys_i386.c
-;
-
-%macro sys_mmap 0-1
-	__syscall mmap, 1, %0, %1
 %endmacro
 
 ;

@@ -19,7 +19,7 @@
 ;; given as the number of seconds since the start of 1970 UTC, to
 ;; display instead of the current time.
 ;;
-;; $Id: date.asm,v 1.1 2001/09/24 16:50:33 konst Exp $
+;; $Id: date.asm,v 1.2 2001/11/24 09:46:18 konst Exp $
 
 %include "system.inc"
 
@@ -81,16 +81,21 @@ mmapfile:
 
 ;; An mmap structure is filled out and handed off to the system call,
 ;; and the function returns.
+;		mov	[byte ecx + 32], ebx
+;		lea	ebx, [byte ecx + 16]
+;		xor	eax, eax
+;		mov	[ebx], eax
+;		mov	[byte ebx + 20], eax
+;		inc	eax
+;		mov	[byte ebx + 8], eax
+;		mov	[byte ebx + 12], eax
+;		sys_mmap
 
-		mov	[byte ecx + 32], ebx
-		lea	ebx, [byte ecx + 16]
-		xor	eax, eax
-		mov	[ebx], eax
-		mov	[byte ebx + 20], eax
-		inc	eax
-		mov	[byte ebx + 8], eax
-		mov	[byte ebx + 12], eax
-		sys_mmap
+		pusha
+		sys_mmap 0,dword [ecx + 20],PROT_READ,MAP_SHARED,ebx,0
+		mov	[esp + 4*7],eax
+		popa
+
 		or	eax, eax
 .return:	ret
 
