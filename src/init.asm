@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Karsten Scheibler <karsten.scheibler@bigfoot.de>
 ;
-;$Id: init.asm,v 1.1 2001/03/18 07:08:25 konst Exp $
+;$Id: init.asm,v 1.2 2002/02/27 17:54:25 konst Exp $
 ;
 ;simple init
 ;
@@ -9,6 +9,7 @@
 ;example: init
 ;
 ;0.01: 03-Mar-2001	initial release
+;0.02: 27-Feb-2002	execute rc script on startup (KB)
 
 %include "system.inc"
 
@@ -16,15 +17,11 @@
 
 %define TTY_PATH	"/dev/tty"
 %define SHELL_PATH	"/bin/sh"
+%define RC_PATH		"/etc/rc"
 
 CODESEG
 
 START:
-			;--------------------------------------------
-			;for the moment: mount /proc /proc proc
-			;this should be replaced by a rc script later
-			;--------------------------------------------
-
 			sys_fork
 			test	dword eax, eax
 			jnz	.skip
@@ -123,29 +120,22 @@ tty_initialize:
 .terminate:		sys_exit  0
 
 
-shell_not_found:	db	"couldn't find "
+shell_not_found:	db	"can't find "
 shell_path:		db	SHELL_PATH, 0, 10
 shell_path_length:	equ	$ - shell_not_found
-rc_path:		db	"/bin/mount", 0
-rc_option1:		db	"/proc", 0
-rc_option2:		db	"proc", 0
+rc_path:		db	RC_PATH, 0
 			align	4
 arguments_shell:	dd	shell_path
 environment:		dd	0
 arguments_rc:		dd	rc_path
-			dd	rc_option1
-			dd	rc_option1
-			dd	rc_option2
 			dd	0
 select_timeval:		dd	300
 			dd	0
 
-
 DATASEG
+
 tty_path:		db	TTY_PATH
 .number:		db	0, 0
-
-
 
 UDATASEG
 			alignb	4
@@ -153,7 +143,4 @@ pids:			resd	MAX_TTYS
 tty_fd:			resd	1
 tty_termios:		resd	01000h
 
-
-
 END
-
