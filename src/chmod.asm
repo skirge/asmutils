@@ -1,6 +1,6 @@
-;Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 2000-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: chmod.asm,v 1.3 2001/01/21 15:18:46 konst Exp $
+;$Id: chmod.asm,v 1.4 2002/10/09 18:04:10 konst Exp $
 ;
 ;hackers' chmod
 ;
@@ -9,7 +9,7 @@
 ;only octal mode strings are suppoted (e.g. 755)
 ;
 ;0.01: 10-Jan-2000	initial release
-;0.02:
+;0.02: 09-Oct-2002	fixed "chmod 4755" bug (KB)
 
 %include "system.inc"
 
@@ -71,7 +71,7 @@ parse_mode_string:
 	jb	.done_err
 	cmp	cl,7
 	ja	.done_err
-	mul	bl
+	mul	bx
 	add	eax,ecx
 	inc	esi
 	jmps	.next
