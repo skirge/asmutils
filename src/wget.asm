@@ -15,6 +15,8 @@
 ;
 ; TODO: Add resume support, more options, DNS-resolver, ftp-client
 ;       and URL-parsing
+;
+; $Id: wget.asm,v 1.2 2002/06/16 14:19:58 konst Exp $
 
 %include "system.inc"
 
@@ -27,6 +29,8 @@ START:
 		pop esi
 		pop esi
 		pop ebp
+		cmp ecx,byte 3
+		jne near .exit
 		sys_socket AF_INET, SOCK_STREAM, IPPROTO_TCP
 		test eax, eax
 		js near .exit
@@ -92,7 +96,7 @@ START:
 .exit:
 		sys_exit 0x0
 
-;; stolencopied from ping.asm
+;; stolen copied from ping.asm
 ip2int:
 	xor		eax,eax
 	xor		edx,edx
