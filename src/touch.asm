@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Jonathan Leto <jonathan@leto.net>
 ;
-;$Id: touch.asm,v 1.3 2001/08/01 05:05:29 konst Exp $
+;$Id: touch.asm,v 1.4 2001/08/16 14:01:12 konst Exp $
 ;
 ;hackers' touch
 ;
@@ -39,7 +39,11 @@ START:
 	sys_open [file],O_RDWR|O_CREAT,0666q
 
 .touchfile:
+%ifdef	__BSD__
+	sys_utimes [file],NULL
+%else
 	sys_utime [file],NULL
+%endif
 	_jmp .next
 
 .nocreate:
