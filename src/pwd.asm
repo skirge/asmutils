@@ -1,9 +1,11 @@
-;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Yuri Ivliev <yuru@black.cat.kazan.su>
 ;
-;$Id: pwd.asm,v 1.8 2001/12/03 19:19:45 konst Exp $
+;$Id: pwd.asm,v 1.9 2002/03/14 17:42:08 konst Exp $
 ;
 ;hackers' pwd
+;
+;syntax: pwd
 ;
 ;0.01: 05-Jun-1999	initial release (KB)
 ;0.02: 17-Jun-1999	size improvements (KB)
@@ -12,8 +14,8 @@
 ;0.05: 17-Dec-1999	size improvements (KB)
 ;0.06: 08-Feb-2000	(KB)
 ;0.07: 21-Aug-2000	STAT_PWD define (KB)
-;
-;syntax: pwd
+;0.08: 14-Mar-2002	bugfixes, syscall optimization, and portability fixes
+;			in stat-based version (KB)
 
 %include "system.inc"
 
@@ -27,7 +29,8 @@
 %define STAT_PWD	;no getcwd :(
 %endif
 
-%assign	lPath 0xff
+%assign	PATHSIZE	0x100
+%assign	BUFSIZE		0x1000
 
 CODESEG
 
@@ -38,37 +41,37 @@ START:
 %assign	lBackPath	0x00000040
 
 ;;getting root's inode and block device
-	sys_lstat	Root.path,st		;get stat for root
-	mov	ax,[ecx+stat.st_dev]
-	mov	[Root.st_dev],ax
-	mov	eax,[ecx+stat.st_ino]
+	sys_lstat Root.path,st		;get stat for root
+	mov	eax,[ecx+Stat.st_dev]
+	mov	[Root.st_dev],eax
+	mov	eax,[ecx+Stat.st_ino]
 	mov	[Root.st_ino],eax
 ;;data initialization
 	mov	ebp,BackPath		;ebp - current position in BackPath
 	mov	dword [ebp],'./'	;we are starting from current dir
-	mov	edi, Path+lPath-1	;edi - current position in Path - 1
-	mov	byte [edi], 0x0A	;NL at the end of Path
+	mov	edi,path+PATHSIZE-1	;edi - current position in Path - 1
+	mov	byte [edi], __n		;NL at the end of Path
 	dec	edi
 ;;the begin of up to root loop
 .up:
-	sys_lstat	BackPath,st	;get stat for current location
+	sys_lstat BackPath,st		;get stat for current location
 	test	eax,eax
 	js	.exit
 	mov	byte [edi],'/'
 	dec	edi
-	mov	ax,[ecx+stat.st_dev]
-	cmp	ax,[Root.st_dev]	;is our block device roots'?
+	mov	eax,[ecx+Stat.st_dev]
+	cmp	eax,[Root.st_dev]	;is our block device roots'?
 	jne	.continue		;no
-	mov	eax,[ecx+stat.st_ino]
+	mov	eax,[ecx+Stat.st_ino]
 	cmp	eax,[Root.st_ino]	;is our inode roots'?
 	jne	.continue		;no
 ;;the begin of exit pwd
 	inc	edi			;yes, pwd comptete
-	mov	esi,Path+lPath-2
+	mov	esi,path+PATHSIZE-2
 	mov	edx,esi
 	sub	edx,edi			;is "/" our current dir?
 	jz	.print			;yes
-	mov	byte [esi],0x0A		;no, remove leading slash
+	mov	byte [esi],__n		;no, remove leading slash
 	dec	edx
 .print:
 	inc	edx
@@ -79,32 +82,29 @@ START:
 ;; the end of exit pwd
 .continue:
 	mov	dword [ebp],'../'	;move current location up
-	lea	ebp, [ebp+3] 
-	mov	ax,[ecx+stat.st_dev]
-	mov	[Dev], ax		;remember block device for prev location
-	mov	eax,[ecx+stat.st_ino]
-	mov	[Inode], eax		;remember inode for prev location
+	lea	ebp,[ebp+3] 
+	mov	ax,[ecx+Stat.st_dev]
+	mov	[Dev],ax		;save block device for prev location
+	mov	eax,[ecx+Stat.st_ino]
+	mov	[Inode],eax		;save inode for prev location
 	sys_open BackPath,O_RDONLY	;open current location
-	test	eax, eax
+	test	eax,eax
 	js	.exit
 	mov	edx,eax
-	mov	esi, de			;esi - pointer to dirent
-	xor	ecx, ecx		;we start from first dirent
-	mov	[esi+dirent.d_off], ecx
-;; the begin of get directory entry loop
-.next_de:
-;;;;;;;;	sys_lseek edx,[esi+dirent.d_off],SEEK_SET
+;; start of get directory entry loop
+.get_de:
 	mov	ebx,edx
-	mov	ecx,[esi+dirent.d_off]
-	xor	edx,edx
-	sys_lseek				;seek to next dirent
+%ifdef	__BSD__
+	sys_getdirentries EMPTY,buf,BUFSIZE,st	;get current dirent
+%else
+	sys_getdents EMPTY,buf,BUFSIZE		;get current dirent
+%endif
 	test	eax,eax
-	js	.exit
-	sys_getdents EMPTY,esi,dirent_size	;get current dirent
-	test	eax,eax
-	js	near .exit
-	jz	near .exit
+	jle	near .exit
+	mov	[de_num],eax			;save dirents size
 	mov	edx,ebx
+	mov	esi,ecx				;esi - pointer to dirent
+.next_de:
 	;concatenate current location and current dirent name
 ;;;;	mov	ecx,ebp
 ;;;;	lea	ebx,[esi+dirent.d_name]
@@ -120,16 +120,16 @@ START:
 	or	al,al
 	jnz	.next.d_name.1
 	sys_lstat BackPath,st		;get stat for current dirent
-	test	eax, eax
+	test	eax,eax
 	js	near .exit
-	mov	ax,[ecx+stat.st_dev]
+	mov	ax,[ecx+Stat.st_dev]
 	cmp	ax,[Dev]		;is this block device ours'
-	jne	near .next_de		;no, try next dirent
-	mov	eax,[ecx+stat.st_ino]
+	jne	.done_de		;no, try next dirent
+	mov	eax,[ecx+Stat.st_ino]
 	cmp	eax,[Inode]		;is this inode ours'
-	jne	near .next_de		;no, try next dirent
+	jne	.done_de		;no, try next dirent
 ;; the end of get directory entry loop
-	sys_close	edx		;close current location
+	sys_close edx			;close current location
 	mov	[ebp],al
 	lea	esi,[esi+dirent.d_name]
 ;;;;	mov	ebx,esi
@@ -145,9 +145,15 @@ START:
 ;;;;	dec	esi
 	lea	esi,[esi+ecx-1]
 	std
-	rep
-	movsb
+	rep	movsb
 	jmp	.up
+
+.done_de:
+	movzx	ecx,word [esi+dirent.d_reclen]
+	add	esi,ecx
+	sub	[de_num],ecx
+	jg	.next_de
+	jmp	.get_de
 
 ;; the end of up to root loop
 
@@ -155,7 +161,7 @@ Root.path	db	'/',EOL
 
 %else
 
-	sys_getcwd Path,lPath
+	sys_getcwd path,PATHSIZE
 
 	mov	esi,ebx
 	xor	edx,edx
@@ -164,7 +170,7 @@ Root.path	db	'/',EOL
 	lodsb
 	or	al,al
 	jnz	.next
-	mov	byte [esi-1],0x0A
+	mov	byte [esi-1],__n
 	sub	esi,edx
 	sys_write	STDOUT,esi
 	sys_exit_true
@@ -173,19 +179,22 @@ Root.path	db	'/',EOL
 
 UDATASEG
 
-Path	CHAR	lPath		;path buffer
+path		resb	PATHSIZE	;path buffer
 
 %ifdef STAT_PWD
 
 BackPath	CHAR	lBackPath	;back path buffer
 
-de	B_STRUC dirent,.d_off,.d_name
-st	B_STRUC stat,.st_dev,.st_ino
-
+Dev		UINT	1
+Root.st_dev	UINT	1
 Inode		UINT	1
-Dev		USHORT	1
-Root.st_dev	USHORT	1
-Root.st_ino	USHORT	1
+Root.st_ino	UINT	1
+
+st	B_STRUC Stat,.st_dev,.st_ino
+
+de_num		resd	1
+buf		resb	0x1000
+
 %endif
 
 END
