@@ -1,6 +1,6 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.16 2002/02/15 18:47:09 konst Exp $
+; $Id: system.inc,v 1.17 2002/02/20 15:27:56 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
@@ -149,7 +149,7 @@
 ;--------------------------------------------------------------------------
 
 %ifdef __STARTUP__
-%define START _start2
+%define START _start_asm
 %else
 %define START _start
 %endif
@@ -192,7 +192,12 @@ __date	db	STAMP_DATE, EOL, __n
 
 SYSCALL_GATE
 
+%ifdef __STARTUP__
+;Startup plugin should prepare the stack
+;in a [ argc | argv[0]... | envp[0].. ] way.
+
 %if	__SYSCALL__=__S_LIBC__
+
 ;C style stack: main(argc,**argv,**envp)
 
 %assign	__S	4
@@ -246,17 +251,11 @@ main:
 	xor	ecx,ecx
 	xor	ebp,ebp
 	jmp	START
-%endif	;__SYSCALL__=__S_LIBC__
 
-;Startup plugin should prepare the stack
-;in a [ argc | argv[0]... | envp[0].. ] way.
-
-%ifdef __STARTUP__
+%elifdef	__BEOS__
 
 	global	_start
 _start:
-
-%ifdef	__BEOS__
 ;
 ;convert BeOS startup stack to common ELF stack
 ;
@@ -308,7 +307,7 @@ _start:
 	xor	ebp,ebp
 
 	jmp	START
-%endif	;__BEOS__
+%endif
 
 %endif	;__STARTUP__
 %endmacro
@@ -684,7 +683,7 @@ resb %{$strucname}_size - ($ - %%top_%$strucname)
 ;this macro for nasm helps speeding up regardless of what addressing mode used
 
 %macro _xchg 2
-%if __OPTIMIZE__=__O_SIZE__
+%if __OPTIMIZE__=__O_SPEED__
 %assign ea 4
 %else
 %assign ea 0
