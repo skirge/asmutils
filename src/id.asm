@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: id.asm,v 1.5 2001/08/13 05:51:46 konst Exp $
+;$Id: id.asm,v 1.6 2001/08/14 18:55:38 konst Exp $
 ;
 ;hackers' id
 ;
@@ -34,9 +34,8 @@ START:
 		
 		sys_exit_true
 
-.groups:
+.groups:	;*** Get GROUPS
 		sys_getgroups   64, groups
-
 		mov	ebp, eax
 		mov	dl, 7		; Looks like a bug, but it works.
 		mov	ecx, gstuff

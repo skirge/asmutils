@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.5 2001/03/18 07:08:25 konst Exp $
+; $Id: os_linux.inc,v 1.6 2001/08/14 18:53:31 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 04-Mar-2001
-; version       : 0.14
+; modified      : 14-Aug-2001
+; version       : 0.15
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -645,26 +645,26 @@ endstruc
 %assign SYS_time		13
 %assign SYS_mknod		14
 %assign SYS_chmod		15
-%assign SYS_lchown		16	;2.4: lchown16
-%assign SYS_break		17	;2.4: ni_syscall
+%assign SYS_lchown		16
+%assign SYS_break		17
 %assign SYS_oldstat		18
 %assign SYS_lseek		19
 %assign SYS_getpid		20
 %assign SYS_mount		21
-%assign SYS_umount		22	;2.4: oldumount
-%assign SYS_setuid		23	;2.4: setuid16
-%assign SYS_getuid		24	;2.4: getuid16
+%assign SYS_umount		22
+%assign SYS_setuid		23
+%assign SYS_getuid		24
 %assign SYS_stime		25
 %assign SYS_ptrace		26
 %assign SYS_alarm		27
-%assign SYS_oldfstat		28	;2.4: fstat
+%assign SYS_oldfstat		28
 %assign SYS_pause		29
 %assign SYS_utime		30
-%assign SYS_stty		31	;2.4: ni_syscall
-%assign SYS_gtty		32	;2.4: ni_syscall
+%assign SYS_stty		31
+%assign SYS_gtty		32
 %assign SYS_access		33
 %assign SYS_nice		34
-%assign SYS_ftime		35	;2.4: ni_syscall
+%assign SYS_ftime		35
 %assign SYS_sync		36
 %assign SYS_kill		37
 %assign SYS_rename		38
@@ -673,22 +673,22 @@ endstruc
 %assign SYS_dup			41
 %assign SYS_pipe		42
 %assign SYS_times		43
-%assign SYS_prof		44	;2.4: ni_syscall
+%assign SYS_prof		44
 %assign SYS_brk			45
-%assign SYS_setgid		46	;2.4: setgid16
-%assign SYS_getgid		47	;2.4: getgid16
+%assign SYS_setgid		46
+%assign SYS_getgid		47
 %assign SYS_signal		48
-%assign SYS_seteuid		49	;2.4: seteuid16
-%assign SYS_getegid		50	;2.4: geteuid16
+%assign SYS_geteuid		49
+%assign SYS_getegid		50
 %assign SYS_acct		51
-%assign SYS_umount2		52	;2.4: umount
-%assign SYS_lock		53	;2.4: ni_syscall
+%assign SYS_umount2		52
+%assign SYS_lock		53
 %assign SYS_ioctl		54
 %assign SYS_fcntl		55
-%assign SYS_mpx			56	;2.4: ni_syscall
+%assign SYS_mpx			56
 %assign SYS_setpgid		57
-%assign SYS_ulimit		58	;2.4: ni_syscall
-%assign SYS_oldolduname		59	;2.4: olduname
+%assign SYS_ulimit		58
+%assign SYS_oldolduname		59
 %assign SYS_umask		60
 %assign SYS_chroot		61
 %assign SYS_ustat		62
@@ -699,35 +699,35 @@ endstruc
 %assign SYS_sigaction		67
 %assign SYS_sgetmask		68
 %assign SYS_ssetmask		69
-%assign SYS_setreuid		70	;2.4: setreuid16
-%assign SYS_setregid		71	;2.4: setregid16
+%assign SYS_setreuid		70
+%assign SYS_setregid		71
 %assign SYS_sigsuspend		72
 %assign SYS_sigpending		73
 %assign SYS_sethostname		74
 %assign SYS_setrlimit		75
-%assign SYS_getrlimit		76	;2.4: old_getrlimit
+%assign SYS_getrlimit		76
 %assign SYS_getrusage		77
 %assign SYS_gettimeofday	78
 %assign SYS_settimeofday	79
-%assign SYS_getgroups		80	;2.4: getgroups16
-%assign SYS_setgroups		81	;2.4: setgroups16
-%assign SYS_oldselect		82
+%assign SYS_getgroups		80
+%assign SYS_setgroups		81
+%assign SYS_select		82
 %assign SYS_symlink		83
-%assign SYS_oldlstat		84	;2.4: lstat
+%assign SYS_oldlstat		84
 %assign SYS_readlink		85
 %assign SYS_uselib		86
 %assign SYS_swapon		87
 %assign SYS_reboot		88
-%assign SYS_readdir		89	;2.4: old_readdir
-%assign SYS_mmap		90	;2.4: old_mmap
+%assign SYS_readdir		89
+%assign SYS_mmap		90
 %assign SYS_munmap		91
 %assign SYS_truncate		92
 %assign SYS_ftruncate		93
 %assign SYS_fchmod		94
-%assign SYS_fchown		95	;2.4: fchown16
+%assign SYS_fchown		95
 %assign SYS_getpriority		96
 %assign SYS_setpriority		97
-%assign SYS_profil		98	;2.4: ni_syscall
+%assign SYS_profil		98
 %assign SYS_statfs		99
 %assign SYS_fstatfs		100
 %assign SYS_ioperm		101
@@ -735,13 +735,13 @@ endstruc
 %assign SYS_syslog		103
 %assign SYS_setitimer		104
 %assign SYS_getitimer		105
-%assign SYS_stat		106	;2.4: newstat
-%assign SYS_lstat		107	;2.4: newlstat
-%assign SYS_fstat		108	;2.4: newfstat
-%assign SYS_olduname		109	;2.4: uname
+%assign SYS_stat		106
+%assign SYS_lstat		107
+%assign SYS_fstat		108
+%assign SYS_olduname		109
 %assign SYS_iopl		110
 %assign SYS_vhangup		111
-%assign SYS_idle		112	;2.4: ni_syscall
+%assign SYS_idle		112
 %assign SYS_vm86old		113
 %assign SYS_wait4		114
 %assign SYS_swapoff		115
@@ -751,7 +751,7 @@ endstruc
 %assign SYS_sigreturn		119
 %assign SYS_clone		120
 %assign SYS_setdomainname	121
-%assign SYS_uname		122	;2.4: newuname
+%assign SYS_uname		122
 %assign SYS_modify_ldt		123
 %assign SYS_adjtimex		124
 %assign SYS_mprotect		125
@@ -766,12 +766,12 @@ endstruc
 %assign SYS_bdflush		134
 %assign SYS_sysfs		135
 %assign SYS_personality		136
-%assign SYS_afs_syscall		137	;2.4: ni_syscall
-%assign SYS_setfsuid		138	;2.4: setfsuid16
-%assign SYS_setfsgid		139	;2.4: setfsgid16
+%assign SYS_afs_syscall		137
+%assign SYS_setfsuid		138
+%assign SYS_setfsgid		139
 %assign SYS_llseek		140
 %assign SYS_getdents		141
-%assign SYS_select		142
+%assign SYS_newselect		142
 %assign SYS_flock		143
 %assign SYS_msync		144
 %assign SYS_readv		145
@@ -794,14 +794,14 @@ endstruc
 %assign SYS_nanosleep		162
 %assign SYS_mremap		163
 %if __KERNEL__ >= 22
-%assign SYS_setresuid		164	;2.4: setresuid16
-%assign SYS_getresuid		165	;2.4: getresuid16
+%assign SYS_setresuid		164
+%assign SYS_getresuid		165
 %assign SYS_vm86		166
 %assign SYS_query_module	167
 %assign SYS_poll		168
 %assign SYS_nfsservctl		169
-%assign SYS_setresgid		170	;2.4: setresgid16
-%assign SYS_getresgid		171	;2.4: getresuid16
+%assign SYS_setresgid		170
+%assign SYS_getresgid		171
 %assign SYS_prctl		172
 %assign SYS_rt_sigreturn	173
 %assign SYS_rt_sigaction	174
@@ -812,45 +812,45 @@ endstruc
 %assign SYS_rt_sigsuspend	179
 %assign SYS_pread		180
 %assign SYS_pwrite		181
-%assign SYS_chown		182	;2.4: chown16
+%assign SYS_chown		182
 %assign SYS_getcwd		183
 %assign SYS_capget		184
 %assign SYS_capset		185
 %assign SYS_sigaltstack		186
 %assign SYS_sendfile		187
 %endif	;__KERNEL__ >= 22
-%assign SYS_getpmsg		188	;2.4: ni_syscall
-%assign SYS_putpmsg		189	;2.4: ni_syscall
+%assign SYS_getpmsg		188
+%assign SYS_putpmsg		189
 %if __KERNEL__ >= 22
 %assign SYS_vfork		190
 %endif	;__KERNEL__ >= 22
 %if __KERNEL__ >= 24
-%assign SYS_ugetrlimit		191	;2.4: getrlimit
+%assign SYS_ugetrlimit		191
 %assign SYS_mmap2		192
 %assign SYS_truncate64		193
 %assign SYS_ftruncate64		194
 %assign SYS_stat64		195
 %assign SYS_lstat64		196
 %assign SYS_fstat64		197
-%assign SYS_lchown32		198	;2.4: lchown
-%assign SYS_getuid32		199	;2.4: getuid
-%assign SYS_getgid32		200	;2.4: getgid
-%assign SYS_geteuid32		201	;2.4: geteuid
-%assign SYS_getegid32		202	;2.4: getegid
-%assign SYS_setreuid32		203	;2.4: setreuid
-%assign SYS_setregid32		204	;2.4: setregid
-%assign SYS_getgroups32		205	;2.4: getgroups
-%assign SYS_setgroups32		206	;2.4: setgroups
-%assign SYS_fchown32		207	;2.4: fchown
-%assign SYS_setresuid32		208	;2.4: setresuid
-%assign SYS_getresuid32		209	;2.4: getresuid
-%assign SYS_setresgid32		210	;2.4: setresgid
-%assign SYS_getresgid32		211	;2.4: getresgid
-%assign SYS_chown32		212	;2.4: chown
-%assign SYS_setuid32		213	;2.4: setuid
-%assign SYS_setgid32		214	;2.4: getuid
-%assign SYS_setfsuid32		215	;2.4: setfsuid
-%assign SYS_setfsgid32		216	;2.4: setfsgid
+%assign SYS_lchown32		198
+%assign SYS_getuid32		199
+%assign SYS_getgid32		200
+%assign SYS_geteuid32		201
+%assign SYS_getegid32		202
+%assign SYS_setreuid32		203
+%assign SYS_setregid32		204
+%assign SYS_getgroups32		205
+%assign SYS_setgroups32		206
+%assign SYS_fchown32		207
+%assign SYS_setresuid32		208
+%assign SYS_getresuid32		209
+%assign SYS_setresgid32		210
+%assign SYS_getresgid32		211
+%assign SYS_chown32		212
+%assign SYS_setuid32		213
+%assign SYS_setgid32		214
+%assign SYS_setfsuid32		215
+%assign SYS_setfsgid32		216
 %assign SYS_pivot_root		217
 %assign SYS_mincore		218
 %assign SYS_madvise		219
