@@ -2,23 +2,23 @@
     Based on code of J.T. Conklin <jtc@netbsd.org> and drepper@cygnus.com
     Public domain.
     Adapted for "C" and for asmutils by Nick Kurshev <nickols_k@mail.ru>.
-    I did an attemp to collect better parts from other free GPL'ed projects:
+    I tried to collect the best snippets from other free GPL'ed projects:
     - DJGPP for DOS <www.delorie.com>
     - EMX for OS2 by Eberhard Mattes
 
-    $Id: libm.c,v 1.4 2001/05/16 09:52:22 konst Exp $
+    $Id: libm.c,v 1.5 2002/03/02 20:23:14 konst Exp $
 
  Why C but not asm?
- 1. Today gcc does not handle floating point as comercial compilers do.
-    But I belive that in the future versions gcc will be able to handle
-    floating point better.
- 2. Such function declaraton allow us to be free from calling convention
-    and build universal models.
+ 1. Although today gcc does not handle floating point as well as commercial
+    compilers do, I belive that in the future versions gcc will be able to
+    handle floating point better.
+ 2. Such function declaraton allows us to be independent from calling
+    convention and build universal models.
 
  ChangeLog:
  0.13  -  initial implementation
- 0.14  -  implementation base function set and test suite
- 0.15  -  minor fixing bugs, minor optimization and support for 80687
+ 0.14  -  implementated basic function set and test suite
+ 0.15  -  fixed minor bugs, minor optimization and support for 80687
 */
 
 /*
@@ -31,9 +31,10 @@
 
 /*              
    ffreep is documented instruction for K7/Athlon processors, but all fpus
-   since 387 undocumentedly support it and I have no issues don't use it.
-   Note: It should be used when top of fpu stack should be die.
+   since 387 undocumentedly support it and I have reasons to not use it.
+   Note: It should be used when top of fpu stack should be destroyed.
 */
+
 # define __NO_MATH_INLINES	1
 # define __USE_ISOC9X 1
 # define __USE_MISC 1

@@ -7,75 +7,53 @@
 			http://linuxassembly.org
 
 
-; THICK BOLDFACED WARNING:
-;
-; THESE UTILITIES COMMUNICATE WITH KERNEL DIRECTLY (except "LIBC" version).
-; AUTHORS ARE NOT RESPONSIBLE FOR ANY DAMAGE THEY CAN DO TO YOUR SYSTEM.
-; THOUGH THEY WORKED ON MY BOX, THEY CAN CRASH AND RUIN YOURS.
-; NO WARRANTY. THIS IS DEVELOPMENT VERSION, USE SOLELY AT YOUR OWN RISK.
+Legal stuff
+===========
 
+ All programs in this package are *copyrighted* by their authors,
+ as stated in the source code and in the CREDITS file. The bulk
+ of code is written by Konstantin Boldyshev, with contributions
+ of various hackers all over the world.
 
-Copyright information
-=====================
+ These programs are free software; you can redistribute and/or modify
+ them under the terms of the version 2 (and only version 2) of the GNU
+ General Public License as published by the Free Software Foundation.
 
-All programs in this package are *copyrighted* by their authors,
-as stated in the source code and in the CREDITS file.
+ These programs are distributed in the hope that they will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty
+ of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ See the version 2 of the GNU General Public License for more details
+ <http://www.gnu.org/copyleft/gpl.html>.
 
-These programs are free software; you can redistribute them and/or modify
-them under the terms of the version 2 (and only version 2) of the GNU
-General Public License as published by the Free Software Foundation.
-
-These programs are distributed in the hope that they will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty
-of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-See the version 2 of the GNU General Public License for more details
-<http://www.gnu.org/copyleft/gpl.html>.
-
+ Authors are not responsible for any damage these programs can do.
+ This is development version, use solely at your own risk.
 
 Description
 ===========
 
-asmutils is a set of miscellaneous utilities written in assembly language,
-targeted on embedded systems and small distributions (e.g. installation
-or rescue disks); also it contains a small libc and a crypto library.
-It features the smallest possible size and memory requirements,
-the fastest speed, and offers fairly good functionality.
-Now project supports Linux and BSD family (FreeBSD, OpenBSD, NetBSD);
-Unixware, Solaris, and AtheOS support is in beta stage (also there's
-no more supported BeOS port), and it is /theoretically/ possible to
-port it to any i386 OS. 
+ asmutils is a set of miscellaneous utilities written in assembly language,
+ targeted on embedded systems and small distributions (e.g. installation
+ or rescue disks); also it contains a small libc and a crypto library.
+ It features the smallest possible size and memory requirements,
+ the fastest speed, and offers fairly good functionality.
+ Now project supports Linux and BSD family (FreeBSD, OpenBSD, NetBSD);
+ Unixware, Solaris, and AtheOS support is in beta stage (also there's
+ no more supported BeOS port), and it is /theoretically/ possible to
+ port it to any i386 OS. 
 
-Another goal of this package is to provide *portable* framework,
-and to encourage assembly programmers to write for Linux/UNIX.
-Usually UNIX is associated with C, and no one wants to deal with assembly..
-Browse the source, look -- it is simple. Read the docs, start to write,
-and you will like it; assembly programming is a lot of fun, especially
-when you deal with a UNIX-like operating systems.
+ Another goal of this package is to provide a *portable* framework,
+ and to encourage assembly programmers to write for Linux/UNIX.
+ Usually UNIX is associated with C, and no one wants to deal with assembly..
+ Browse the source, look -- it is simple. Read the docs, start to write,
+ and you will like it; assembly programming is a lot of fun, especially
+ when you deal with a UNIX-like operating systems.
 
-These utilities also may be useful for system administrators;
-there were several reports that they have rescued when libc
-crashed and it was not possible to use usual system utilities.
+ In addition, this package has some "special bonus" like small intros,
+ games, and other various assembly snippets.
 
-So, in one word, this package provides:
-
-    - binaries, that
-	do not require libc
-	are small as scripts
-	are fast as kernel
-	need only few KBytes of RAM
-
-	Usual way for small system is to replace binaries with shell scripts,
-	however scripts require much more memory and are slow.
-
-	Several utilities are fully compliant with usual,
-	examine NOTES for details.
-
-    - small libc and crypto library; you can use them
-      in both C and assembly projects
-    
-    - portable & extendable framework for fast and easy development
-
-    - other various hacks, like small graphics intros, etc.
+ These utilities also may be useful for system administrators;
+ there were several reports that they have rescued when libc
+ crashed and it was not possible to use usual system utilities.
 
 
 How to install
@@ -86,7 +64,9 @@ How to install
 	1) i386 (however some programs may require higher CPU);
 	   some programs may require FPU (or kernel emulation)
 
-	2) ELF/AOUT executable format (actually not a requirement,
+	2) UNIX-like kernel
+
+	3) ELF/AOUT executable format (actually not a requirement,
 	   you just need to write startup stack preparation
 	   for your executable format on your own)
 
@@ -104,12 +84,11 @@ How to install
  neither to /bin or /usr/bin, nor to /usr/local/bin).
 
 
-Other stuff
-===========
+Feedback
+========
 
- Contributions are welcome! If you wish to contribute
- please read the Asmutils-HOWTO in the doc directory!
+ Contributions are welcome! If you want to contribute some code,
+ please read the Asmutils-HOWTO in the doc directory.
+ At least send a bugreport or a success story :)
 
- Do not forget to send feedback and bugreports.
-
- $Id: README,v 1.14 2002/01/28 08:40:38 konst Exp $
+ $Id: README,v 1.15 2002/03/02 20:23:14 konst Exp $

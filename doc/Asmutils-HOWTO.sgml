@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.17 2002/02/20 15:34:06 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.18 2002/03/02 20:23:14 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -23,7 +23,7 @@
 </author>
 
 <releaseinfo>Version 0.8</releaseinfo>
-<pubdate role="cvs">$Date: 2002/02/20 15:34:06 $</pubdate>
+<pubdate role="cvs">$Date: 2002/03/02 20:23:14 $</pubdate>
 
 <copyright>
 <year>1999-2002</year><holder>Konstantin Boldyshev</holder>
@@ -226,14 +226,14 @@ and <function>END</function> macro, other sections are optional.
 <function>CODESEG</function> is read-only,
 <function>DATASEG</function> and <function>UDATASEG</function> are read-write;
 i.e. you can place data in <function>CODESEG</function>
-as long as you will not change it.
+as long as you do not change it.
 You can also define your own sections if you want, but there's very rare need
-to do so. Each section (even if it is empty) will enlarge your executable.
+to do so. Each section (even if it is empty) enlarges your executable.
 </para>
 
 <para>
 <function>START</function> macro tells linker the entry point,
-and MUST be present (if you are not making a library).
+and <emphasis>must</emphasis> be present (if you are not making a library).
 </para>
 
 <para>
@@ -329,7 +329,7 @@ please do not forget to mention header file it was taken from.
 <title>syscall.inc</title>
 
 <para>
-File holds system call macros, here are general things to know them:
+File holds system call macros, here are general things to know about them:
 
 <itemizedlist>
 <listitem><para>
@@ -454,10 +454,9 @@ line in <filename>MCONFIG</filename> (enabled by default),
 this turns on automatic usage of these macros
 (and you do not have to include <filename>elf.inc</filename>).
 And if you will follow simple rules when writing a program,
-then you will not have to carry out two different definitions
+then you do not have to carry out two different definitions
 for sections and structures; so, you can compile the same source
 with and without usage of these macros, getting correct code in both cases.
-This is experimental thing, however it seems to work well.
 Rules are simple: use following section order:
 <function>CODESEG</function>,
 <function>DATASEG</function>,
@@ -470,8 +469,8 @@ instead of <literal>istruc</literal> and <literal>iend</literal>
 (take any <application>asmutils</application> source as an example),
 Alternatively, you can use macros from elf.inc directly if you want,
 but then you can't compile your source using usual nasm/ld procedure.
-If you want to go this way, take the time and read carefully
-description by Brian Raiter below and comments in <filename>elf.inc</filename>
+If you want to go this way, take the time and read carefully description
+by Brian Raiter below and comments in the <filename>elf.inc</filename>
 (also do read it if you want to understand how they work).
 Personally I think that first way is simpler.
 </para>
@@ -686,7 +685,7 @@ Read its manual page (<command>man strace</command>) and
 Asmutils would never become what they are without submissions
 from various hackers. As any open project, it relies much
 on contributions. Hence, if you've got an intention/inspiration
-to contribute something, you're more than welcome!
+to contribute something, you're welcome!
 </para>
 
 <para>
@@ -844,9 +843,9 @@ If your program is intended to be portable (which is recommended),
 also try another <function>OS</function> parameter. As a rule, compiling
 with <function>OS=LINUX</function> and <function>OS=FREEBSD</function>
 cleans out most (but not necessary all) issues.
-Also, be aware of code size difference when <function>OPTIMIZE=SPEED<function>
+Also, be aware of code size difference when <function>OPTIMIZE=SPEED</function>
 and/or <function>SYSCALL=LIBC</function> are set -- short jumps can became
-out of range.
+out of range (don't you like nasm?).
 </para>
 
 <para>
@@ -861,7 +860,7 @@ cryptic parts that are hard (as you feel) to understand initially.
 
 <para>
 New programs should be sent to project maintainer, while improvements
-of existing -- to particular util maintainer first.
+of existing -- to particular util maintainer(s) first.
 </para>
 
 <para>
@@ -873,12 +872,12 @@ i.e. do a checkout right before creating your patch.
 </para>
 
 <para>
-Sometimes maintainer (or I) will modify your code a bit.
+Sometimes maintainer will modify your code a bit.
 Please use that modified code for next program version.
 </para>
 
 <para>
-Simple, huh? :)
+Isn't it that simple? :)
 </para>
 
 <para>
@@ -1103,7 +1102,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.17 2002/02/20 15:34:06 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.18 2002/03/02 20:23:14 konst Exp $
 </literal></para>
 </appendix>
 

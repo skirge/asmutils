@@ -2,7 +2,7 @@
 #
 # MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.17 2002/02/02 14:00:42 konst Exp $
+# $Id: MCONFIG,v 1.18 2002/03/02 20:23:14 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -27,8 +27,12 @@ OPTIMIZE = SIZE
 
 SYSCALL = KERNEL
 
-# ELF hack for smaller binaries (when possible)
-# Disable if you have trouble with running resulting executables.
+# Target executable format (ELF/AOUT)
+
+EXECUTABLE = ELF
+
+# Use hacked ELF for smaller binaries (when possible)
+# Disable if you have trouble running resulting executables.
 
 ELF_MACROS = y
 
@@ -36,15 +40,14 @@ ELF_MACROS = y
 
 #DEBUG = y
 
-# Write version stamp into the binaries
+# Write version stamp into executables
 
 #STAMP = y
 
 # Use custom startup code
-# Define with SYSCALL=LIBC if gcc fails with -nostartfiles.
-# You may also need this with OS=BEOS.
-
-#STARTUP = y
+# Enable along with SYSCALL=LIBC if gcc fails with -nostartfiles
+# (when linker can't find some external symbols required by libc);
+# you may also need this with OS=BEOS.
 
 #STARTUP = y
 
@@ -56,7 +59,32 @@ ELF_MACROS = y
 
 VERSION = 0.16
 
+#
+# force reasonable defaults for some OSes
+#
+
+ifdef OPENBSD
+EXECUTABLE = AOUT
+ELF_MACROS =
+endif
+
+#ifdef NETBSD
+#ifneq ($(KERNEL),15)
+#EXECUTABLE = AOUT
+#else
+#EXECUTABLE = ELF
+#endif
+#endif
+
+ifdef BEOS
+STARTUP = y
+ELF_MACROS =
+endif
+
+#
+
 ${OS} = y
+${EXECUTABLE} = y
 
 AS := nasm
 LD := ld
@@ -87,7 +115,7 @@ INSTALLDIR=../bin/$(OS)-$(KERNEL)
 LDFLAGS :=
 ASFLAGS := -w+orphan-labels -w+macro-params -i../inc/
 DEFINES := -D__$(OS)__ -D__KERNEL__=$(KERNEL) -D__SYSCALL__=__S_$(SYSCALL)__\
-	    -D__OPTIMIZE__=__O_$(OPTIMIZE)__ 
+	   -D__OPTIMIZE__=__O_$(OPTIMIZE)__ -D__$(EXECUTABLE)__
 
 ifeq ($(SYSCALL),LIBC)
 LD = gcc
@@ -107,23 +135,6 @@ ifdef BUILD_LIB
 ELF_MACROS =
 endif
 
-ifdef OPENBSD
-AOUT = y
-ELF_MACROS =
-endif
-
-ifdef NETBSD
-ifneq ($(KERNEL),15)
-AOUT = y
-ELF_MACROS =
-endif
-endif
-
-ifdef BEOS
-STARTUP = y
-ELF_MACROS =
-endif
-
 ifdef STARTUP
 DEFINES += -D__STARTUP__
 endif
@@ -131,6 +142,12 @@ endif
 ifdef STAMP
 DEFINES += -DSTAMP_VERSION="'asmutils $(VERSION)'" -DSTAMP_DATE="'$(shell date "+%d-%b-%Y %H:%M")'"
 endif
+
+ifndef ELF
+ELF_MACROS =
+endif
+
+#
 
 ifdef ELF_MACROS
 
@@ -149,7 +166,6 @@ STRIP = strip
 ifdef BUILD_SRC
 LDFLAGS += -e _start
 endif
-DEFINES += -D__AOUT__
 else
 ASFLAGS += -f elf
 ifndef DEBUG

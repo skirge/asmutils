@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.14 2002/02/02 12:33:38 konst Exp $
+; $Id: includes.inc,v 1.15 2002/03/02 20:23:14 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 28-Jan-2002
+; modified      : 01-Mar-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : generic constants and structures from (libc) header files
@@ -434,6 +434,17 @@ endstruc
 %assign	S_IFSOCK 0140000q	;socket
 %assign	S_IFWHT  0160000q	;whiteout
 %assign	S_ISVTX	 0001000q	;save swapped text even after use
+
+;
+;sys/poll.h
+;
+
+%assign POLLIN      0x0001   ;There is data to read
+%assign POLLPRI     0x0002   ;There is urgent data to read
+%assign POLLOUT     0x0004   ;Writing now will not block
+%assign POLLERR     0x0008   ;Error condition
+%assign POLLHUP     0x0010   ;Hung up
+%assign POLLNVAL    0x0020   ;Invalid request: fd not open
 
 ;
 ;sys/resource.h

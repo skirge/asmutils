@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.17 2002/02/20 15:27:56 konst Exp $
+; $Id: system.inc,v 1.18 2002/03/02 20:23:14 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 15-Feb-2002
+; modified	: 02-Mar-2002
 ; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: framework and generic stuff (macros, sections, etc)
@@ -82,6 +82,16 @@
 
 %ifndef __KERNEL__
 %assign	__KERNEL__	10
+%endif
+
+;
+;executable format
+;
+
+%ifndef __ELF__
+%ifndef __AOUT__
+%error	"Invalid executable format"
+%endif
 %endif
 
 ;

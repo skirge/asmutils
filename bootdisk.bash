@@ -4,7 +4,7 @@
 #
 # Copyright (C) 2001	Karsten Scheibler <karsten.scheibler@bigfoot.de>
 #
-# $Id: bootdisk.bash,v 1.2 2002/02/27 17:57:44 konst Exp $
+# $Id: bootdisk.bash,v 1.3 2002/03/02 20:23:14 konst Exp $
 
 
 TMP_DIR=/tmp/bootdisk-$$
@@ -13,8 +13,6 @@ MOUNT_POINT="$TMP_DIR"/mnt
 BOOTDISK_IMAGE="$TMP_DIR"/bootdisk
 ROOT_IMAGE="$TMP_DIR"/rootraw
 ROOT_IMAGE_SIZE=1024
-
-
 
 function echo2
 	{
@@ -58,17 +56,22 @@ function check2
 
 function create_rc
 {
-cat <<EOF >"$MOUNT_POINT/etc/rc" 
+cat <<EOF >"$1" 
 #!/bin/sh
 
 echo -e "mounting /proc..\c"
 mount -t proc none /proc
 && echo -e "done"
 
-echo -e "\033[2J\033[2;1H\t\033[1;37mWelcome to the \033[34masmutils\033[37m bootdisk! [\033[32mhttp://linuxassembly.org\033[0;37m]\n"
+echo -e "configuring network..\c"
+ifconfig lo 127.0.0.1
+&& ifconfig eth0 192.168.0.1
+&& echo -e "done"
+
+echo -e "\033[2J\033[3;1H\t\033[1;37mWelcome to the \033[34masmutils\033[37m bootdisk! [\033[32mhttp://linuxassembly.org\033[0;37m]\n\n\n"
 
 EOF
-chmod 555 "$MOUNT_POINT/etc/rc"
+chmod 555 "$1"
 }
 
 
@@ -81,15 +84,15 @@ trap 'umount "$ROOT_IMAGE" >/dev/null 2>&1; rm -rf "$TMP_DIR"' 0
 if [ $# -ne 2 ]; then
 	echo2 "Usage: $0 <kernelfile> <path to asmutils binaries>"
 	echo2
-	echo2 "The given kernel has to support the minix filesystem."
-	error "The resulting bootdisk is written to stdout."
+	echo2 "Given kernel must support ramdisk, minix fs and floppy drive."
+	error "Resulting bootdisk is written to stdout."
 fi
 
 KERNEL_FILE="$1"
 ASMUTILS_PATH="$2"
 
 if ! mkdir "$TMP_DIR" 2>/dev/null; then
-	error "couldn't create '$TMP_DIR'"
+	error "can't create '$TMP_DIR'"
 fi
 
 echo2n "creating root image mount point ... "
@@ -149,7 +152,7 @@ mknod -m 600 "$MOUNT_POINT"/dev/mem c 1 1 &&
 mknod -m 600 "$MOUNT_POINT"/dev/audio c 14 4 &&
 mknod -m 600 "$MOUNT_POINT"/dev/dsp c 14 3 &&
 mknod -m 600 "$MOUNT_POINT"/dev/fb0 c 29 0 &&
-create_rc &&
+create_rc "$MOUNT_POINT/etc/rc" &&
 echo "/dev/ram0 / minix rw 0 0" > "$MOUNT_POINT"/etc/mtab &&
 ( cd "$ASMUTILS_PATH"; ls -1 | while read FILE; do if [ -x "$FILE" ]; then
   cp -a "$FILE" "$MOUNT_POINT"/bin/; fi; done;
@@ -198,4 +201,3 @@ check2 'dd if="$ROOT_IMAGE".gz of="$BOOTDISK_IMAGE" bs=1024 seek="$KERNEL_SIZE"'
 
 echo2n "outputting bootdisk ... "
 check 'cat "$BOOTDISK_IMAGE"'
-

@@ -1,3 +1,40 @@
+03-Mar-2002:	asmutils 0.16
+
+	- cmp, finger, killall/killall5/pidof, mesg, nice, nm, nohup,
+	  rot13, sysctl, test, write (TO)
+	- fdisk, host, tar, telnet (RM)
+	- cut, m_inetd (JH)
+	- pop3 (MM)
+	- scan (SR)
+	- kldload/kldunload/kldstat (KB)
+	- sh: added && and || internals and scripting (JH),
+	  added pipe & redirection support, wildcard extending,
+	  ctrl+z handling, fg, bg, jobs internal commands (RM),
+	  added $environment variable handling and some control-characters (TO),
+	  '#' comments, improved scripting, cleanup and misc fixes (KB)
+	- httpd: added logging (IP||HEADER), err404file command line argument,
+	  added more content types (RM), added extension-content type table,
+	  fixed infinite loop when err404file is missing, size improvement (KB)
+	- grep: added "-b", "-c", "-v" options,
+	  output filename when grepping several files (KB)
+	- hostname: added sysctl-based version (KB)
+	- uname: fixed sysctl-based BSD version (KB)
+	- mount: rewritten to match usual syntax, BSD port (KB)
+	- reboot: added "-p", "-f" options, safety check, BSD port (KB)
+	- lsmod: use sys_query_module if /proc/modules is missing (KB)
+	- ls: fixed FPE when file's mtime is in the future (KB)
+	- touch: fixes and size improvement (KB)
+	- head: fixed reading from stdin (JH)
+	- init: execute rc script on startup (KB)
+	- libc: fixed strlen(), other various fixes (KB)
+	- initial Solaris port (TO)
+	- initial UnixWare port (TO)
+	- rewritten libc port (KB)
+	- ELF macros for BSD and perhaps all other OSes (KB)
+	- include files bugfixes, uptates, improvements and rearrangement (KB)
+	- bootdisk.bash: added creation of /etc/rc startup script (KB)
+	- Asmutils-HOWTO: misc updates (KB)
+
 24-Sep-2001:	asmutils 0.15
 
 	- dc, mknod/mkfifo, od, paste, readlink, tr, which (JH)
@@ -17,7 +54,7 @@
 	- added bootdisk.bash script to build boot-disk image
 	  with Linux kernel and asmutils binaries (KS)
         - libm: fixed minor bugs, improved optimizations and test suite,
-	  support for different IA-CPUs (preferedly pentium pro) (NK)
+	  support for different IA32-CPUs (mostly i686) (NK)
         - heap.asm: heap manager for Linux (RM)
 	- special bonus: battle "game", resembling corewars (RM)
 

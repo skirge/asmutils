@@ -4,10 +4,9 @@ long-term:
 - develop libc
 - develop multicall binary
 - port more code to *BSD
-- merge basename, dirname, extname (?)
 
 short-term:
 
 - develop QNXRTP port
 - test AtheOS code
-- write stub for BeOS
+- merge basename, dirname, extname (?)

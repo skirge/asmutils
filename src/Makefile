@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.40 2002/03/01 17:23:25 konst Exp $
+# $Id: Makefile,v 1.41 2002/03/02 20:23:14 konst Exp $
 
 #DEBUG = y
 
@@ -22,7 +22,6 @@ FILES += clear cp host httpd m_inetd less ls more mount mv nc ping pop3 pwd\
 
 LINKS = arch cpuspeed domainname false mkfifo rmdir sln todos umount\
 	halt poweroff\
-	regs
 
 BONUS =	execve report asmutils
 
@@ -70,7 +69,7 @@ install:$(FILES)
 	$(CP) $(FILES) $(LINKS) $(INSTALLDIR)
 
 clean:
-	$(RM) *.o $(FILES) $(BONUS) $(LINKS)
+	$(RM) *.o $(FILES) $(LINKS) $(BONUS) regs
 
 check:
 ifneq ("$(ASVER)", "$(CORRECT_ASVER)")
