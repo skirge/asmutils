@@ -1,25 +1,23 @@
-;  $Id: idea.asm,v 1.2 2002/12/17 15:42:49 konst Exp $
-;
 ;  idea.asm
 ;
-;  guesss... & enjoy! ;^)
+;  IDEA cipher impl based on Bruce Schneier's "Applied Cryptography"
+;    (Polish edition WNT W-wa 1995, page 314..321 & code examples
+;                     at the end of the book)
 ;
-;  (c) 2k2.10(18-25) Maciej Hrebien with dedication
-;     to Dominika Ferenc (miss You all the time!)
+;  USAGE: $ idea e/d key [file(s)]
 ;
-;  based on: Bruce Schneier's "Applied Cryptography"
-;            (Polish edition WNT W-wa 1995, page 314..321
-;               & code examples at the end of the book)
 ;  NOTE:
-;     IDEA algorithm is patented by Ascom-Tech AG but
-;         free of charge for non-commercial users
+;    IDEA algorithm is patented by Ascom-Tech AG but free of
+;               charge for non-commercial users
 ;
-;  2k2.11(01) + read from stdin if no file(s) specified
-;      12(06) eat 2 bytes :)
+;  (c) 2003.02(03) Maciej Hrebien with dedication
+;           to Dominika Ferenc (miss You all the time!)
+;
+;  $Id: idea.asm,v 1.3 2003/02/10 16:22:36 konst Exp $
 
 %include "system.inc"
 
-%assign PADchr ' '	; padding at the end of not full block
+%assign PADchr '*' ; padding char at the end of not full block
 
 CODESEG
 
@@ -28,6 +26,7 @@ CODESEG
 ; NOTE: the MSBs of eax must be zeroed!
 
  mod_mul:
+
 	or	eax,eax
 	jz	short _a0
 
@@ -71,7 +70,9 @@ CODESEG
 
 	_mov	ecx,65535
 	lea	ebx,[ecx+2]
+
  inv_lp:
+
 	xor	edx,edx
 	push	eax
 
@@ -84,12 +85,16 @@ CODESEG
 	jz	short inv_done
 
 	loop	inv_lp
+
  inv_done:
+
 	xchg	ecx,eax
 	pop	edx
 	pop	ecx
 	pop	ebx
+
  inv_ret:
+
 	ret
 
 
@@ -98,35 +103,38 @@ CODESEG
 ; out: edi - en_key[52]
 
  gen_en_key:
+
 	pusha
 	push	edi
 
 	_mov	ecx,8
-	rep	movsw		; memcpy(en_key,user_key,2*8)
+	rep	movsw			; memcpy(en_key,user_key,2*8)
 
 	pop	esi
-	inc	ecx		; i = 1
-	xor	ebx,ebx		; b = 0
+	inc	ecx			; i = 1, b = 0..
+	_mov	ebx,0
+
  gek_lp:
+
 	push	ecx
 
-	and	ecx,7		; ax = en_key[b+(i&7)]
+	and	ecx,7			; ax = en_key[b+(i&7)]
 	lea	edx,[ebx+ecx]
 	mov	ax,[esi+edx*2]
 
-	inc	ecx		; dx = en_key[b+((i+1)&7)]
+	inc	ecx			; dx = en_key[b+((i+1)&7)]
 	and	ecx,7
 	lea	edx,[ebx+ecx]
 	mov	dx,[esi+edx*2]
 
-	shl	ax,9		; en_key[j++] = (ax << 9)|(dx >> 7)
+	shl	ax,9			; en_key[j++] = (ax << 9)|(dx >> 7)
 	shr	dx,7
 	or	ax,dx
 	stosw
 
 	pop	ecx
 
-	mov	eax,ecx		; b += (!((i++)&7))*8
+	mov	eax,ecx			; b += (!((i++)&7))*8
 	and	eax,7
 	sub	al,1
 	setc	al
@@ -146,6 +154,7 @@ CODESEG
 ; out: edi - de_key[52]
 
  gen_de_key:
+
 	pusha
 	xor	eax,eax
 
@@ -166,7 +175,9 @@ CODESEG
 	stosw
 					; k = 42
 	_mov	ecx,42
+
  gdk_lp:
+
 	mov	eax,[esi+ecx*2+2*4]	; de_key[i++]=en_key[k+4]
 	stosd				; de_key[i++]=en_key[k+5]
 
@@ -212,158 +223,135 @@ CODESEG
 	ret
 
 
-; encode/decode routine
-; in:  esi - en/de_key[52]
-;      edi - input[4]
+; encode / decode routine
+; in:  esi - en/de_key[52], edi - input[4]
 ; out: edi - output[4]
 
  do_idea:
+
 	pusha
 	push	edi
 
-	mov	cx,[edi]	; x1
-	mov	dx,[edi+2*1]	; x2
-	mov	bp,[edi+2*2]	; x3
-	mov	di,[edi+2*3]	; x4
+	mov	cx,[edi]		; x1
+	mov	dx,[edi+2*1]		; x2
+	mov	bp,[edi+2*2]		; x3
+	mov	di,[edi+2*3]		; x4
 
 	_mov	eax,8
  di_lp:
 	push	eax
 
-	lodsw			; x1 = x1 %* key[i++]
+	lodsw				; x1 = x1 %* key[i++]
 	mov	bx,cx
 	call	mod_mul
 	xchg	cx,ax
 
-	lodsw			; x2 += key[i++]
+	lodsw				; x2 += key[i++]
 	add	dx,ax
 
-	lodsw			; x3 += key[i++]
+	lodsw				; x3 += key[i++]
 	add	bp,ax
 
-	lodsw			; x4 = x4 %* key[i++]
+	lodsw				; x4 = x4 %* key[i++]
 	mov	bx,di
 	call	mod_mul
 	xchg	di,ax
 
-	mov	bx,bp		; tmp1 = (x1^x3) %* key[i++]
+	mov	bx,bp			; tmp1 = (x1^x3) %* key[i++]
 	xor	bx,cx
 	lodsw
 	call	mod_mul
 	push	eax
 
-	mov	bx,di		; tmp2 = (tmp1 + (x2^x4)) %* key[i++]
+	mov	bx,di			; tmp2 = (tmp1 + (x2^x4)) %* key[i++]
 	xor	bx,dx
 	add	bx,ax
 	lodsw
 	call	mod_mul
 
-	pop	ebx		; tmp1 += tmp2
+	pop	ebx			; tmp1 += tmp2
 	add	bx,ax
 
-	xor	cx,ax		; x1 ^= tmp2
-	xor	bp,ax		; x3 ^= tmp2
-	xor	dx,bx		; x2 ^= tmp1
-	xor	di,bx		; x4 ^= tmp1
+	xor	cx,ax			; x1 ^= tmp2
+	xor	bp,ax			; x3 ^= tmp2
+	xor	dx,bx			; x2 ^= tmp1
+	xor	di,bx			; x4 ^= tmp1
 
-	xchg	bp,dx		; swap(x2,x3)
+	xchg	bp,dx			; swap(x2,x3)
 
 	pop	eax
 	dec	eax
 	jnz	short di_lp
 
-	mov	bx,cx		; x1 = x1 %* key[i++]
+	mov	bx,cx			; x1 = x1 %* key[i++]
 	lodsw
 	call	mod_mul
 	xchg	cx,ax
 
-	lodsw			; x2 += key[i++]
+	lodsw				; x2 += key[i++]
 	add	bp,ax
 
-	lodsw			; x3 += key[i++]
+	lodsw				; x3 += key[i++]
 	add	dx,ax
 
-	mov	bx,di		; x4 = x4 %* key[i++]
+	mov	bx,di			; x4 = x4 %* key[i++]
 	lodsw
 	call	mod_mul
 
-	pop	edi		; store..
+	pop	edi			; store..
 
-	mov	[edi],cx	; x1
-	mov	[edi+2*1],bp	; x2
-	mov	[edi+2*2],dx	; x3
-	mov	[edi+2*3],ax	; x4
+	mov	[edi],cx		; x1
+	mov	[edi+2*1],bp		; x2
+	mov	[edi+2*2],dx		; x3
+	mov	[edi+2*3],ax		; x4
 
 	popa
 	ret
 
 
 ; idea main routine
-; in:  esi - in_fd
-;      edi - out_fd
-;      edx - key[52]
-; out: eax eq 0 if no errors detected else eq -1
+; in:  esi - key[52], edi - fd to read from
+; out: eax < 0 if err
 
  idea:
-	push	ebx
-	push	ecx
-	push	ebp
+	push	eax			; some space for buffer..
+	push	eax
 
-	sub	esp,2*4
-	mov	ebp,esp
+	mov	ecx,esp
  i_lp:
-	push	edx
-
-	sys_read esi,ebp,8
-
-	pop	edx
-
-	or	eax,eax
-	js	short i_err
-	jz	short i_ret
+	_mov	eax,7
  i_pad:
-	cmp	eax,8
-	jge	short i_ped
+	mov	[ecx+eax],byte PADchr
+	dec	eax
+	jns	i_pad
 
-	mov	[ebp+eax],byte PADchr
+	sys_read edi,ecx,8
 
-	inc	eax
-	jmp	short i_pad
- i_ped:
-	push	esi
+	cmp	eax,0
+	jle	short i_ret
+
 	push	edi
-
-	mov	esi,edx
-	mov	edi,ebp
+	mov	edi,ecx
 
 	call	do_idea
 
+	sys_write STDOUT,ecx,8
+
 	pop	edi
-	pop	esi
-
-	push	edx
-
-	sys_write edi,ebp,8
-
-	pop	edx
-
-	or	eax,eax
-	jns	short i_lp
- i_err:
+	jmp	i_lp
  i_ret:
-	add	esp,8
-	pop	ebp
 	pop	ecx
-	pop	ebx
+	pop	ecx
+
 	ret
 
 
 ; main routine :)
 
  START:
-	pop	eax		; argc
-	pop	eax		; argv[0]
-	pop	esi		; argv[1]
+	pop	eax			; argc
+	pop	eax			; argv[0]
+	pop	esi			; argv[1]
 
 	or	esi,esi
 	jz	short help
@@ -375,10 +363,11 @@ CODESEG
 
 	cmp	al,'d'
 	jne	short help
- getkey:
-	mov	[ed_flag],al
 
-	pop	esi		; argv[2]
+ getkey:
+
+	mov	[ed_flag],al
+	pop	esi			; argv[2]
 
 	or	esi,esi
 	jz	short help
@@ -386,16 +375,20 @@ CODESEG
 	mov	edi,usr_key
 	_mov	ecx,16
 	push	edi
- key_cp:
+
+ key_copy:
+
 	lodsb
 	or	al,al
-	jz	short kcped
+	jz	short copy_done
 
 	stosb
-	loop	key_cp
- kcped:
+	loop	key_copy
+
+ copy_done:
+
 	pop	esi
-	lea	edi,[esi+16]	; = mov	edi,enc_key
+	lea	edi,[esi+16]		; mov edi,enc_key
 
 	call	gen_en_key
 
@@ -405,20 +398,19 @@ CODESEG
 	je	short pre
 
 	mov	esi,edi
-	add	edi,2*52	; = mov	edi,dec_key
+	add	edi,2*52		; mov edi,dec_key
 
 	call	gen_de_key
 
 	mov	ebp,edi
  pre:
-	pop	edx		; argv[3]
-	push	edx
+	pop	ecx			; argv[3]
+	push	ecx
 	_mov	eax,STDIN
 	
-	or	edx,edx
-	jz	go
- nextf:
-	pop	eax		; argv[n]
+	jecxz	go
+ argv:
+	pop	eax			; argv[n]
 
 	or	eax,eax
 	jz	short exit
@@ -428,9 +420,8 @@ CODESEG
 	or	eax,eax
 	js	short err
  go:
-	xchg	esi,eax
-	_mov	edi,STDOUT
-	mov	edx,ebp
+	xchg	edi,eax
+	mov	esi,ebp
 
 	call	idea
 
@@ -439,18 +430,18 @@ CODESEG
 ;	pop	eax
 
 	or	eax,eax
-	js	short err
+	jns	short argv
 
-	jmp	short nextf
+	jmp	short err
  help:
-	sys_write STDERR,usage,23
+	sys_write STDERR,usage,25
  err:
  exit:
 	sys_exit eax
 
  _rodata:
 
- usage db "idea e|d key [file(s)]",0xa
+ usage db "$ idea e/d key [file(s)]",0xa
 
 UDATASEG
 

@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Tiago Gasiba <ee97034@fe.up.pt>
 ;
-;$Id: less.asm,v 1.7 2002/03/14 17:49:05 konst Exp $
+;$Id: less.asm,v 1.8 2003/02/10 16:22:36 konst Exp $
 ;
 ;hackers' less/more
 ;
@@ -78,6 +78,9 @@ begin:
 		pop	ebx
 		sys_open EMPTY,O_RDONLY
 		mov	[fd],eax
+		test eax, eax
+		jns .entrada
+		sys_exit 1
 .entrada:
 		sys_ioctl [fd],TCGETS,oldtermios	;redirection check
 		test	eax,eax
