@@ -1,0 +1,363 @@
+; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
+;
+; $Id: includes.inc,v 1.1 2000/02/10 15:14:18 konst Exp $
+;
+; file          : includes.inc
+; created       : 04-Jul-1999
+; modified      : 09-Feb-2000
+; version       : 0.07
+; assembler     : nasm 0.98
+; description   : general constants and structures from header files (libc)
+; author        : Konstantin Boldyshev <konst@linuxassembly.org>
+; comment       : included internally from system.inc
+
+%ifdef	__SYSTEM_INC
+
+%ifndef __INCLUDES_INC
+%define __INCLUDES_INC
+
+%assign	NULL	0
+
+%assign TRUE	1
+%assign FALSE	0
+
+%assign	STDIN	0
+%assign	STDOUT	1
+%assign	STDERR	2
+
+%assign	EOL	0
+
+%assign	__a	0x07
+%assign	__b	0x08
+%assign	__e	0x1b
+%assign	__f	0x0c
+%assign	__n	0x0a
+%assign	__r	0x0d
+%assign	__t	0x09
+%assign	__v	0x0b
+%assign	__s	0x20
+
+;
+;please provide corresponding include file when adding new entries
+;
+
+;
+;fcntl.h
+;
+
+%assign SEEK_SET	0
+%assign SEEK_CUR	1
+%assign SEEK_END	2
+
+;
+;unistd.h
+;
+
+%assign	R_OK	4	; read
+%assign W_OK	2	; write
+%assign X_OK	1	; execute
+%assign F_OK	0	; existence
+
+;
+;asm/fcntl.h
+;
+
+%assign O_RDONLY	0
+%assign O_WRONLY	1
+%assign O_RDWR		2
+%assign O_ACCMODE	3
+%assign O_CREAT		100q
+%assign O_EXCL		200q
+%assign O_NOCTTY	400q
+%assign O_TRUNC		1000q
+%assign O_APPEND	2000q
+%assign O_NONBLOCK	4000q
+%assign O_NDELAY	O_NONBLOCK
+%assign O_SYNC		 10000q
+%assign FASYNC		 20000q
+%assign O_DIRECT	 40000q
+%assign O_LARGEFILE	100000q
+%assign O_DIRECTORY	200000q
+%assign O_NOFOLLOW	400000q
+
+;
+;
+;
+
+;* Supported address families. *
+%assign AF_UNSPEC	0
+%assign AF_UNIX		1	; Unix domain sockets
+%assign AF_LOCAL	1	; POSIX name for AF_UNIX
+%assign AF_INET		2	; Internet IP Protocol
+%assign AF_AX25		3	; Amateur Radio AX.25
+%assign AF_IPX		4	; Novell IPX
+%assign AF_APPLETALK	5	; AppleTalk DDP
+%assign AF_NETROM	6	; Amateur Radio NET/ROM
+%assign AF_BRIDGE	7	; Multiprotocol bridge
+%assign AF_ATMPVC	8	; ATM PVCs
+%assign AF_X25		9	; Reserved for X.25 project
+%assign AF_INET6	10	; IP version 6
+%assign AF_ROSE		11	; Amateur Radio X.25 PLP
+%assign AF_DECnet	12	; Reserved for DECnet project
+%assign AF_NETBEUI	13	; Reserved for 802.2LLC project
+%assign AF_SECURITY	14	; Security callback pseudo AF
+%assign AF_KEY		15	; PF_KEY key management API
+%assign AF_NETLINK	16
+%assign AF_ROUTE	AF_NETLINK 	; Alias to emulate 4.4BSD
+%assign AF_PACKET	17	; Packet family
+%assign AF_ASH		18	; Ash
+%assign AF_ECONET	19	; Acorn Econet
+%assign AF_ATMSVC	20	; ATM SVCs
+%assign AF_SNA		22	; Linux SNA Project (nutters!)
+%assign AF_IRDA		23	; IRDA sockets
+%assign AF_MAX		32	; For now..
+
+;* Protocol families, same as address families.
+%assign PF_UNSPEC	AF_UNSPEC
+%assign PF_UNIX		AF_UNIX
+%assign PF_LOCAL	AF_LOCAL
+%assign PF_INET		AF_INET
+%assign PF_AX25		AF_AX25
+%assign PF_IPX		AF_IPX
+%assign PF_APPLETALK	AF_APPLETALK
+%assign	PF_NETROM	AF_NETROM
+%assign PF_BRIDGE	AF_BRIDGE
+%assign PF_ATMPVC	AF_ATMPVC
+%assign PF_X25		AF_X25
+%assign PF_INET6	AF_INET6
+%assign PF_ROSE		AF_ROSE
+%assign PF_DECnet	AF_DECnet
+%assign PF_NETBEUI	AF_NETBEUI
+%assign PF_SECURITY	AF_SECURITY
+%assign PF_KEY		AF_KEY
+%assign PF_NETLINK	AF_NETLINK
+%assign PF_ROUTE	AF_ROUTE
+%assign PF_PACKET	AF_PACKET
+%assign PF_ASH		AF_ASH
+%assign PF_ECONET	AF_ECONET
+%assign PF_ATMSVC	AF_ATMSVC
+%assign PF_SNA		AF_SNA
+%assign PF_IRDA		AF_IRDA
+%assign PF_MAX		AF_MAX
+
+%assign SOCK_STREAM    1		; stream (connection) socket
+%assign SOCK_DGRAM     2		; datagram (conn.less) socket
+%assign SOCK_RAW       3		; raw socket
+%assign SOCK_RDM       4		; reliably-delivered message
+%assign SOCK_SEQPACKET 5		; sequential packet socket
+%assign SOCK_PACKET    10		; linux specific way of
+					; getting packets at the dev
+					; level.  For writing rarp and
+					; other similar things on the
+					; user level.
+
+%assign IPPROTO_IP		0		; Dummy protocol for TCP
+%assign IPPROTO_HOPOPTS		0		; IPv6 Hop-by-Hop options
+%assign IPPROTO_ICMP		1		; Internet Control Message Protocol
+%assign IPPROTO_IGMP		2		; Internet Group Management Protocol
+%assign IPPROTO_IPIP		4		; IPIP tunnels (older KA9Q tunnels use 94)
+%assign IPPROTO_TCP		6		; Transmission Control Protocol
+%assign IPPROTO_EGP		8		; Exterior Gateway Protocol
+%assign IPPROTO_PUP		12		; PUP protocol
+%assign IPPROTO_UDP		17		; User Datagram Protocol
+%assign IPPROTO_IDP		22		; XNS IDP protocol
+%assign IPPROTO_TP		29		; SO Transport Protocol Class 4
+%assign IPPROTO_IPV6		41		; IPv6 header
+%assign IPPROTO_ROUTING		43		; IPv6 routing header
+%assign IPPROTO_FRAGMENT 	44		; IPv6 fragmentation header
+%assign IPPROTO_RSVP		46		; Reservation Protocol
+%assign IPPROTO_GRE		47		; General Routing Encapsulation
+%assign IPPROTO_ESP		50		; encapsulating security payload
+%assign IPPROTO_AH		51		; authentication header
+%assign IPPROTO_ICMPV6		58		; ICMPv6
+%assign IPPROTO_NONE		59		; IPv6 no next header
+%assign IPPROTO_DSTOPTS		60		; IPv6 destination options
+%assign IPPROTO_MTP		92		; Multicast Transport Protocol
+%assign IPPROTO_ENCAP		98		; Encapsulation Header
+%assign IPPROTO_PIM		103		; Protocol Independent Multicast
+%assign IPPROTO_RAW		255		; Raw IP packets
+
+;
+;
+;
+
+%assign	UTS_LEN	64
+
+;
+;
+;
+
+%define		INT		resd
+%define		UINT		resd
+%define		LONG		resd
+%define		ULONG		resd
+%define 	SHORT		resw
+%define		USHORT		resw
+%define		CHAR		resb
+%define		UCHAR		resb
+%define		BYTE		resb
+%define		WORD		resw
+%define		DWORD		resd
+%define		U8		resb
+%define		U16		resw
+%define		U32		resd
+
+%define		_INT		dd
+%define		_UINT		dd
+%define		_LONG		dd
+%define		_ULONG		dd
+%define 	_SHORT		dw
+%define		_USHORT		dw
+%define		_CHAR		db
+%define		_UCHAR		db
+%define		_BYTE		db
+%define		_WORD		dw
+%define		_DWORD		dd
+%define		_U8		db
+%define		_U16		dw
+%define		_U32		dd
+
+;
+;linux/utsname.h
+;
+
+luts		equ	65
+
+struc new_utsname
+.sysname	CHAR	luts
+.nodename	CHAR	luts
+.release	CHAR	luts
+.version	CHAR	luts
+.machine	CHAR	luts
+.domainname	CHAR	luts
+endstruc
+
+;
+;linux/time.h
+;
+
+struc timespec
+.tv_sec		ULONG	1
+.tv_nsec	ULONG	1
+endstruc
+
+;
+;asm/stat.h
+;
+
+struc stat
+.st_dev		USHORT	1
+.__pad1		USHORT	1
+.st_ino		ULONG	1
+.st_mode	USHORT	1
+.st_nlink	USHORT	1
+.st_uid		USHORT	1
+.st_gid		USHORT	1
+.st_rdev	USHORT	1
+.__pad2		USHORT	1
+.st_size	ULONG	1
+.st_blksize	ULONG	1
+.st_blocks	ULONG	1
+.st_atime	ULONG	1
+.__unused1	ULONG	1
+.st_mtime	ULONG	1
+.__unused2	ULONG	1
+.st_ctime	ULONG	1
+.__unused3	ULONG	1
+.__unused4	ULONG	1
+.__unused5	ULONG	1
+endstruc
+
+;
+;linux/dirent.h
+;
+
+ld_name		equ	256
+struc dirent
+.d_ino		ULONG	1
+.d_off		ULONG	1
+.d_reclen	USHORT	1
+.d_name		CHAR	ld_name
+endstruc
+
+;
+;arch/i386/kernel/sys_i386.c
+;
+
+struc	mmap_arg_struct
+.addr	ULONG	1
+.len	ULONG	1
+.prot	ULONG	1
+.flags	ULONG	1
+.fd	ULONG	1
+.offset	ULONG	1
+endstruc
+
+;
+;asm/ptrace.h
+;
+
+struc pt_regs
+.ebx	ULONG	1
+.ecx	ULONG	1
+.edx	ULONG	1
+.esi	ULONG	1
+.edi	ULONG	1
+.ebp	ULONG	1
+.eax	ULONG	1
+%if __KERNEL__ = 20
+.ds	USHORT	1
+.__dsu	USHORT	1
+.es	USHORT	1
+.__esu	USHORT	1
+.fs	USHORT	1
+.__fsu	USHORT	1
+.gs	USHORT	1
+.__gsu	USHORT	1
+%elif __KERNEL__ = 22
+.xds	INT	1
+.xes	INT	1
+%endif
+.orig_eax	ULONG	1
+.eip		ULONG	1
+%if __KERNEL__ = 20
+.cs	USHORT	1
+.__csu	USHORT	1
+%elif __KERNEL__ = 22
+.xcs	INT	1
+%endif
+.eflags	ULONG	1
+.esp	ULONG	1
+%if __KERNEL__ = 20
+.ss	USHORT	1
+.__ssu	USHORT	1
+%elif __KERNEL__ = 22
+.xss	INT	1
+%endif
+endstruc
+
+;
+;linux/socket.h
+;
+
+struc	sockaddr
+.sa_family_t	USHORT	1		;address family, AF_xxx
+.sa_data	CHAR	14		;14 bytes of protocol address
+endstruc
+
+;
+;linux/in.h
+;
+
+struc in_addr
+.s_addr		U32	1
+endstruc
+
+
+%endif	;__INCLUDES_INC
+
+%else
+
+%error "this file must be included internally from system.inc !"
+
+%endif	;__SYSTEM_INC

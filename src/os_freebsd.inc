@@ -1,10 +1,10 @@
 ; Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_freebsd.inc,v 1.1 2000/02/10 15:07:04 konst Exp $
+; $Id: os_freebsd.inc,v 1.2 2000/02/10 15:14:18 konst Exp $
 ;
 ; file          : os_freebsd.inc
 ; created       : 08-Feb-2000
-; modified      : 09-Feb-2000
+; modified      : 10-Feb-2000
 ; version       : 0.07
 ; assembler     : nasm 0.98
 ; description   : freebsd kernel defined constants and structures
@@ -17,7 +17,7 @@
 %define __FREEBSD_INC
 
 ;
-;FreeBSD 3.1 syscalls
+;FreeBSD 3.2 syscalls
 ;created from	Id: syscalls.master,v 1.55.2.1 1999/05/05 22:53:05 dt Exp
 ;
 
