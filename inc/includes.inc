@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.17 2002/03/08 19:11:49 konst Exp $
+; $Id: includes.inc,v 1.18 2002/03/14 07:08:55 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 05-Mar-2002
-; version       : 0.16
+; modified      : 14-Mar-2002
+; version       : 0.17
 ; assembler     : nasm 0.98
 ; description   : generic constants and structures from (libc) header files
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -483,6 +483,17 @@ endstruc
 
 struc in_addr
 .s_addr		U32	1
+endstruc
+
+;
+;
+;
+
+struc winsize
+.ws_row		USHORT	1
+.ws_col		USHORT	1
+.ws_xpixel	USHORT	1
+.ws_ypixel	USHORT	1
 endstruc
 
 %endif	;__INCLUDES_INC
