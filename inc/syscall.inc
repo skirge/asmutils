@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.5 2001/03/18 07:08:25 konst Exp $
+; $Id: syscall.inc,v 1.6 2001/08/13 05:52:27 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 11-Mar-2001
-; version	: 0.14
+; modified	: 14-May-2001
+; version	: 0.15
 ; assembler	: nasm 0.98
 ; description	: system call macros
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -300,6 +300,14 @@ extern %{1}
 	__syscall pwrite, 4, %0, %1, %2, %3, %4
 %endmacro
 
+%macro sys_readv  0-3
+	__syscall readv, 3, %0, %1, %2, %3
+%endmacro
+
+%macro sys_writev  0-3
+	__syscall writev, 3, %0, %1, %2, %3
+%endmacro
+
 ;
 ;fs/open.c
 ;
@@ -408,6 +416,10 @@ extern %{1}
 ;fs/namei.c
 ;
 
+%macro sys_mknod 0-3
+	__syscall mknod, 3, %0, %1, %2, %3
+%endmacro
+
 %macro sys_mkdir 0-2
 	__syscall mkdir, 2, %0, %1, %2
 %endmacro
@@ -431,7 +443,6 @@ extern %{1}
 %macro sys_rename 0-2
 	__syscall rename, 2, %0, %1, %2
 %endmacro
-
 
 ;
 ;fs/ioctl.c
@@ -539,6 +550,10 @@ extern %{1}
 
 %macro sys_setuid 0-1
 	__syscall setuid, 1, %0, %1
+%endmacro
+
+%macro sys_getgroups 0-2
+	__syscall getgroups, 2, %0, %1, %2
 %endmacro
 
 ;

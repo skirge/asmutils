@@ -1,11 +1,12 @@
 ;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: id.asm,v 1.4 2000/04/07 18:36:01 konst Exp $
+;$Id: id.asm,v 1.5 2001/08/13 05:51:46 konst Exp $
 ;
 ;hackers' id
 ;
 ;0.01: 25-Oct-1999	initial release
 ;0.02: 07-Apr-2000	squeezed few bytes (KB)
+;0.03: 11-Aug-2001	added groups=list  (JH)
 ;
 ;syntax: id
 ;        No options so far.
@@ -25,11 +26,46 @@ START:
 		mov	bl,'g'			; ebx="gid="
 		call	print_stuff
 		
+		call	.groups
+	
 		mov	cl,10			; print "\n"
 		push	ecx
 		sys_write STDOUT,esp,1
 		
 		sys_exit_true
+
+.groups:
+		sys_getgroups   64, groups
+
+		mov	ebp, eax
+		mov	dl, 7		; Looks like a bug, but it works.
+		mov	ecx, gstuff
+		sys_write	STDOUT
+
+		mov	esi, groups
+		or	ebp, ebp
+		jz	.nogroups
+.forallgroups:
+		mov	edi, num_buf
+		push	edi
+		mov	ax, [esi]
+		inc	esi
+		inc	esi
+		call	bin_to_dec
+		dec	ebp
+		or	ebp, ebp
+		jz	.nocomma
+		mov	al, ','
+		stosb
+.nocomma:
+		mov	edx, edi
+		pop	ecx
+		sub	edx, ecx
+		sys_write	STDOUT
+		or	ebp, ebp
+		jnz	.forallgroups
+.nogroups:
+		ret
 
 print_stuff:
 		pushad
@@ -40,8 +76,32 @@ print_stuff:
 		mov	edi,num_buf
 		push	edi			; save num_buf
 		push	ebx			; save "uid="
+		call	bin_to_dec
+		mov	al,9
+		stosb		
+		
+		pop	ebx			; restore "uid="
+		
+		push	ebx			; put "uid=" on the stack
+		mov	ecx,esp			; point ecx to it
+		mov	dl,4			; len=4
+		sys_write STDOUT		; write
+		pop	ebx			; restore stack
 
-		; bin_to_dec		
+		pop	esi			; restore num_buf
+		
+		mov	ecx,esi			; save it in ecx
+		mov	edx,edi
+		sub	edx,ecx
+		
+		; ecx already holds string, edx holds strlen
+		sys_write STDOUT
+
+.error:	
+		popad
+		ret
+
+bin_to_dec:	; Pointer to num_buf in edi, number in eax
 		xor	ecx,ecx		
 		mov	ebx,ecx
 		mov	bl,10
@@ -57,38 +117,12 @@ print_stuff:
 		pop	eax
 		stosb
 		loop	.keep_popping
-		mov	ax,9
-		stosw		
-		
-		pop	ebx			; restore "uid="
-		
-		push	ebx			; put "uid=" on the stack
-		mov	ecx,esp			; point ecx to it
-		mov	dl,4			; len=4
-		sys_write STDOUT		; write
-		pop	ebx			; restore stack
-
-		pop	esi			; restore num_buf
-		
-		mov	ecx,esi			; save it in ecx
-		xor	eax,eax
-		mov	edx,eax
-		dec	edx
-.do_strlen:
-		inc	edx
-		lodsb
-		test	al,al
-		jnz	.do_strlen
-		
-		; ecx already holds string, edx holds strlen
-		sys_write STDOUT
-
-.error:	
-		popad
 		ret
 
+gstuff		db	'groups='
 
 		UDATASEG
+groups:		resw	64
 num_buf:	resb	16
 		
 		END
