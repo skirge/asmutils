@@ -1,6 +1,6 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.20 2002/02/02 12:33:39 konst Exp $
+; $Id: os_linux.inc,v 1.21 2002/02/19 12:31:39 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
@@ -1192,6 +1192,18 @@ endstruc
 	_add	esp,(2 * 4)
 %endmacro
 
+%macro	sys_send 0-4
+	__pushargs 4, %0, %1, %2, %3, %4
+	sys_socketcall SYS_SEND,esp
+	_add	esp,(4 * 4)
+%endmacro
+
+%macro	sys_recv 0-4
+	__pushargs 4, %0, %1, %2, %3, %4
+	sys_socketcall SYS_RECV,esp
+	_add	esp,(4 * 4)
+%endmacro
+
 %macro	sys_sendto 0-6
 	__pushargs 6, %0, %1, %2, %3, %4, %5, %6
 	sys_socketcall SYS_SENDTO,esp
@@ -1202,6 +1214,18 @@ endstruc
 	__pushargs 6, %0, %1, %2, %3, %4, %5, %6
 	sys_socketcall SYS_RECVFROM,esp
 	_add	esp,(6 * 4)
+%endmacro
+
+%macro	sys_sendmsg 0-3
+	__pushargs 3, %0, %1, %2, %3
+	sys_socketcall SYS_SENDMSG,esp
+	_add	esp,(3 * 4)
+%endmacro
+
+%macro	sys_recvmsg 0-3
+	__pushargs 3, %0, %1, %2, %3
+	sys_socketcall SYS_RECVMSG,esp
+	_add	esp,(3 * 4)
 %endmacro
 
 %endif

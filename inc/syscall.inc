@@ -1,6 +1,6 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.16 2002/02/02 13:59:59 konst Exp $
+; $Id: syscall.inc,v 1.17 2002/02/19 12:31:39 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
@@ -587,12 +587,28 @@ extern %{1}
 	__syscall listen, 2, %0, %1, %2
 %endmacro
 
+%macro	sys_send 0-4
+	__syscall send, 6, %0, %1, %2, %3, %4
+%endmacro
+
+%macro	sys_recv 0-4
+	__syscall recv, 6, %0, %1, %2, %3, %4
+%endmacro
+
 %macro	sys_sendto 0-6
 	__syscall sendto, 6, %0, %1, %2, %3, %4, %5, %6
 %endmacro
 
 %macro	sys_recvfrom 0-6
 	__syscall recvfrom, 6, %0, %1, %2, %3, %4, %5, %6
+%endmacro
+
+%macro	sys_sendmsg 0-3
+	__syscall sendmsg, 6, %0, %1, %2, %3
+%endmacro
+
+%macro	sys_recvmsg 0-3
+	__syscall recvmsg, 6, %0, %1, %2, %3
 %endmacro
 
 %endif	;__OS_SYSCALL_NETWORK__
