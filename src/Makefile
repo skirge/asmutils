@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.20 2001/09/17 09:36:19 konst Exp $
+# $Id: Makefile,v 1.21 2001/09/17 20:15:29 konst Exp $
 
 #DEBUG = y
 
@@ -17,7 +17,7 @@ FILES = basename cat chmod chroot chown cpuinfo date dc dd dirname\
 	uname wc whoami yes\
 	md5sum rmdsum rc6crypt\
 
-FILES += clear cp httpd less ls more mv nc readkey rm ping pwd touch which
+FILES += clear cp httpd less ls more mv nc readkey rm ping pwd touch watch which
 
 BONUS =	execve report asmutils
 

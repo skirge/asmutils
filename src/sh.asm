@@ -1,25 +1,29 @@
-;
-;Copyright (C) 2000,2001	Alexandr Gorlov <alexandr@fssrf.spb.ru>, <ct@mail.ru>
+;Copyright (C) 2000, 2001	Alexandr Gorlov <alexandr@fssrf.spb.ru>, <ct@mail.ru>
 ;				Karsten Scheibler <karsten.scheibler@bigfoot.de>
-;$Id: sh.asm,v 1.3 2001/08/28 06:31:55 konst Exp $
+;				Rudolf Marek <marekr2@feld.cvut.cz>
 ;
-;small shell
+;$Id: sh.asm,v 1.4 2001/09/17 20:15:29 konst Exp $
+;
+;hackers' shell
 ;
 ;syntax: sh
 ;
 ;example: sh
 ;
 ;0.01: 07-Oct-2000	initial release (AG + KS)
-;0.02  26-Jul-2001      Added char-oriented commandline, tab-filename filling
-;			partial export support 
+;0.02  26-Jul-2001      Added char-oriented commandline, tab-filename filling,
+;			partial export support, 
 ;			partial CTRL+C handling (RM)
+;0.03   16-Sep-2001     Added history handling (runtime hist), 
+;			improved signal handling (RM)
 
 %include "system.inc"
-;%ifdef __LINUX__
-;%include "os_linux.inc"
-;%endif
 
+%ifdef __LINUX__ 
+%define HISTORY 
+%endif
 
+;%undef HISTORY save 192 bytes + dynamic memory for cmdlines
 
 
 ;****************************************************************************
@@ -35,7 +39,7 @@
 
 
 %assign CMDLINE_BUFFER1_SIZE		001000h
-%assign CMDLINE_BUFFER2_SIZE		010000h
+%assign CMDLINE_BUFFER2_SIZE		010000h  ;so much ?
 %assign CMDLINE_PROGRAM_PATH_SIZE	001000h
 %assign CMDLINE_MAX_ARGUMENTS		(CMDLINE_BUFFER1_SIZE / 2)
 %assign CMDLINE_MAX_ENVIRONMENT		20
@@ -129,10 +133,36 @@ get_cmdline:		sys_write  STDOUT, [cmdline.prompt], text.prompt_length
 			test	dword eax, eax
 			jz	get_cmdline
 
+			
+%ifdef HISTORY		
+			xchg 	eax,edx   ;save the length of str in buff
+			mov 	ecx,[history_start] ;load the counter located some
+			or 	ecx,ecx             ;where in stack
+			jnz .next_entry
+			push 	byte 0              ;count of lines in history
+			mov 	[history_start],esp ;write the pos of this counter
+			mov 	ecx,esp             ;also from this pos will be
+.next_entry:			                    ;saving ptrs to strings
+			inc 	dword [ecx]       
+			mov 	eax,[ecx]
+			mov 	[history_cur],eax   ;update last history
+			sys_brk 0                   ;get top of heap
+			push 	eax 		    ;store cur addres
+			mov 	edi,eax
+			add 	eax,edx
+			;dec  eax ;dont copy 00, change 0A->00
+			sys_brk eax                 ;extend heap
+			mov 	esi,cmdline.buffer1
+			mov 	ecx,edx
+			rep                         ;copy str to free mem
+			movsb
+			dec 	edi
+			mov 	byte [edi],0        ;delete 0A
+			xchg 	eax,edx
+%endif
 			;-------------
 			;parse cmdline
 			;-------------
-
 			call	cmdline_parse
 			test	dword eax, eax
 			jz	get_cmdline
@@ -376,7 +406,12 @@ cmdline_get:
 .append:
 			mov	word [edi],0x000a
 			xchg 	edi,eax
-			sub 	eax,cmdline.buffer1-1 
+			sub 	eax,cmdline.buffer1-1
+			mov 	ebx,eax
+			dec 	ebx
+			jnz  .ok_end
+			xor 	eax,eax			    ;if EAX==1 =>eax=0 
+.ok_end:
 			ret				;bye bye ...
 .back_space:	
 			cmp 	edi,cmdline.buffer1    ;check outer limits
@@ -409,7 +444,24 @@ cmdline_get:
 			jz  .cursor_left	
 			cmp 	word [ecx],'[C'
 			jz  .cursor_right
+%ifdef HISTORY
+			mov 	edx,history_cur
+			cmp 	word [ecx],'[A'
+			jz  .cursor_up	
+			cmp 	word [ecx],'[B'
+			jz  .cursor_down
 			jmp short .big_fat_jump2		
+.cursor_down:		
+			inc 	dword [edx]  ;choose which line of hist to display
+			jmps .do_history
+.cursor_up:		
+			cmp 	dword [edx],0
+			jz .beep
+			dec 	dword [edx]	
+			jmps .do_history
+%else
+			jmp short .big_fat_jump2		
+%endif
 .cursor_right:
 			cmp 	byte [edi],0		;check outer limits
 			jz .beep
@@ -418,19 +470,44 @@ cmdline_get:
 			jmp  short .big_fat_jump2
 .beep:	
 			sys_write STDOUT,beep,1 	;beeeeeeeeeep
-			jmp short .big_fat_jump2
+			jmp short .big_fat_jump3
 .cursor_left:
 			cmp 	edi,cmdline.buffer1 	;check outer limits
 			jz .beep
 			dec 	edi
 			sys_write STDOUT,backspace,1    ;cursor one left
-			jmp    short .big_fat_jump2
+.big_fat_jump3:			
+			jmp    near .do_nothing_loop
 
-;
-
-;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-;TODO: append same part of filenames from a list 
-;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+%ifdef HISTORY
+.do_history:
+			mov 	ebx,[history_start]
+			or 	ebx,ebx                 ;first use and want history ??
+			jz .beep
+			mov 	ecx,[edx]
+			cmp 	ecx,[ebx]
+			jb  .bound_ok
+			dec 	dword [edx]  ;stupid, try to thing about better solution
+			jmps .beep
+.bound_ok:
+			inc 	ecx          ;count the adress of pointer to cmdline
+			shl 	ecx,2
+			sub 	ebx,ecx
+			mov 	edi,[ebx]    ;offset of command line, reading fm stack
+			mov 	esi,edi 
+			call string_length
+			mov 	edi,cmdline.buffer1
+			dec 	ecx
+			mov 	ebp,ecx
+			dec 	ebp  ;save length to ebp
+			rep
+			movsb
+			dec edi
+			sys_write STDOUT,erase_line,5
+			sys_write EMPTY, [cmdline.prompt], text.prompt_length			
+			sys_write EMPTY, cmdline.buffer1, ebp
+			jmp    short .big_fat_jump3
+%endif
 
 .last_slash:
 			or 	edx,edx
@@ -523,7 +600,7 @@ cmdline_get:
 			jz near .finish_lookup		;no entries left
 			add 	eax,ecx 		;set the buffer limit {offset] 	    
 			xor 	edx,edx    
-			push dword 0 			;mark last entry
+			push byte 0 			;mark last entry
 .compare_next:
 			add 	ecx,edx
 			mov 	edx,ecx
@@ -873,8 +950,9 @@ execute_builtin:
 .error:			sys_write  STDERR, text.cmd_not_found, text.cmd_not_found_length
 			sys_exit  1
 
-.wait:			mov [pid],eax
+.wait:			mov 	[pid],eax
 			sys_wait4  0xffffffff, NULL, NULL, NULL
+			mov 	dword [pid],0
 			jmp	tty_initialize
 
 
@@ -899,28 +977,28 @@ cmd_export:
 		mov	dword edi, [cmdline.arguments + 4]
 		or 	edi,edi
 		jz .export_print
-		mov ebp,edi
+		mov 	ebp,edi
 		call string_length
 		;ecx size of str
 		;dec ecx
 		sys_brk 0
-		mov esi,eax
-		add eax,ecx
-		xchg eax,ebx
+		mov 	esi,eax
+		add 	eax,ecx
+		xchg 	eax,ebx
 		sys_brk EMPTY
-		xchg ebp,edi
-		xchg esi,edi
+		xchg 	ebp,edi
+		xchg 	esi,edi
 		;edi the ptr
 		mov [cmdline.environment+edx*4],edi
-		inc edx
-		cmp edx,CMDLINE_MAX_ENVIRONMENT
-		mov [environ_count],edx
+		inc 	edx
+		cmp 	edx,CMDLINE_MAX_ENVIRONMENT
+		mov 	[environ_count],edx
 		jnz .write_var
 		int 3
 .write_var:
 		lodsb
 		stosb
-		or al,al
+		or 	al,al
 		jnz .write_var
 .done:
 		ret
@@ -978,9 +1056,15 @@ cmd_cd:
 
 
 break_hndl:
-sys_write STDOUT,text.break,text.break_length
-sys_kill [pid],15
-ret
+			sys_signal 02,break_hndl
+			sys_write STDOUT,text.break,text.break_length
+			cmp dword [pid],0
+			jnz .not_us
+			sys_write STDOUT,text.suicide,text.suicide_length
+			ret
+.not_us:
+			sys_kill [pid],15
+			ret
 
 
 ;****************************************************************************
@@ -1003,8 +1087,10 @@ text:
 .prompt_length			equ	2
 .cmd_not_found:			db	"command not found", 10
 .cmd_not_found_length:		equ	$ - .cmd_not_found
-.break:			db	">>SIGINT received<<,sending SIGTERM", 10
-.break_length:		equ	$ - .break
+.break:				db	__n,">>SIGINT received<<,sending SIGTERM", 10
+.break_length:			equ	$ - .break
+.suicide:			db	"Suicide is painless...", 10,"...NEVER!",10
+.suicide_length:			equ	$ - .suicide
 
 .cd_failed:			db	"couldn't change directory", 10
 .cd_failed_length:		equ	$ - .cd_failed
@@ -1051,6 +1137,7 @@ cur_dir db "./",0
 ;DATASEG
 
 UDATASEG
+
 cmdline:
 .buffer1:			CHAR	CMDLINE_BUFFER1_SIZE
 .buffer2:			CHAR	CMDLINE_BUFFER2_SIZE
@@ -1078,7 +1165,12 @@ file_equal resb 255
 first_time  resb 1 ;stupid
 stat_buf B_STRUC stat,.st_mode
 %endif
+%ifdef HISTORY
+history_cur   resd 1
+history_start resd 1
+%endif
 pid resd 1
+
 END
 ;****************************************************************** AG + KS *
 
