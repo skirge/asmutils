@@ -1,7 +1,7 @@
 ;Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-;$Id: libc.asm,v 1.13 2002/01/28 08:38:50 konst Exp $
+;$Id: libc.asm,v 1.14 2002/03/03 07:58:43 konst Exp $
 ;
 ;hackers' libc
 ;
@@ -34,6 +34,7 @@
 ;			PIC fixes (KB)
 ;0.07: 25-Feb-2001	added __VERBOSE__, memcmp(), getenv() (KB)
 ;0.08: 20-Jan-2002	strlen() bugfix, various fixes (KB)
+;0.09: 03-Mar-2002	__start_main fastcall fix (KB)
 
 %undef __ELF_MACROS__
 
@@ -338,9 +339,9 @@ __start_main:
 %else
 	mov	[__envp],ecx
 %endif
-	mov	ebx,esp			;**argv
+	mov	edx,esp			;**argv
 	push	ecx
-	push	ebx
+	push	edx
 	push	eax
 	call	ebp
 	push	eax
