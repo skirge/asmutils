@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.45 2002/03/14 07:12:11 konst Exp $
+# $Id: Makefile,v 1.46 2002/03/15 19:40:10 konst Exp $
 
 #DEBUG = y
 
@@ -18,7 +18,7 @@ FILES = basename cal cat chmod chroot chown cmp cpuinfo cut date dc dd dirname\
 	md5sum rmdsum rc6crypt\
 
 FILES += readkey less\
-	 host httpd m_inetd nc ping pop3 proxy scan\
+	 host httpd m_inetd nc netstat ping pop3 proxy scan\
 	 cp ls mount mv pwd rm sh test touch watch which write\
 
 LINKS = arch cpuspeed domainname false mkfifo more rmdir sln todos\
