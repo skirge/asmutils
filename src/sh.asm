@@ -4,7 +4,7 @@
 ;			 Joshua Hudson <joshudson@hotmail.com>
 ;			 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;
-;$Id: sh.asm,v 1.10 2002/02/19 07:15:06 konst Exp $
+;$Id: sh.asm,v 1.11 2002/02/19 12:25:36 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -19,31 +19,36 @@
 ;	...
 ; Now you can enjoy basic redirection support !
 ;
-;  ls|grep asm|grep s>>list 
-;  
+; ls|grep asm|grep s>>list 
+;
 ;or just:
 ;
 ;  ls|sort
 ;  cat<my_input
 ;  cat sh.asm > my_output
 ;  cat sh.asm>>my_appended_output  (spaces between > | < aren't mandatory)
+;  
+; And wildcard extending !
+;
+; echo asm??ils*.*.* rulez
 ;
 ; Comment (may not be in conditional):
 ;	: text without shell special characters
 ;
 ;example: sh
 ;
-;0.01: 07-Oct-2000	initial release (AG,KS)
-;0.02: 26-Jul-2001      Added char-oriented commandline, tab-filename filling,
+;0.01: 07-Oct-2000	initial release (AG + KS)
+;0.02: 26-Jul-2001      added char-oriented commandline, tab-filename filling,
 ;			partial export support, 
 ;			partial CTRL+C handling (RM)
-;0.03: 16-Sep-2001      Added history handling (runtime hist), 
+;0.03: 16-Sep-2001      added history handling (runtime hist), 
 ;			improved signal handling (RM)
-;0.04: 30-Jan-2002	Added and/or internals and scripting (JH)
-;0.05: 10-Feb-2002      Added pipe mania & redir support, 
+;0.04: 30-Jan-2002	added and/or internals and scripting (JH)
+;0.05: 10-Feb-2002      added pipe mania & redir support, 
 ;			shell inherits parent's env if any (RM)
-;0.06: 18-Feb-2002      Added $environment variable handling and
-;			some control-characters (TO)
+;0.06  16-Feb-2002	added wildcard extending (RM),
+;			added $environment variable handling
+;			and some control-characters (TO)
 
 %include "system.inc"
 
@@ -894,7 +899,7 @@ clstrlen equ $ - .clstr
 ;* <=eax  number of parameters (0 = none, 0ffffffffh = line incomplete)
 ;****************************************************************************
 ;!!!!!!!!!!!!!!!!!!!!!!
-;TODO: ' \  2> * ` $
+;TODO: ' \  2>  ` $
 ;!!!!!!!!!!!!!!!!!!!!!!
 
 cmdline_parse_flags:
@@ -925,11 +930,11 @@ cmdline_parse_restart:
 			cmp byte  al, '$'
 			je  near .get_env
 			cmp	byte  al, 0x09		;between
-			je	.skip_character
+			je	near .skip_character
 			cmp	byte  al, 0x0a
-			je	.end
+			je	near .end
 			cmp	byte  al, 0x20
-			je	.skip_character
+			je	near .skip_character
 			push    dword .skip_character  ;used by redir where to return
 			cmp	byte  al, '>'
 			je	near .redir_stdout
@@ -938,6 +943,10 @@ cmdline_parse_restart:
 			pop     dword   [esp-4] ;interessting ... pop [esp] throw it away
 			cmp	byte  al, '|'
 			je	near  .pipe     ;Pipe Mania !
+			cmp	byte  al, '?'
+			je	near .wild_ext
+			cmp	byte  al, '*'
+			je	near .wild_ext
 			mov	dword [cmdline.arguments + 4 * ebp], edi ;ok time to create new arg
 			inc	dword ebp ;take notice that we have more args from now
 			inc	dword edx
@@ -962,6 +971,10 @@ cmdline_parse_restart:
 			pop     dword   [esp-4] ;interessting ...
 			cmp	byte  al, '|'
 			je	near .pipe
+			cmp	byte  al, '?'
+			je	near .wild_ext
+			cmp	byte  al, '*'
+			je	near .wild_ext
 ;****			
 			cmp	byte  al, 0x20
 			jne	.copy_character
@@ -1112,8 +1125,251 @@ cmdline_parse_restart:
 		        mov	[cmdline.redir_stdin],eax
 			pop     eax ;chars left
 			jmp     cmdline_parse_restart
+			
+;EAX wild card type
+;EBX flags
+;ECX chars to end
+;EDX ARGC
+;ESI buffer ptr to next char
+;EDI writing arg into buffer2
+;EBP index into args array
+.wild_ext:		mov byte [file_name],0 ;stupid
+			
+			test	dword ebx, cmdline_parse_flags.seperator ;are we in argument 
+			jz	.not_in					    ;or between ?
+			and	dword ebx, ~cmdline_parse_flags.seperator ;arg end here lets see 
+			
+			push 	eax
+			push 	ecx
+			push	esi
+			push 	edi
+			std
+			mov	esi,edi
+			mov	edi,dword [cmdline.arguments-4 + 4 * ebp]   
+.find_next_slash:
+			cmp	esi,edi
+			jz	.slash_not_found
+			lodsb
+			cmp 	al,'/'
+			jnz	.find_next_slash
+			;ESI last byte to copy EDI start
+			cld
+			mov	ecx,esi
+			sub 	ecx,edi
+			inc	ecx	
+			mov 	esi,edi
+			mov	edi,file_name  
+			rep
+			movsb  
+			xor al,al
+			stosb 		;we have a dir to explore there
+			jmps .copy_to_eq
+.slash_not_found:
+			dec esi
+.copy_to_eq:
+			cld
+			inc 	esi
+			mov 	edi,file_equal
+			pop	ecx
+			push 	ecx
+			sub	ecx,esi
+			rep
+			movsb
+			mov	dword [cmdline.arguments + 4 * ebp],edi ;unused pos   
+			xor al,al
+			stosb
+			pop	edi
+			pop	esi
+			pop	ecx
+			pop	eax
+			dec 	edx   	;remove this arg from array
+			dec	ebp
+			mov	edi,dword [cmdline.arguments + 4 * ebp]   
+			pushad
+			push 	ebp
+			mov	edi,dword [cmdline.arguments+4 + 4 * ebp]   
+			mov 	ebp,esp			
+			mov 	ebx,file_name
+			cmp	byte [ebx],0
+			jnz	.dir_open
+			mov	ebx,cur_dir
+			jmps	.dir_open
+			
+.not_in:		
+;		    	mov byte [file_equal],0
+			
+			pushad
+			nop	;I think there are buggy CPUs...
+			push 	ebp
+			mov 	ebp,esp			
+
+			mov 	edi,file_equal
+					;we begin with the wild card => use cur dir
+			mov 	ebx,cur_dir
+
+		
+.dir_open:		;ESI next char 	
+		        ;EDI next pos in file_equal
+			stosb ;save the wild card
+			push 	eax ;save the wild card (first)
+.copy_rest_wild:
+			lodsb
+			cmp 	al,0xa
+			jz 	.copy_done
+			cmp 	al,0x9
+			jz 	.copy_done
+			cmp 	al,' '
+			jz 	.copy_done
+			stosb
+			dec 	dword [ebp+(7*4)] ;how many chars to end update (ECX)
+			jmps .copy_rest_wild
+.copy_done:		
+			dec	esi
+			mov 	dword [ebp+(2*4)],esi ;last esi for parser
+			mov 	dword [ebp+(8*4)],eax ;write last separator for parser
+			xor 	al,al			;(EAX)
+			stosb
+			;now we have filled filename_equal with wildcard mask and directory
+			;in which will be searched is ready in ebx
+			;whuff ...
+			
+			sys_open EMPTY,O_DIRECTORY|O_RDONLY ;NON_BLOCK  too ?
+			mov	ebx,eax
+			or 	eax,eax
+			jns .ok
+			int 3
+			;ssiuwidgiwgiwudwdgiw
+.ok:
+
+			sys_getdents EMPTY,file_buff,file_buff_size ;get dir entries
+			or 	eax,eax
+			jz 	 .finish_lookup		;no entries left
+			add 	eax,ecx 		;set the buffer limit {offset] 	    
+			xor 	edx,edx    
+.compare_next:
+			add 	ecx,edx
+			mov 	edx,ecx
+			mov 	esi,file_equal
+			cmp 	eax,ecx
+			;jb .print_what_find
+			;jz .print_what_find
+			jna .ok
+			add 	edx,0ah ;offset in struct for file name - stupid
+
+			push 	edx	;put candidate on the list
+			push 	ecx
+			xchg 	edx,edi
+			;int 3
+			;nop
+			call  string_compare ;cmp fm last slash!  
+					    ;look if he have parcial match
+			dec 	edi
+			dec	esi 
+			pop 	ecx
+			pop 	edx 	   ;filename
+			
+			;pop	eax
+			;push	eax
+			push 	eax
+			mov	eax,[esp+4]
+			
+			cmp	byte [esi],al
+			jnz	.next_entry ;differs before wild
+			call 	.match_rest
+;		or	eax,eax
+			jnz	.next_entry ;ZF=0 bad ZF=1 ok
+			;ok put candidate as arg
+;			dword [cmdline.arguments + 4 * ebp],edi
+			mov 	edi,dword [ebp+(1*4)] ;OLD EDI
+			inc 	dword [ebp+(6*4)] ;(EDX)
+			mov 	esi,[ebp+(4*3)] ;(EBP)
+			mov	dword [cmdline.arguments + 4 * esi],edi
+			inc	esi
+			mov 	[ebp+(4*3)],esi ;(EBP++)
+			mov	esi,edx
+.copy_loop:		lodsb
+			stosb
+			or 	al,al
+			jnz	.copy_loop
+			;ok 	go to next entry
+			mov 	dword [ebp+(1*4)],edi ;OLD EDI
+.next_entry:
+			movzx 	edx,word [ecx+8] ;get the size of this entry
+			pop	eax
+			jmp short .compare_next
+
+.finish_lookup:		;int 3
+			;nop
+			pop	eax ;throw away wild
+			sys_close EMPTY
+			pop	ebp
+			popad
+			nop
+			jmp .next_character
+			
+;*****************************************************
+;Match rest 
+;Input: ESI - somewhere in mask string
+;       EDI - somewhere in offered filename
+;Output ZF==1 "identical"
+;       ZF==0 ee
+;****************************************************
 
 
+.match_rest:		
+			push	eax  
+			push 	edx
+;			int 3
+;			nop
+			inc	esi 
+.cmp_next_char:	
+			cmp	al,'*'
+			jnz	.not_ast
+			call	.find_part_match
+			jz	.cmp_next
+			jmps	.done_cmp
+.not_ast:		cmp	al,'?'
+			jnz	.not_q
+			inc	edi
+			lodsb
+			jmps .cmp_next_char
+.not_q:			mov	byte ah,[edi]
+			or	eax,eax
+			jz 	.done_cmp
+			cmp	ah,al
+			jz	.cmp_next
+.done_cmp:
+			pop 	edx
+			pop	eax
+			ret
+.cmp_next:
+			lodsb
+			inc	edi
+			jmps	.cmp_next_char
+
+.find_part_match:	lodsb ;next symbol in mask
+			or al,al
+			jz .find_part_match_done_total
+			;ok now we have to find AL somewhere in EDI
+			cmp	al,'*'
+			jz .find_part_match
+			;TODO check also for '?' ???
+.find_part_next:
+			mov	byte ah,[edi]
+			cmp 	al,ah
+			jnz .find_part_match_next
+			ret
+.find_part_match_next:	or ah,ah
+			jz .find_part_end
+			inc	edi
+			jmps .find_part_next
+.find_part_end:
+			inc 	ah	;ZF = 0
+.find_part_match_done_total:
+			pop	edx ;EIP
+			pop	edx
+			pop	eax
+			ret
 ;****************************************************************************
 ;* cmdline_execute **********************************************************
 ;****************************************************************************
