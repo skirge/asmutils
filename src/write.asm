@@ -1,15 +1,14 @@
-; (c) 2001 Thomas M. Ogrisegg
-;
-; $Id: write.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
+; Copyright (C) 2001 Thomas M. Ogrisegg
 ;
 ; write utility
 ;
-; usage:
-; 		write user [tty]
+; usage: write user [tty]
 ;
 ; BUGS/TODO:
 ;   Improve diagnostic messages
 ;   using mmap would be smarter...
+;
+; $Id: write.asm,v 1.3 2002/03/26 05:24:57 konst Exp $
 
 %include "system.inc"
 
@@ -23,9 +22,9 @@ usage:
 
 START:
 	pop ecx
-	cmp ecx, 3
+	cmp ecx, byte 3
 	jg usage
-	cmp ecx, 1
+	cmp ecx, byte 1
 	jz usage
 
 	pop eax
@@ -58,8 +57,7 @@ _loop:
 	mov ecx, [esp]
 	repz cmpsb
 	or ecx, ecx
-	jz do_write
-	jmp _loop
+	jnz _loop
 
 do_write:
 	lea ebx, [utmpbuf+utmp.ut_line]
@@ -69,6 +67,7 @@ do_write:
 	mov edi, ebx
 	mov ecx, 6
 	repz cmpsb
+	
 	or ecx, ecx
 	jnz _loop
 	
@@ -89,23 +88,30 @@ Next:
 
 io_loop:
 	sys_read STDIN, buffer, BUFLEN
+	_mov ebx,[ttyfd]
 	test eax, eax
 	jz eof
-	sys_write [ttyfd], buffer, eax
-	jmp io_loop
+	sys_write EMPTY, buffer, eax
+	jmps io_loop
 
 eof:
-	sys_write [ttyfd], EOF, eoflen
-	jmp do_exit
+	_mov ecx,EOF
+	_mov edx,eoflen
+	jmps do_exit
 
 noperm:
-	sys_write STDERR, perm, permlen
-	jmp do_exit
+	_mov ebx,STDERR
+	_mov ecx,perm
+	_mov edx,permlen
+	jmps do_exit
 
 error:
-	sys_write STDERR, nologin, nologlen
+	_mov ebx,STDERR
+	_mov ecx,nologin
+	_mov edx,nologlen
 
 do_exit:
+	sys_write
 	sys_exit 0x0
 
 helptxt	db	"Usage: write user [ttyname]", __n
