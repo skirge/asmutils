@@ -1,10 +1,10 @@
 ;Copyright (C) 2000-2002 Alexandr Gorlov <ct@mail.ru>
 ;			 Karsten Scheibler <karsten.scheibler@bigfoot.de>
 ;			 Rudolf Marek <marekr2@fel.cvut.cz>
-;			 Joshua Hudson <joshudson@hotmail.com>
-;			 Thomas Ogrisegg <tom@rhadamanthys.org>
+;       		 Joshua Hudson <joshudson@hotmail.com>
+;       		 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;
-;$Id: sh.asm,v 1.12 2002/02/20 15:33:00 konst Exp $
+;$Id: sh.asm,v 1.13 2002/02/25 06:30:25 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -35,7 +35,19 @@
 ; Comment (may not be in conditional):
 ;	: text without shell special characters
 ;
+; Job control:
+;
+; ctrl+z works as expected, shell will return the job id.
+; via fg id, bg id you can put job for/back-ground
+; jobs - will list jobs
+;
 ;example: sh
+;
+; Note: 
+;	if shell receives SIGTRAP it means it has run out of some
+;	resources, array size mostly. I don't know if it is good idea (tm)
+;	to handle such situation by signal handler (RM)
+;
 ;
 ;0.01: 07-Oct-2000	initial release (AG + KS)
 ;0.02: 26-Jul-2001      added char-oriented commandline, tab-filename filling,
@@ -47,9 +59,11 @@
 ;0.05: 10-Feb-2002      added pipe mania & redir support, 
 ;			shell inherits parent's env if any (RM)
 ;0.06  16-Feb-2002	added wildcard extending (RM),
-;			added $environment variable handling
-;			and some control-characters (TO)
-
+;                     	added $environment variable handling
+;                     	and some control-characters (TO)
+;0.07  23-Feb-2002	added ctrl+z handling, fg, bg, jobs 
+;			internal commands, some bugfixes (RM)
+;
 %include "system.inc"
 
 %ifdef __LINUX__ 
@@ -70,24 +84,27 @@
 
 
 
-
 %assign CMDLINE_BUFFER1_SIZE		001000h
 %assign CMDLINE_BUFFER2_SIZE		010000h  ;so much ?
 %assign CMDLINE_PROGRAM_PATH_SIZE	001000h
 %assign CMDLINE_MAX_ARGUMENTS		(CMDLINE_BUFFER1_SIZE / 2)
-%assign CMDLINE_MAX_ENVIRONMENT		50
+%assign CMDLINE_MAX_ENVIRONMENT		050
+%assign MAX_PID				010 ;how many background processes
+					    ;we can handle
 
-
-%assign ENTER 		0ah
-%assign BACKSPACE 	08h
-%assign DEL 		7fh
-%assign TABULATOR 	09h
+%assign ENTER 		00ah
+%assign BACKSPACE 	008h
+%assign DEL 		07fh
+%assign TABULATOR 	009h
 %assign ESC 		01bh
-%assign CTRL_D		04h
-%assign CTRL_L		0ch
-%assign file_buff_size 	0512
+%assign file_buff_size 	200h
+%assign CTRL_D          004h
+%assign CTRL_L          00ch
 
 
+%assign TIOCGPGRP  0x0000540F  ;  pid_t *
+%assign TIOCSPGRP  0x00005410  ;  const pid_t *
+	 
 ;%define DATAOFF(addr)           byte ebp + ((addr) - score)
 
 CODESEG
@@ -112,14 +129,13 @@ CODESEG
 START:
 
 
-
-;stack layout:
+			;cur_dir db "./",0 we dont have writable CS
+			mov dword [cur_dir],0x2F2E
+			;stack layout:
 			;argument counter
 			;null terminated list with pointers to arguments
 			;null terminated list with pointers to environment variables
-			pop esi ;dont want argc
-
-			
+			pop 	esi ;dont want argc
 			pop 	edi ;prg name
 			call    environ_initialize
 			pop	ebp			; shell_script
@@ -139,7 +155,7 @@ START:
 			sys_exit	; error code=2
 .script_opened:		mov	[script_id], eax
 			mov	[cmdline.prompt], dword text.prompt_ptrace
-			jmps	conspired_to_run
+			jmp	conspired_to_run ;NEAR
 			
 			;---------------------
 			;write welcome message
@@ -153,9 +169,34 @@ START:
 			;-------------------
 			call tty_initialize
 			
-			;Experimental error handling 
-			sys_signal 02,break_hndl
-
+			
+			
+			;---------------------------
+			;Experimental error handling
+			;---------------------------
+			 
+%ifdef __LINUX__
+			mov 	edi,signal_struc.handler
+			mov 	dword [edi], SIG_IGN
+			sys_sigaction SIGTTOU,signal_struc,NULL
+			mov 	dword [edi], SIG_IGN
+			sys_sigaction SIGTTIN,EMPTY,EMPTY
+			mov 	dword [edi],break_hndl			
+; C7870000000014900408       mov dword [edi+0x0], 0x8049014
+; WHY ^^^^^^^^		NASM version 0.98
+; I don't uderstand ... could you tell me ? (RM)
+			sys_sigaction SIGINT,EMPTY,EMPTY
+			mov 	dword [edi],ctrl_z
+			sys_sigaction SIGTSTP,EMPTY,EMPTY
+			sys_getpid
+			mov [cur_pid],eax
+			sys_setpgid eax,0
+			mov edx,cur_pid
+			sys_ioctl STDERR,TIOCSPGRP
+%else
+			sys_signal SIGINT,break_hndl
+			sys_signal SIGTSTP,ctrl_z
+%endif
 			;------------------------------
 			;get UID and select prompt type
 			;------------------------------
@@ -222,7 +263,7 @@ get_cmdline:
 			;-------------
 			call	cmdline_parse
 			test	dword eax, eax
-%ifdef	__LONG_JUMPS__		;f***ing nasm!!!!!
+%ifdef	__LONG_JUMPS__		;fu**ing nasm!!!!!
 			jz	near get_cmdline
 			js	near get_cmdline.incomplete_prompt ;this is somewhat broken
 %else
@@ -233,7 +274,7 @@ get_cmdline:
 			;---------------
 			;execute cmdline
 			;---------------
-
+;			call	check_casualties ;our lovely child(ern) may be 0xDEAD
 			call	cmdline_execute
 
 			;----------------
@@ -472,10 +513,10 @@ cmdline_get:
 			jz	near .back_space
 			cmp     al,DEL
 			jz	near .back_space
-			cmp     al,CTRL_D
-			jz  near cmd_exit
-			cmp     al,CTRL_L
-			jz  near .clear
+                        cmp     al,CTRL_D
+                        jz  near cmd_exit
+                        cmp     al,CTRL_L
+                        jz  near .clear
 			sys_write STDOUT,getchar,1
 			mov 	al,[getchar]
 			cmp 	al,ENTER
@@ -521,9 +562,9 @@ cmdline_get:
 clstrlen equ $ - .clstr
 
 .clear:
-				sys_write STDOUT, .clstr, clstrlen
-				jmp get_cmdline
-
+                        sys_write STDOUT, .clstr, clstrlen
+                        jmp get_cmdline
+								
 .back_space:	
 			cmp 	edi,cmdline.buffer1    ;check outer limits
  			jz   near .beep
@@ -922,13 +963,13 @@ cmdline_parse_restart:
 			mov	dword ebp, [cmdline.arguments_offset]
 			add	dword edi, [cmdline.buffer2_offset]
 
-.next_character:	lodsb			;load next cahr from buffer
+.next_character:	lodsb			;load next char from buffer
 			test	byte  al, al
 			jz	near  .end      ;we are done
 			test	dword ebx, cmdline_parse_flags.seperator ;are we in argument or between ?
 			jnz	.check_seperator
-			cmp byte  al, '$'
-			je  near .get_env
+                        cmp 	byte  al, '$'
+			je  	near .get_env			
 			cmp	byte  al, 0x09		;between
 			je	near .skip_character
 			cmp	byte  al, 0x0a
@@ -1050,56 +1091,59 @@ cmdline_parse_restart:
 			mov	dword [cmdline.arguments_offset], ebp
 
 			ret ;leave parser
-			
-.get_env:
-			push edi
-			push ecx
-			push edx
-			push esi
-			mov  edi, esi
-			mov  esi, cmdline.environment
-			mov  ecx, [edi]
-			mov  edx, ecx
+.get_env:		
+                        push edi
+                        push ecx
+                        push edx
+                        push esi
+                        mov  edi, esi
+                        mov  esi, cmdline.environment
+                        mov  ecx, [edi]
+                        mov  edx, ecx
 .env_loop:
-			lodsd
-			or eax, eax
-			jz .Lnope
-			cmp [eax], edx
-			jnz .env_loop
-			push esi
-			push edi
-			mov esi, eax
-			repz cmpsb
-			cmp byte [esi-1], '='
-			jz .Lout_first
+                        lodsd
+                        or eax, eax
+                        jz .Lnope
+                        cmp byte [eax], dl
+                        jnz .env_loop
+                        push esi
+                        push edi
+                        mov esi, eax
+                        repz cmpsb
+                        ;cmp byte [esi-1], '='
+                        ;jz .Lout_first
+			cmp byte [edi-1], ' '
+                    	jna .Lout_first	
+			
+                        ;pop esi ;bug
+                        pop edi
 			pop esi
-			pop edi
-			jmp .env_loop
+                        jmps .env_loop
 .Lout_first:
-			pop edx
+                        pop edx
 			pop edx
 .Lout:
-			mov long [cmdline.arguments + ebp*4], esi
-			inc ebp
-			mov esi, edi
-			pop edx
-			pop edx
-			inc edx
-			jmp .Lnext
+                        mov long [cmdline.arguments + ebp*4], esi
+                        inc ebp
+                        mov esi, edi
+                        pop edx
+                        pop edx
+                        inc edx
+                        jmp .Lnext
 .Lnope:
-			pop esi
+                        pop esi
 .Lnope_loop:
-			lodsb
-			or  al, al
-			jz .Lyet_another_label
-			cmp al, ' '
-			jg .Lnope_loop
+                        lodsb
+                        or  al, al
+                        jz .Lyet_another_label
+                        cmp al, ' '
+                        jg .Lnope_loop ; ja ? (RM)
 .Lyet_another_label:
-			pop edx
+                        pop edx
 .Lnext:
-			pop ecx
-			pop edi
-			jmp .next_character
+                        pop ecx
+                        pop edi
+                        jmp .next_character
 
 .pipe:
 			push 	ecx ;how many chars left ??? Decrease by one ?
@@ -1120,6 +1164,7 @@ cmdline_parse_restart:
 		        mov 	eax,[pipe_pair.write]
 		        mov	[cmdline.redir_stdout],eax
 			pop	eax
+			mov 	byte [pbackground],1
 			call	cmdline_execute ;both redir_'s are set to 0 there
 		        mov 	eax,[pipe_pair.read]
 		        mov	[cmdline.redir_stdin],eax
@@ -1237,8 +1282,10 @@ cmdline_parse_restart:
 			mov	ebx,eax
 			or 	eax,eax
 			jns .ok
-			int 3
-			;ssiuwidgiwgiwudwdgiw
+			pop 	eax
+			pop	ebp
+			popad	;TODO copy everything back
+			jmp .next_character
 .ok:
 
 			sys_getdents EMPTY,file_buff,file_buff_size ;get dir entries
@@ -1251,16 +1298,12 @@ cmdline_parse_restart:
 			mov 	edx,ecx
 			mov 	esi,file_equal
 			cmp 	eax,ecx
-			;jb .print_what_find
-			;jz .print_what_find
 			jna .ok
 			add 	edx,0ah ;offset in struct for file name - stupid
 
 			push 	edx	;put candidate on the list
 			push 	ecx
 			xchg 	edx,edi
-			;int 3
-			;nop
 			call  string_compare ;cmp fm last slash!  
 					    ;look if he have parcial match
 			dec 	edi
@@ -1298,8 +1341,7 @@ cmdline_parse_restart:
 			pop	eax
 			jmp short .compare_next
 
-.finish_lookup:		;int 3
-			;nop
+.finish_lookup:		
 			pop	eax ;throw away wild
 			sys_close EMPTY
 			pop	ebp
@@ -1319,8 +1361,6 @@ cmdline_parse_restart:
 .match_rest:		
 			push	eax  
 			push 	edx
-;			int 3
-;			nop
 			inc	esi 
 .cmp_next_char:	
 			cmp	al,'*'
@@ -1371,6 +1411,39 @@ cmdline_parse_restart:
 			pop	eax
 			ret
 ;****************************************************************************
+;* serve_casualties  ********************************************************
+;****************************************************************************
+;It will only make cleanup in our job control handling
+
+serve_casualties:
+			cmp 	byte [rtn],0x7F ;stopped ?
+			jnz 	.terminated	
+			xor	ebx,ebx
+			call 	find_pid
+			or	edi,edi
+			jnz	.ok_got_it
+			int 3
+.ok_got_it:		mov	[edi],eax
+			sub	edi,pid_array
+			mov 	eax,edi
+			shr 	eax,2
+			mov	ah,010
+			add 	al,'0'
+			mov	[b_id],ax
+			sys_write STDOUT,text.stopped,text.stopped_length
+			sys_write EMPTY,b_id,2
+.terminated:		
+			mov	ebx,eax
+			call 	find_pid
+			or	edi,edi
+			jz	.ok_havent_in_list
+			xor	eax,eax
+			mov 	[edi],eax
+.ok_havent_in_list:
+			ret
+
+
+;****************************************************************************
 ;* cmdline_execute **********************************************************
 ;****************************************************************************
 cmdline_execute:
@@ -1388,28 +1461,25 @@ execute_builtin:
 			jmp	dword [builtin_cmds.table + 8 * ebx + 4]
 .end:
 
-			;---------------
-			;set environment
-			;---------------
-
-
-.set_environment:
-;			xor	dword eax, eax
-			
-			;mov 	eax, [environ_count]
-			;mov	dword [cmdline.environment], eax
-			;mov	dword [cmdline.environment+4], eax
-
 			;----    |
 			;fork    |
 			;----   /|\
 			;      | | |
-;***
+
 			call  tty_restore
 			sys_fork
 			test	dword eax, eax
 			jnz	near  .wait
-
+%ifdef __LINUX__ 
+			sys_getpid
+			mov 	edx,cur_pid
+			mov 	[edx],eax
+			sys_setpgid eax,0
+			sys_ioctl STDERR,TIOCSPGRP
+			mov dword [signal_struc.handler], SIG_DFL
+			sys_sigaction SIGINT,signal_struc,NULL
+			sys_sigaction SIGTSTP,EMPTY,EMPTY
+%endif
 			;--------------------------------------------------
 			;try to execute directly if the name contains a '/'
 			;--------------------------------------------------
@@ -1443,7 +1513,7 @@ execute_builtin:
 			;-------------------------------------
 			;TODO: grab paths from ENV ?
 			
-.scan_paths:		mov	dword ebp, 4
+.scan_paths:		mov	dword ebp, 5
 			mov	dword esi, builtin_cmds.paths
 .next_path:		mov	dword edi, cmdline.program_path
 .copy_loop1:		lodsb
@@ -1474,7 +1544,6 @@ execute_builtin:
 
 .wait:			
 			mov 	[pid],eax
-			
 			mov ebx, [cmdline.redir_stdin]
 			mov ecx, [cmdline.redir_stdout]
 			or ebx,ebx
@@ -1487,23 +1556,92 @@ execute_builtin:
 			jz .no_close_out
 			sys_close ecx
 .no_close_out:
-			;sys_exit 0			
+wait_here:			;sys_exit 0			
 			xor 	eax,eax
 			mov	[cmdline.redir_stdin],eax
 			mov	[cmdline.redir_stdout],eax	
-			xor	ebx,ebx		; Code updated to support
-			dec	ebx		; background processes
-			_mov	ecx, rtn	; JH
-			xor	edx, edx
-			xor	esi, esi
-.wait4another:		sys_wait4	; 0xffffffff, rtn, NULL, NULL
+			mov	eax,[pid]
+			cmp	byte [pbackground],0
+			jnz 	.nowait
+;			xor	ebx,ebx		; Code updated to support
+;			dec	ebx		; background processes
+;			_mov	ecx, rtn	; JH
+;			_mov 	edx,WUNTRACED
+;			xor	esi, esi
+.wait4another:		sys_wait4	 0xffffffff, rtn, WUNTRACED, NULL
+			test eax,eax
+			js   .wait4another
+;RTN struc
+; 0-6 bit signal caught (0x7f is stopped) 
+; 7 core ?
+;8-15 bit EXIT code
+;if 0x7f -> 9-15 signal which caused the stop
 			cmp	[pid], eax
-			jne	.wait4another	; Wrong pid! - end update
+			jz	.is_our_child	
+			call	serve_casualties
+			jmps 	.wait4another
+.is_our_child:			
 			mov 	dword [pid],0
+
+			cmp 	byte [rtn],0x7F ;stopped ?
+			jnz 	.not_stopped
+.nowait:
+			xor	ebx,ebx
+			call 	find_pid
+			or	edi,edi
+			jnz	.ok_have_place
+			int 3
+					
+.ok_have_place:		mov 	[edi],eax
+			sub	edi,pid_array
+			mov	eax,edi
+			shr	eax,2
+			add	al,'0'
+			mov	ah,010
+			mov	[b_id],ax
+			cmp 	byte [pbackground],0
+			jnz	.not_stopped
+			sys_write STDOUT,text.stopped,text.stopped_length
+			sys_write EMPTY,b_id,2
+			
+.not_stopped:
 			call tty_restore
+
+%ifdef __LINUX__
+			sys_getpid
+			mov [cur_pid],eax
+			sys_setpgid eax,0
+			mov edx,cur_pid
+			sys_ioctl STDERR,TIOCSPGRP
+%endif
+			mov byte [pbackground],0 
 			jmp	tty_initialize
 
+;***************************************************************************
+; find_pid 
+; EBX = pid (can use 0 to find empty pos)
+; EDI = ptr to it or NULL
+;***************************************************************************
 
+find_pid:	push	eax
+		push	esi
+		mov 	esi,pid_array
+.find_loop:	cmp	esi,pid_array+(4*MAX_PID)
+		jae 	.not_found
+		lodsd
+		cmp	eax,ebx
+		jz	.got_it
+		jmps	.find_loop
+.not_found:	xor	edi,edi
+		jmps	.end
+.got_it:	mov 	edi,esi	
+		sub	edi,4
+.end:
+		pop	esi
+		pop	eax
+		ret
+	    
+	    
 
 
 ;****************************************************************************
@@ -1581,8 +1719,7 @@ cmd_export:
 ;****************************************************************************
 ;* cmd_and, cmd_or **********************************************************
 ;****************************************************************************
-cmd_and:		;int 3
-			;nop
+cmd_and:		
 			cmp	[rtn], dword 0
 			jne	cmd_and_nogo
 
@@ -1634,11 +1771,138 @@ cmd_cd:
 			jns	.end
 			sys_write  STDERR, text.cd_failed, text.cd_failed_length
 .end:			ret
+;****************************************************************************
+;* cmd_fg  ******************************************************************
+;****************************************************************************
+cmd_fg:			
+			mov	dword eax, [cmdline.arguments + 4]
+			xor	ecx,ecx
+			xor	ebx,ebx			
+			or 	eax,eax
+			jz	.take_first
+			mov	cl,byte [eax]
+			sub 	cl,'0'
+			cmp 	cl,MAX_PID+1
+			jae	near bad_record
+.take_first:
+			xchg	ebx,[pid_array+ecx*4]
+			or	ebx,ebx
+			jz	near bad_record
+			push	ebx
+			call	tty_restore
+			pop	ebx
+			mov	[pid],ebx
 
+%ifdef __LINUX__ 
+			;sys_getpid
+			;mov [cur_pid],ebx
+			sys_setpgid EMPTY,ebx
+			mov edx,pid
+			sys_ioctl STDERR,TIOCSPGRP
+%endif
+			sys_kill [pid],SIGCONT
+			test	eax,eax
+			jns	.ok
+			call no_such_pid
+			jmps .terminated			
+.ok:
+			
+.wait4another:		sys_wait4  0xffffffff, rtn, WUNTRACED, NULL
+			test eax,eax
+			js   .wait4another
+			cmp	[pid], eax
+			jz	.is_our_child	
+			call	serve_casualties
+			jmps 	.wait4another
+.is_our_child:			
+			call	serve_casualties
+.terminated:
+%ifdef __LINUX__ 
+			sys_getpid
+			mov [cur_pid],eax
+			sys_setpgid eax,0
+			mov edx,cur_pid
+			sys_ioctl STDERR,TIOCSPGRP
+%endif
+			call tty_initialize
+			xor eax,eax
+			mov	[pid],eax
 
+			ret
+
+bad_record:		sys_write STDOUT,text.nosuchjob,text.nosuchjob_length
+			ret
+			
+no_such_pid:		sys_write STDOUT,text.nosuchpid,text.nosuchpid_length
+			ret
+			
+;****************************************************************************
+;* cmd_bg *******************************************************************
+;****************************************************************************
+
+cmd_bg:
+			mov	dword eax, [cmdline.arguments + 4]
+			
+			xor	ecx,ecx
+			xor	ebx,ebx			
+			or 	eax,eax
+			jz	.take_first
+			mov	cl,byte [eax]
+			sub 	cl,'0'
+			cmp 	cl,MAX_PID+1
+			jae	bad_record
+
+.take_first:
+;			xchg	ebx,[pid_array+ecx*4]
+			lea 	edi,[pid_array+ecx*4]
+			mov	ebx,[edi]
+			or	ebx,ebx
+			jz	bad_record
+			;call	tty_restore
+%ifdef __LINUX__ 
+			sys_setpgid EMPTY,0 ;FIXME 
+%endif
+			sys_kill EMPTY,SIGCONT	
+			test	eax,eax
+			jns	.ok
+			xor 	eax,eax
+			mov dword [edi],eax
+			call no_such_pid
+.ok:
+
+			ret
+
+;****************************************************************************
+;* cmd_jobs *****************************************************************
+;****************************************************************************
+
+cmd_jobs:			
+			mov 	esi,pid_array
+.find_loop:		cmp	esi,pid_array+(4*MAX_PID)
+			jz 	.end
+			lodsd
+			or 	eax,eax
+	    		jnz	.got_it
+			jmps	.find_loop
+.got_it:			
+			mov 	eax,esi
+			sub	eax,pid_array+4
+			shr	eax,2
+			mov	ah,010
+			add 	al,'0'
+			mov	[b_id],ax
+			sys_write STDOUT,b_id,2
+			jmps .find_loop
+.end:			ret
+				    
+
+			
 
 break_hndl:
-			sys_signal 02,break_hndl
+%ifndef __LINUX__ 
+
+			sys_signal SIGINT,break_hndl
+%endif
 %ifdef	DEBUG
 			sys_write STDOUT,text.break,text.break_length
 %endif
@@ -1647,8 +1911,21 @@ break_hndl:
 			sys_write STDOUT,text.suicide,text.suicide_length
 			ret
 .not_us:	
-			sys_kill [pid],15
+			sys_kill [pid],SIGTERM
 			ret
+ctrl_z:
+%ifndef __LINUX__ 
+
+			sys_signal SIGTSTP,ctrl_z
+%endif
+			cmp dword [pid],0
+			jnz .not_us
+			sys_write STDOUT,text.stop,text.stop_length
+			ret
+.not_us:	
+			sys_kill [pid],SIGSTOP
+			ret
+
 
 
 ;****************************************************************************
@@ -1678,13 +1955,20 @@ text:
 %endif
 .suicide:			db	__n,"Suicide is painless..."
 .suicide_length:			equ	$ - .suicide
-
+.stop:			db	__n,"You say STOP and I say go..."
+.stop_length:			equ	$ - .stop
 .cd_failed:			db	"couldn't change directory", 10
 .cd_failed_length:		equ	$ - .cd_failed
 .logout:			db	"logout", 10
 .logout_length:			equ	$ - .logout
 .scerror:			db	"couldn't open scriptfile", 10
 .scerror_length:		equ	$ - .scerror
+.stopped:			db 	"Stopped id: "
+.stopped_length			equ	$ - .stopped
+.nosuchjob			db	"I haven't such job",10
+.nosuchjob_length:		equ	$ - .nosuchjob
+.nosuchpid			db	"Child is 0xDEAD. I'm sorry",10
+.nosuchpid_length:		equ	$ - .nosuchpid
 
 builtin_cmds:
 				align	4
@@ -1695,6 +1979,10 @@ builtin_cmds:
 				dd	.and, cmd_and
 				dd	.or, cmd_or
 				dd	.colon, cmd_colon
+				dd	.fg, cmd_fg
+				dd	.bg, cmd_bg
+				dd	.jobs, cmd_jobs
+				
 				dd	0, 0
 .and:				db	"and", 0
 .or:				db	"or", 0
@@ -1703,17 +1991,20 @@ builtin_cmds:
 .logout:			db	"logout", 0
 .cd:				db	"cd", 0
 .export:			db      "export",0
+.fg:				db	"fg",0
+.bg:				db 	"bg",0
+.jobs:				db	"jobs",0
 .paths:				db	"/bin", 0
 				db	"/sbin", 0
 				db	"/usr/bin", 0
 				db	"/usr/sbin", 0
-
+				db	"/usr/local/bin",0
 
 erase_line      db     0x1b,"[2K",0xd
 insert_char 	db     0x1b,"[1@]"
 delete_one_char db 0x8,0x1b,"[1P"
 beep   		db 07h
-cur_dir db "./",0
+;cur_dir db "./",0
 
 ;****************************************************************************
 ;****************************************************************************
@@ -1726,10 +2017,19 @@ cur_dir db "./",0
 
 ;DATASEG
 
+
 UDATASEG
+
+signal_struc:
+.handler resd 1
+.mask	resd 32
+.flags	resd 1
+.restorer resd 1 ;obsolote
+b_id resw 1
 backspace:
 ;cur_move_tmp 	db 08h,' ',08h
 cur_move_tmp resd 1
+cur_dir resd 1
 cmdline:
 .buffer1:			CHAR	CMDLINE_BUFFER1_SIZE
 .buffer2:			CHAR	CMDLINE_BUFFER2_SIZE
@@ -1757,15 +2057,6 @@ environ_count resd 1
 termattrs B_STRUC termios,.c_lflag
 getchar_buff: resb 3
 getchar resb 3
-%endif
-%ifdef HISTORY
-history_cur   resd 1
-history_start resd 1
-%endif
-pid resd 1
-rtn resd 1		; Return code
-script_id resd 1	; Script handle
-
 file_buff resb file_buff_size
 write_after_slash resd 1 
 first_chance resb 1
@@ -1773,7 +2064,16 @@ file_name resb 255
 file_equal resb 255
 first_time  resb 1 ;stupid
 stat_buf B_STRUC Stat,.st_mode
+%endif
+%ifdef HISTORY
+history_cur   resd 1
+history_start resd 1
+%endif
+pbackground resb 1
+pid resd 1		;curr running child
+pid_array resd MAX_PID
+rtn resd 1		; Return code
+script_id resd 1	; Script handle
+cur_pid resd 1
 
 END
-;****************************************************************** AG + KS *
-
