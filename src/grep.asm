@@ -1,11 +1,13 @@
 ;Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: grep.asm,v 1.5 2002/02/14 13:38:15 konst Exp $
+;$Id: grep.asm,v 1.6 2002/02/18 06:46:47 konst Exp $
 ;
 ;hackers' grep
 ;
-;syntax: grep [-q] [-v] PATTERN [file...]
+;syntax: grep [-b] [-c] [-q] [-v] PATTERN [file...]
 ;
+;-b	print byte offset before each line of output
+;-c	print count of matching lines for each file (instead of actual lines)
 ;-q	be quiet (supress output, only set exit code)
 ;-v	invert matching (select non-matching lines)
 ;
@@ -14,6 +16,8 @@
 ;
 ;0.01: 19-Dec-1999	initial release (dumb and slow version)
 ;0.02: 14-Feb-2002	added -v option
+;0.03: 18-Feb-2002	added -b, -c options,
+;			output filename when grepping several files
 
 %include "system.inc"
 
@@ -21,6 +25,8 @@ CODESEG
 
 %assign	_q	00000001b
 %assign	_v	00000010b
+%assign	_c	00000100b
+%assign	_b	10000000b
 
 %assign	BUFSIZE	0x4000
 
@@ -34,30 +40,48 @@ START:
 	pop	ebx
 	dec	ebx
 	jz	do_exit
+
 	pop	esi
 .s0:
 	pop	edi		;get pattern
 
 	cmp	word [edi],"-q"
 	jnz	.s2
-	or	[flag],byte _q
+	or	al,_q
 .s1:
 	dec	ebx
 	jmps	.s0
 .s2:
+	cmp	word [edi],"-c"
+	jnz	.s3
+	or	al,_c
+	jmps	.s1
+.s3:
+	cmp	word [edi],"-b"
+	jnz	.s4
+	or	al,_b
+	jmps	.s1
+.s4:
 	cmp	word [edi],"-v"
 	jnz	.proceed
-	or	[flag],byte _v
+	or	al,_v
 	jmps	.s1
 
 .proceed:
+	mov	[flag],byte al
 	dec	ebx
 	jz	.mainloop	;if no args - read STDIN
+	mov	[argc],ebx
 
 .next_file:
 	pop	ebx		;pop filename pointer
 	or	ebx,ebx
 	jz	do_exit		;exit if no more agrs
+
+	xor	eax,eax
+	mov	[count],eax
+	mov	[realoff],eax
+	mov	[fname],ebx
 
 ; open O_RDONLY
 
@@ -70,27 +94,114 @@ START:
 	mov	esi,buf
 	call	gets
 	cmp	[tmp], byte 0
-	jnz	.next_file
+	jz	.find
+	
+	test	[flag],byte _c
+	jz	.next_file
 
+	call	write_fname
+	call	write_count
+	jmps	.next_file
+
+.find:
 	call	strstr
 
-	test	[flag],byte _v
-	setz	bl
+	mov	edx,[flag]
+
 	test	eax,eax
 	setz	bh
+	test	dl,_v
+	setz	bl
 
 	xor	bl,bh
 	jz	.mainloop
 
 .match:
 	mov	[retcode],byte 0
-	test	[flag],byte _q
+	test	dl,_q
 	jnz	.mainloop
 
-	call	strlen
+	inc	dword [count]
+	test	dl,_c
+	jnz	.mainloop
+	
+	call	write_fname
+	call	write_byteoff
+
+    	call	strlen
 	sys_write STDOUT,esi,eax
 
-	jmp	short .mainloop
+	jmp	.mainloop
+
+;
+;
+;
+
+write_fname:
+	cmp	[argc],byte 1
+	jbe	.return
+	pusha
+	mov	esi,[fname]
+	call	strlen
+	mov	byte [esi+eax],':'
+	inc	eax
+	sys_write STDOUT,esi,eax
+	mov	byte [esi+eax-1],0
+	popa
+.return:
+	ret
+
+write_byteoff:
+	test	[flag],byte _b
+	jz	.return
+
+	pusha
+	mov	eax,[byteoff]
+	call	itoa
+
+	mov	byte [edi],':'
+	mov	edx,edi
+	sub	edx,esi
+	inc	edx
+	sys_write STDOUT,esi
+	popa
+.return:
+	ret
+
+write_count:
+	pusha
+	mov	eax,[count]
+	call	itoa
+	mov	byte [edi],__n
+	mov	edx,edi
+	sub	edx,esi
+	inc	edx
+	sys_write STDOUT,esi
+	popa
+	ret
+
+itoa:
+	_mov	edi,itoabuf
+	_mov	ecx,10
+	mov	esi,edi
+
+.printB:
+	sub	edx,edx 
+	div	ecx 
+	test	eax,eax 
+	jz	.print0
+	push	edx
+	call	.printB
+	pop	edx
+.print0:
+	add	dl,'0'
+	cmp	dl,'9'
+	jle	.print1
+	add	dl,0x27
+.print1:
+	mov	[edi],dl
+ 	inc	edi
+ 	ret
 
 
 ;esi	-	buffer
@@ -98,10 +209,15 @@ gets:
 	pusha
 	mov	[tmp], byte 1
 
+	push	dword [realoff]
+	pop	dword [byteoff]
+
 .read_byte:
 	sys_read ebp,tmp,1
 	cmp	eax,edx
 	jnz	.return
+
+	inc	dword [realoff]
 
 	mov	al,[tmp]
 	mov	[esi],al
@@ -158,7 +274,6 @@ strstr:
 	pop	esi
 	ret
 
-
 strlen:
 	push	edi
 	mov	edi,esi
@@ -173,12 +288,18 @@ strlen:
 	pop	edi
 	ret
 
-
 UDATASEG
+
+argc	resd	1
+fname	resd	1
+count	resd	1
+realoff	resd	1
+byteoff	resd	1
 
 retcode	resd	1
 tmp	resb	1
 flag	resb	1
+itoabuf	resb	0x10
 buf	resb	BUFSIZE
 
 END
