@@ -14,7 +14,7 @@
 ;; -b  show non-graphic characters using C-style backslash sequences
 ;; -R  recursively list contents of subdirectories
 ;;
-;; $Id: ls.asm,v 1.7 2001/09/24 16:49:19 konst Exp $
+;; $Id: ls.asm,v 1.8 2002/01/28 08:38:01 konst Exp $
 
 %include "system.inc"
 
@@ -348,7 +348,7 @@ lsfile:
 		mov	cl, [byte ebx + 4]
 		or	ecx, ecx
 		jz	.showtime
-		div	ecx
+		idiv	ecx
 		or	eax, eax
 		jnz	.timingloop
 		xchg	eax, edx
@@ -839,7 +839,7 @@ itoa:
 		push	edi
 		mov	cl, 10
 .decloop:	cdq
-		div	ecx
+		idiv	ecx
 		add	dl, '0'
 		dec	edi
 		mov	[edi], dl
