@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.22 2002/08/17 08:13:39 konst Exp $
+; $Id: syscall.inc,v 1.23 2003/05/26 05:03:23 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 14-Aug-2002
-; version	: 0.17
+; modified	: 26-May-2003
+; version	: 0.18
 ; assembler	: nasm 0.98
 ; description	: system call macros
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -361,6 +361,14 @@ extern %{1}
 
 %macro sys_setpgid 0-2
 	__syscall setpgid, 2, %0, %1, %2
+%endmacro
+
+%macro sys_setreuid 0-2
+	__syscall setreuid, 2, %0, %1, %2
+%endmacro
+
+%macro sys_setregid 0-2
+	__syscall setregid, 2, %0, %1, %2
 %endmacro
 
 %macro sys_getpgid 0-1
