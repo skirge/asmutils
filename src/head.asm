@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Jonathan Leto <jonathan@leto.net>
 ;
-;$Id: head.asm,v 1.1 2000/12/10 08:20:36 konst Exp $
+;$Id: head.asm,v 1.2 2001/02/23 12:39:29 konst Exp $
 ;
 ;hackers' head
 ;
@@ -46,15 +46,16 @@ START:
 .nextfile:			
 	pop	ebx			; get next arg
 	or	ebx,ebx		
-	jz	.exit			; exit if none
-	
+	jnz	.n2			; exit if none
+.exit:
+	sys_exit edi			; exit with return value
+.n2:
 	cmp word [ebx], "-n"
 	je	.set_num_of_lines
 	
 	cmp word [ebx], "-c"
 	je	.set_chars
 	
-
 	sys_open ebx,O_RDONLY
 	_mov	ebp,eax			; save fd
 	test	eax,eax		
@@ -62,7 +63,7 @@ START:
 
 .error:
 	inc	edi		
-	jmp  .nextfile			; try to open next file
+	jmps	.nextfile		; try to open next file
 
 .read:
 	_mov	ecx,buf
@@ -73,7 +74,9 @@ START:
 	js	.error			; fd < 0, error
 	jz	.nextfile		; EOF, go to next file
 
-	cmp	[chars],dword 0
+	mov	esi,[chars]
+	test	esi,esi
+;	cmp	[chars],dword 0
 	jg 	.print_chars
 
 	xor	esi,esi			; set to zero
@@ -91,37 +94,31 @@ START:
 	dec	dword [lines]
 	mov	eax,[lines]
 	test	eax,eax
-	jnz short .findnewlines		; keep finding newlines
+	jnz	.findnewlines		; keep finding newlines
 				
 .write:					; found enough newlines
 
 	inc	esi			; add one to esi for last newline
-	sys_write STDOUT,ecx,esi	; print
-	jmp .nextfile
-
-.exit:
-	sys_exit edi			; exit with return value
-
 .print_chars:
-	sys_write STDOUT,ecx,[chars]
-	jmp	.nextfile
+	sys_write STDOUT,ecx,esi	; print
+	_jmp	.nextfile
 
 ;---------------------------------------
 ; esi = string
 ; eax = number 
 .ascii_to_num:
-        xor     eax,eax                 ; zero out regs
-        xor     ebx,ebx
+        xor	eax,eax                 ; zero out regs
+        xor	ebx,ebx
 .next_digit:
         lodsb                           ; load byte from esi
-        test    al,al
-        jz      .done
-        sub     al,'0'                  ; '0' is first number in ascii
-        imul    ebx,10
-        add     ebx,eax
-        jmp     .next_digit
+        test	al,al
+        jz	.done
+        sub	al,'0'                  ; '0' is first number in ascii
+        imul	ebx,10
+        add	ebx,eax
+        jmp	short .next_digit
 .done:
-        xchg    ebx,eax                 ; ebx=eax,eax=ebx
+        xchg	ebx,eax                 ; ebx=eax,eax=ebx
         ret
 ;---------------------------------------
 

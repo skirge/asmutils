@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.7 2001/01/21 15:18:46 konst Exp $
+;$Id: httpd.asm,v 1.8 2001/02/23 12:39:29 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -111,26 +111,19 @@ START:
 	pop	dword [document]
 	pop	esi		;port number
 
-;<ESI -string
-;>EAX - result
-
 	xor	eax,eax
-	xor	ecx,ecx
-	_mov	ebx,10
-.next:
-        mov	cl,[esi]
-	sub	cl,'0'
+	xor	ebx,ebx
+.next_digit:
+	lodsb
+	sub	al,'0'
 	jb	.done
-	cmp	cl,9
+	cmp	al,9
 	ja	.done
-	mul	bx
-	add	eax,ecx
-;	adc edx,0
-.nextsym:
-	inc	esi
-	jmps	.next
+	imul	ebx,byte 10
+	add	ebx,eax
+	_jmp	.next_digit
 .done:
-	push	eax
+	push	ebx
 	sys_socket PF_INET,SOCK_STREAM,IPPROTO_TCP
 	mov	ebp,eax		;socket descriptor
 	test	eax,eax

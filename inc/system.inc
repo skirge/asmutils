@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.3 2001/01/21 15:18:46 konst Exp $
+; $Id: system.inc,v 1.4 2001/02/23 12:39:29 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 09-Jan-2001
-; version	: 0.12
+; modified	: 26-Jan-2001
+; version	: 0.13
 ; assembler	: nasm 0.98
 ; description	: generic (not OS specific) macros, sections, headers, etc.
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -29,6 +29,7 @@
 ;			NetBSD and OpenBSD stuff
 ;0.11: 24-Oct-2000	AtheOS stuff
 ;0.12: 19-Jan-2001	_xchg (PR), _jmp (KB)
+;0.13: 21-Feb-2001	modified __syscall_gate (KB)
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
@@ -163,13 +164,40 @@ __date	db	STAMP_DATE, EOL, __n
 __syscall_gate:
 
 %ifdef	__BSD__
+%if __OPTIMIZE__=__O_SIZE__
+;we can't use pusha - we need correct order
+	push	ebp
+	push	edi
+	push	esi
+	push	edx
+	push	ecx
+	push	ebx
+	push	eax
+%endif
 	int	0x80
 	jnc	.__ok
 	neg	eax
 .__ok:
+%if __OPTIMIZE__=__O_SIZE__
+	add	esp,byte 7*4
+%endif
 	ret
+
+
 %elifdef __BEOS__
+%if __OPTIMIZE__=__O_SIZE__
+	push	ebp
+	push	edi
+	push	esi
+	push	edx
+	push	ecx
+	push	ebx
+	push	eax
+%endif
 	int	0x25
+%if __OPTIMIZE__=__O_SIZE__
+	add	esp,byte 7*4
+%endif
 	ret
 %endif
 

@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Jonathan Leto <jonathan@leto.net>
 ;
-;$Id: touch.asm,v 1.1 2001/01/21 15:18:46 konst Exp $
+;$Id: touch.asm,v 1.2 2001/02/23 12:39:29 konst Exp $
 ;
 ;hackers' touch
 ;
@@ -9,9 +9,13 @@
 ; Version 0.1 - Wed Dec 20 02:58:02 EST 2000  
 ;
 ; All comments/feedback welcome.
+
 %include "system.inc"
 
 CODESEG
+
+.exit:
+	sys_exit 0 
 
 START:
 	pop eax
@@ -36,13 +40,11 @@ START:
 
 .touchfile:
 	sys_utime [file],NULL
-	jmp .next
-.exit:
-	sys_exit 0 
+	_jmp .next
 
 .nocreate:
         inc     byte [nocreate]
-        jmp     .next
+        _jmp     .next
 
 UDATASEG
 	

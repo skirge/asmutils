@@ -1,12 +1,8 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: softdog.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: softdog.asm,v 1.4 2001/02/23 12:39:29 konst Exp $
 ;
 ;hackers' softdog (software watchdog)
-;
-;0.01: 04-Jul-1999	initial release
-;0.02: 29-Jul-1999	fixed bug with sys_open
-;0.03: 18-Sep-1999	elf macros support
 ;
 ;syntax: softdog [PERIOD]
 ;
@@ -14,11 +10,16 @@
 ;
 ;example:	softdog
 ;		softdog 15
+;
+;0.01: 04-Jul-1999	initial release
+;0.02: 29-Jul-1999	fixed bug with sys_open
+;0.03: 18-Sep-1999	elf macros support
+;0.04: 22-Jan-2001	minor size improvement
 
 %include "system.inc"
 
-DEFPERIOD	equ	10	;default period
-MAXPERIOD	equ	60	;maximum kernel margin
+%assign	DEFPERIOD	10	;default period
+%assign	MAXPERIOD	60	;maximum kernel margin
 
 CODESEG
 
@@ -31,36 +32,27 @@ START:
 	jz	.start
 	pop	esi
 	pop	esi
-	mov	edi,esi
-
-;convert string to 16 bit integer
 
 	xor	eax,eax
-	xor	ecx,ecx
-	mov	bl,10
-.next:
-	mov	cl,[esi]
-	sub	cl,'0'
+	xor	ebx,ebx
+.next_digit:
+	lodsb
+	sub	al,'0'
 	jb	.done
-	cmp	cl,9
+	cmp	al,9
 	ja	.done
-	mul	bl
-	add	eax,ecx
-	inc	esi
-	jmp short .next
+	imul	ebx,byte 10
+	add	ebx,eax
+	_jmp	.next_digit
 .done:
-;some reasonable checks
-;can be removed if sure
-	cmp	edi,esi	;some wrong number?
+	or	ebx,ebx		;zero?
 	jz	.start
-	or	eax,eax	;zero?
-	jz	.start
-	_mov	ebx,MAXPERIOD
-	cmp	eax,ebx			;if more than max - set max
+	_mov	eax,MAXPERIOD
+	cmp	ebx,eax			;if more than max - set max
 	jb	.start0
-	mov	eax,ebx
+	mov	ebx,eax
 .start0:
-	mov	ebp,eax
+	mov	ebp,ebx
 .start:
 	mov	[t.tv_sec],ebp
 
@@ -75,11 +67,10 @@ START:
 .exit:
 	sys_exit
 
-
 .child:
 	sys_write ebp,softdog,1
 	sys_nanosleep t,NULL
-	jmp short .child
+	_jmp	.child
 
 softdog	db	'/dev/watchdog',EOL
 

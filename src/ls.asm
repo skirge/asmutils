@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: ls.asm,v 1.3 2000/04/07 18:36:01 konst Exp $
+;$Id: ls.asm,v 1.4 2001/02/23 12:39:29 konst Exp $
 ;
 ;hackers' ls
 ;
@@ -9,9 +9,9 @@
 ;			'/' in the arguments
 ;0.03: 10-Feb-2000	symlinks listing bugfix, thanks to
 ;			Franck Lesage <lesage@nexus.pulp.eu.org>
-;
 ;0.04: 22-Mar-2000      Alexandr Gorlov <winct@mail.ru>
 ;			ls -l is handled properly (no . is required)
+;0.05: 05-Feb-2001      initial *BSD support (KB)
 ;
 ;syntax: ls [option] [dir, dir, dir...]
 ;        The only supported option by now is -l which is, as you might have 
@@ -37,8 +37,8 @@
 		
 		LINK_BUF_LEN	equ	260
 
-		%define	D_RECLEN	8
-		%define D_FILENAME	10
+		%define	D_RECLEN	dirent_buf.d_reclen-dirent_buf
+		%define D_FILENAME	dirent_buf.d_name-dirent_buf
 
 
 START:
@@ -95,7 +95,7 @@ open_file:
 
 do_it_again:
 
-		sys_getdents ebp,buf,buf_size
+		sys_getdents ebp,dirent_buf,dirent_buf_size
 		
 		test	eax,eax
 		js	near error
@@ -130,7 +130,7 @@ next_dentry:
 		js	near error
 
 		; get rwx field
-		mov	bx,[st_mode]
+		mov	bx,[stat_buf.st_mode]
 		mov	ecx,f_mode
 		lea	edi,[ecx+9]		; make edi point to the end of f_mode
 		call	make_rwx
@@ -139,7 +139,7 @@ next_dentry:
 		call	print
 		
 		xor	eax,eax
-		mov	esi,st_nlink
+		mov	esi,stat_buf.st_nlink
 		mov	edi,num_buf
 		mov	ecx,edi
 		
@@ -154,7 +154,7 @@ go_on:
 		jnz	go_on
 		
 		; print file size
-		mov	eax,[st_size]
+		mov	eax,[stat_buf.st_size]
 		call	bin_to_dec
 		call	print
 	
@@ -381,8 +381,6 @@ bin_to_dec:
 		popad
 		ret	
 
-		DATASEG
-	
 cr		db	10,0
 rwx		db	"xwr"
 set_id		db	"tss"
@@ -393,34 +391,60 @@ f_mode		db	"-rwxrwxrwx",9,0
 
 		UDATASEG
 
-buf:
-	d_ino:		resd	1
-	d_off:		resd	1
-	d_reclen:	resw	1
-	d_name:		resb	256
-	buf_size:	equ	$-buf
+dirent_buf I_STRUC dirent
+%ifdef	__LINUX__
+.d_ino		ULONG	1
+.d_off		ULONG	1
+.d_reclen	USHORT	1
+%else
+.d_fileno	U32	1
+.d_reclen	U16	1
+.d_type		U8	1
+.d_namlen	U8	1
+%endif
+.d_name		CHAR	NAME_MAX + 1
+I_END
+dirent_buf_size	equ	$-dirent_buf
+
 	
-stat_buf:
-	st_dev		resw	1
-	__pad1 		resw 	1
-	st_ino 		resd	1
-	st_mode 	resw	1
-	st_nlink 	resw 	1
-	st_uid 		resw 	1
-	st_gid 		resw 	1
-	st_rdev 	resw 	1
-	__pad2 		resw 	1
-	st_size 	resd 	1
-	st_blksize 	resd 	1
-	st_blocks 	resd 	1
-	st_atime 	resd 	1
-	__unused1 	resd 	1
-	st_mtime 	resd 	1
-	__unused2 	resd 	1
-	st_ctime 	resd 	1
-	__unused3 	resd 	1
-	__unused4 	resd 	1
-	__unused5 	resd 	1	
+stat_buf I_STRUC stat
+.st_dev		USHORT	1
+.__pad1		USHORT	1
+.st_ino		ULONG	1
+.st_mode	USHORT	1
+.st_nlink	USHORT	1
+.st_uid		USHORT	1
+.st_gid		USHORT	1
+.st_rdev	USHORT	1
+.__pad2		USHORT	1
+%ifdef __BSD__
+.st_atime	ULONG	1
+.st_atimensec	ULONG	1
+.st_mtime	ULONG	1
+.st_mtimensec	ULONG	1
+.st_ctime	ULONG	1
+.st_ctimensec	ULONG	1
+.st_size	ULONG	1
+.st_blocks	ULONG	1
+.__pad3		ULONG	1
+.st_blksize	ULONG	1
+.st_flags	ULONG	1
+.st_gen		ULONG	1
+.st_lspare	ULONG	3
+%else
+.st_size	ULONG	1
+.st_blksize	ULONG	1
+.st_blocks	ULONG	1
+.st_atime	ULONG	1
+.__unused1	ULONG	1
+.st_mtime	ULONG	1
+.__unused2	ULONG	1
+.st_ctime	ULONG	1
+.__unused3	ULONG	1
+%endif
+.__unused4	ULONG	1
+.__unused5	ULONG	1
+I_END
 
 fhandle:
 			resd	1

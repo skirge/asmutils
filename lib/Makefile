@@ -2,7 +2,7 @@
 #
 # Makefile for libc (GNU make is required)
 #
-# $Id: Makefile,v 1.7 2001/01/21 15:18:46 konst Exp $
+# $Id: Makefile,v 1.8 2001/02/23 12:39:29 konst Exp $
 
 #DEBUG = y
 
@@ -14,21 +14,23 @@ BUILD_STATIC = y
 BUILD_SHARED = y
 
 LIBCRYPTO_OBJS = md5.o rc6.o rmd.o
-LIBCRYPTO_SO = libcrypto.so
 LIBCRYPTO_A = libcrypto.a
+LIBCRYPTO_SO = libcrypto.so.0
+
+STUB_OBJS = libc_stub.o
 
 LIBC_OBJS = libc.o
-LIBC_SO = ./libc.so
 LIBC_A = libc.a
+LIBC_SO = ./libc.so.0
 
 LIBM_OBJS = libm.o
-LIBM_SO = ./libm.so
 LIBM_A = libm.a
+LIBM_SO = ./libm.so.0
 
 TESTS = test1 test2
 
-CLEAN_CFLAGS := -Wall -O1
-#CLEAN_CFLAGS := -Wall -O1 -Os #will produce the smallest code on gcc 2.95+
+CLEAN_CFLAGS := -Wall -O1 -m386
+#CLEAN_CFLAGS := -Wall -O1 -Os -march=i386 #will produce the smallest code on gcc 2.95+
 
 ifdef DEBUG
 CLEAN_CFLAGS += -g
@@ -48,23 +50,23 @@ CFLAGS += -D__NO_STRING_INLINES -fno-builtin
 
 # the same with all other glibc crap
 
-CFLAGS += -nostartfiles -nostdlib -Wl,-e,main
+CFLAGS += -nostartfiles -nostdlib #-Wl,-e,main
 
 %:	%.c
 ifdef	BUILD_SHARED
-	$(CC) $(CFLAGS) -o $@-shared $< $(LIBC_SO)
+	$(CC) $(CFLAGS) -o $@-shared $< $(STUB_OBJS) $(LIBC_SO)
 	$(CC) $(CFLAGS) -mregparm=3 -D__FASTCALL__\
-		-o $@-shared-fastcall $< $(LIBC_SO)
+		-o $@-shared-fastcall $< $(STUB_OBJS) $(LIBC_SO)
 endif
 ifdef	BUILD_STATIC
-	$(CC) $(CFLAGS) -static -o $@-static $< $(LIBC_A)
+	$(CC) $(CFLAGS) -static -o $@-static $< $(STUB_OBJS) $(LIBC_A)
 	$(CC) $(CFLAGS) -static -mregparm=3 -D__FASTCALL__\
-		-o $@-static-fastcall $< $(LIBC_A)
+		-o $@-static-fastcall $< $(STUB_OBJS) $(LIBC_A)
 endif
 
-all:	libc libm tests crypto
+all:	libc tests crypto libm
 
-libc:	$(LIBC_OBJS)
+libc:	$(LIBC_OBJS) $(STUB_OBJS)
 ifdef BUILD_STATIC
 	$(AR) rcv $(LIBC_A) $(LIBC_OBJS)
 endif
@@ -104,4 +106,4 @@ endif
 install:
 
 clean:
-	rm -f *.o *.a *.so $(TESTS) *-shared* *-static*
+	rm -f *.o *.a *.so* $(TESTS) *-shared* *-static*

@@ -1,7 +1,7 @@
 /*
 	Copyright (C) 1999-2001 Konstantin Boldyshev
 
-	$Id: test1.c,v 1.3 2001/01/21 15:18:46 konst Exp $
+	$Id: test1.c,v 1.4 2001/02/23 12:39:29 konst Exp $
 
 	test program for assembly libc
 */
@@ -19,7 +19,7 @@ static char *fname = "_tst_",
 
 static int fd, len;
 
-int main(void)
+int main(int argc, char **argv, char **envp)
 {
     FASTCALL(3);
 
@@ -41,5 +41,5 @@ int main(void)
     len = read(STDIN_FILENO, buf, 10);
     write(STDOUT_FILENO, buf, len);
 
-    exit(len); /* MUST be called to exit */
+    return len;
 }

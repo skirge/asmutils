@@ -2,32 +2,31 @@
     Based on code of J.T. Conklin <jtc@netbsd.org> and drepper@cygnus.com
     Public domain.
     Adapted for "C" and for asmutils by Nick Kurshev <nickols_k@mail.ru>.
+    I did an attemp to collect better parts from other free GPL'ed projects:
+    - DJGPP for DOS <www.delorie.com>
+    - EMX for OS2 by Eberhard Mattes
 
-    $Id: libm.c,v 1.1 2001/01/21 15:18:46 konst Exp $
+    $Id: libm.c,v 1.2 2001/02/23 12:39:29 konst Exp $
 
  White C but not asm?
- 1. Today gcc doesnot handle floating point as commercial compilers do.
+ 1. Today gcc doesnot handle floating point as comercial compilers do.
     But I belive that in the future versions gcc will be able to handle
     floating point better.
  2. Such function declaraton allow us to be free from calling convention
     and build universal models.
 */
- 
-#include <stdint.h>
- 
-static const double one = 1.0;
-	/* It is not important that this constant is precise.  It is only
-	   a value which is known to be on the safe side for using the
-	   fyl2xp1 instruction.  */
-static const double limit = 0.29;
 
-static const float two25 =  3.3554432000e+07; 
-/* 0x4c000000 */
-static const double two54 =  1.80143985094819840000e+16; 
-/* 0x43500000, 0x00000000 */
-static const long double two65 =  3.68934881474191032320e+19L;
-/* 0x4040, 0x80000000, 0x00000000 */
+/*
+  Missed: drem(l,f), erf(l,f), erfc(l,f), expm1(l,f), fpclassify, gamma(l,f),
+          infnan, isfinite, isgreater,  isgreaterequal, isinf(l,f), isless,
+          islessequal,  islessgreater, isnan(l,f), isnormal, isunordered,
+          j0(l,f),  j1(l,f), jn(l,f), ldexp(l,f), lgamma(l,f) lgamma(l,f)_r,
+          llround(l,f), lround(l,f), mod(f,l), nan(l,f), nearbyint(l,f),
+          nextafter(l,f),  nexttoward(l,f), round(l,f), scalb(l,f), signbit,
+          tgamma(l,f), y0(l,f),  y1(l,f),  yn(l,f)
+*/
 
+typedef unsigned int uint32_t;
 
 /* acos = atan (sqrt(1 - x^2) / x) */
 
@@ -37,7 +36,7 @@ static const long double two65 =  3.68934881474191032320e+19L;
       "	fld1\n"\
       "	fsubp\n"\
       "	fsqrt\n"\
-      "	fxch	%1\n"\
+      "	fxch	%%st(1)\n"\
       "	fpatan"   :\
       "=t"(ret)   :\
       "0"(x)      :\
@@ -127,125 +126,94 @@ long double atan2l(long double y,long double x)
 }
 
 /* e^x = 2^(x * log2(e)) */
-
-/* I added the following ugly construct because expl(+-Inf) resulted
-   in NaN.  The ugliness results from the bright minds at Intel.
-   For the i686 the code can be written better.
-   -- drepper@cygnus.com.  */
-#define __IEEE754_EXP(ret,x)\
-  asm("fxam\n"\
-      "	fstsw	%%ax\n"\
-      "	movb	$0x45, %%dh\n"\
-      "	andb	%%ah, %%dh\n"\
-      "	cmpb	$0x05, %%dh\n"\
-      "	je	1f\n"\
-      "	fldl2e\n"\
+#define IEEE754_EXP(ret,x)\
+  asm("fldl2e\n"\
+      "	fxch	%%st(1)\n"\
       "	fmulp\n"\
-      "	fld	%0\n"\
+      "	fst	%%st(1)\n"\
       "	frndint\n"\
-      "	fsubr	%0,%2\n"\
-      "	fxch\n"\
+      "	fst	%%st(2)\n"\
+      "	fsubrp\n"\
       "	f2xm1\n"\
       "	fld1\n"\
       "	faddp\n"\
       "	fscale\n"\
-      "	fstp	%2\n"\
-      "	jmp     2f\n"\
-"1:	testl	$0x200, %%eax\n"\
-      "	jz	2f\n"\
-      "	fxch\n"\
-"2:	fstp	%0\n":\
-        "=t"(ret)  :\
-        "0"(x),\
-        "u"(0.):\
-        "st(1)","eax","edx")
+      "	ffree	%%st(1)\n":\
+        "=t"(ret):\
+        "0"(x):\
+        "st(2)")
 
 float expf(float x)
 {
   register float ret;
-  __IEEE754_EXP(ret,x);
+  IEEE754_EXP(ret,x);
   return ret;
 }
 
 double exp(double x)
 {
   register double ret;
-  __IEEE754_EXP(ret,x);
+  IEEE754_EXP(ret,x);
   return ret;
 }
 
 long double expl(long double x)
 {
   register long double ret;
-  __IEEE754_EXP(ret,x);
+  IEEE754_EXP(ret,x);
   return ret;
 }
 
 /* e^x = 2^(x * log2l(10)) */
 
-/* I added the following ugly construct because expl(+-Inf) resulted
-   in NaN.  The ugliness results from the bright minds at Intel.
-   For the i686 the code can be written better.
-   -- drepper@cygnus.com.  */
-#define __IEEE754_EXP10(ret,x)\
-  asm("fxam\n"\
-      "	fstsw	%%ax\n"\
-      "	movb	$0x45, %%dh\n"\
-      "	andb	%%ah, %%dh\n"\
-      "	cmpb	$0x05, %%dh\n"\
-      "	je	1f\n"\
-      "	fldl2t\n"\
+#define IEEE754_EXP10(ret,x)\
+  asm("fldl2t\n"\
+      "	fxch	%%st(1)\n"\
       "	fmulp\n"\
-      "	fld	%0\n"\
+      "	fst	%%st(1)\n"\
       "	frndint\n"\
-      "	fsubr	%0,%2\n"\
-      "	fxch\n"\
+      "	fst	%%st(2)\n"\
+      "	fsubrp\n"\
       "	f2xm1\n"\
       "	fld1\n"\
       "	faddp\n"\
       "	fscale\n"\
-      "	fstp	%2\n"\
-      "	jmp	2f\n"\
-"1:	testl	$0x200, %%eax\n"\
-      "	jz	2f\n"\
-      "	fxch\n"\
-"2:	fstp	%0" :\
-      "=t"(ret)     :\
-      "0"(x),\
-      "u"(0.):\
-      "st(1)","eax","edx")
+      "	ffree	%%st(1)\n":\
+        "=t"(ret):\
+        "0"(x):\
+        "st(2)")
 
 float exp10f(float x)
 {
   register float ret;
-  __IEEE754_EXP10(ret,x);
+  IEEE754_EXP10(ret,x);
   return ret;
 }
 
 double exp10(double x)
 {
   register double ret;
-  __IEEE754_EXP10(ret,x);
+  IEEE754_EXP10(ret,x);
   return ret;
 }
 
 long double exp10l(long double x)
 {
   register long double ret;
-  __IEEE754_EXP10(ret,x);
+  IEEE754_EXP10(ret,x);
   return ret;
 }
 
 #define IEEE754_FMOD(ret,x,y)\
-  asm("\n1:	fprem\n"\
+  asm("1:\n"\
+      "	fprem\n"\
       "	fstsw	%%ax\n"\
       "	sahf\n"\
-      "	jp  	1b\n"\
-      "	fstp	%2":\
-      "=t"(ret)    :\
-      "0"(x),\
-      "u"(y)       :\
-      "st(1)","eax")
+      "	jp  	1b\n":\
+      "=t"(ret):\
+      "u"(y),\
+      "0"(x):\
+      "eax","st")
 
 float fmodf(float x,float y)
 {
@@ -270,7 +238,7 @@ long double fmodl(long double x,long double y)
 
 /* We have to test whether any of the parameters is Inf.
    In this case the result is infinity. */
-#define __IEEE754_HYPOT(retval,x,y)\
+#define IEEE754_HYPOT(retval,x,y)\
    asm (\
       "fxam\n"\
       "	fnstsw\n"\
@@ -313,113 +281,82 @@ long double fmodl(long double x,long double y)
 float hypotf(float x,float y)
 {
   register float retval;
-  __IEEE754_HYPOT(retval,x,y);
+  IEEE754_HYPOT(retval,x,y);
   return retval;
 }
 
 double hypot(double x,double y)
 {
   register double retval;
-  __IEEE754_HYPOT(retval,x,y);
+  IEEE754_HYPOT(retval,x,y);
   return retval;
 }
 
 long double hypotl(long double x,long double y)
 {
   register long double retval;
-  __IEEE754_HYPOT(retval,x,y);
+  IEEE754_HYPOT(retval,x,y);
   return retval;
 }
 
-/* 
+/*
    We pass address of contstants one and limit through registers
-   for non relocatable system (-fpic -fPIC) 
+   for non relocatable system (-fpic -fPIC)
 */
 
-#define __IEEE754_LOG(ret,x)\
+#define IEEE754_LOG(ret,x)\
    asm("fldln2\n"\
       "	fxch\n"\
-      "	fld	%0\n"\
-      "	fsubl	(%2)\n"\
-      "	fld	%0\n"\
-      "	fcompl	(%3)\n"\
-      "	fnstsw\n"\
-      "	andb	$0x45, %%ah\n"\
-      "	jz	1f\n"\
-      "	fstp	%%st(1)\n"\
-      "	fyl2xp1\n"\
-      "	jmp	2f\n"\
-"1:	fstp	%0\n"\
-      "	fyl2x\n"\
-"2:	fstp	%0":\
+      "	fyl2x":\
       "=t"(ret):\
-      "0"(x),\
-      "r"(&one),\
-      "r"(&limit):\
-      "eax")
+      "0"(x))
 
 float logf(float x)
 {
   register float ret;
-  __IEEE754_LOG(ret,x);
-  return ret;    
+  IEEE754_LOG(ret,x);
+  return ret;
 }
 
 double log(double x)
 {
   register double ret;
-  __IEEE754_LOG(ret,x);
-  return ret;    
+  IEEE754_LOG(ret,x);
+  return ret;
 }
 
 long double logl(long double x)
 {
   register long double ret;
-  __IEEE754_LOG(ret,x);
-  return ret;    
+  IEEE754_LOG(ret,x);
+  return ret;
 }
 
-#define __IEEE754_LOG10(ret,x)\
+#define IEEE754_LOG10(ret,x)\
    asm("fldlg2\n"\
       "	fxch\n"\
-      "	fld	%0\n"\
-      "	fsubl	(%2)\n"\
-      "	fld	%0\n"\
-      "	fabs\n"\
-      "	fcompl	(%3)\n"\
-      "	fnstsw\n"\
-      "	andb	$0x45, %%ah\n"\
-      "	jz	1f\n"\
-      "	fstp	%%st(1)\n"\
-      "	fyl2xp1\n"\
-      "	jmp	2f\n"\
-"1:	fstp	%0\n"\
-      "	fyl2x\n"\
-"2:	fstp	%0\n":\
+      "	fyl2x":\
       "=t"(ret):\
-      "0"(x),\
-      "r"(&one),\
-      "r"(&limit):\
-      "eax")
+      "0"(x))
 
 float log10f(float x)
 {
   register float ret;
-  __IEEE754_LOG10(ret,x);
+  IEEE754_LOG10(ret,x);
   return ret;
 }
 
 double log10(double x)
 {
   register double ret;
-  __IEEE754_LOG10(ret,x);
+  IEEE754_LOG10(ret,x);
   return ret;
 }
 
 long double log10l(long double x)
 {
   register long double ret;
-  __IEEE754_LOG10(ret,x);
+  IEEE754_LOG10(ret,x);
   return ret;
 }
 
@@ -509,19 +446,15 @@ long double atanl(long double x)
 }
 
 #define __CEIL(ret,val,cw,new_cw)\
-   asm("fstcw	%2\n"\
-      "	movl	$0x800, %%edx\n"\
-      "	orl	%2, %%edx\n"\
-      "	andl	$0xfbff, %%edx\n"\
-      "	movl	%%edx, %3\n"\
-      "	fldcw	%3\n"\
+   asm("fstcw	%0":"=m"(cw)::"memory");\
+   new_cw = (cw | 0x800) & 0xfbff;\
+   asm("fldcw	%3\n"\
       "	frndint\n"\
       "	fldcw	%2"\
       :"=t"(ret)\
       :"0"(val),\
       "m"(cw),\
-      "m"(new_cw)\
-      :"edx")
+      "m"(new_cw))
 
 float ceilf(float val)
 {
@@ -566,25 +499,22 @@ long double copysignl(long double x,long double y)
 }
 
 #define __FTRIG(name,ret,x)\
-   asm("fldz":\
-      "=t"(ret));\
    asm(name\
       "	fnstsw	%%ax\n"\
       "	testl	$0x400, %%eax\n"\
       "	je	2f\n"\
       "	fldpi\n"\
       "	fadd	%0\n"\
-      "	fxch	%2\n"\
+      "	fxch	%%st(1)\n"\
 "1:	fprem1\n"\
       "	fnstsw	%%ax\n"\
       "	testl	$0x400, %%eax\n"\
       "	jne	1b\n"\
-      "	fstp	%2\n"\
+      "	fstp	%%st(1)\n"\
       "	"name\
-"2:	fstp	%1"   :\
-      "=t"(ret)       :\
-      "0"(x),\
-      "u"(ret):\
+"2:":\
+      "=t"(ret)    :\
+      "0"(x):\
       "st(1)","eax")
 
 float cosf(float x)
@@ -629,28 +559,47 @@ long double sinl(long double x)
   return ret;
 }
 
+#define __FTAN(ret,x)\
+   asm("fptan\n"\
+      "	fnstsw	%%ax\n"\
+      "	testl	$0x400, %%eax\n"\
+      "	je	2f\n"\
+      "	fldpi\n"\
+      "	fadd	%0\n"\
+      "	fxch	%%st(1)\n"\
+"1:	fprem1\n"\
+      "	fnstsw	%%ax\n"\
+      "	testl	$0x400, %%eax\n"\
+      "	jne	1b\n"\
+      "	fstp	%%st(1)\n"\
+      "	fptan\n"\
+"2:	fstp	%0":\
+      "=t"(ret)    :\
+      "0"(x):\
+      "st(1)","eax")
+
 float tanf(float x)
 {
   register float ret;
-  __FTRIG("fptan\n",ret,x);
+  __FTAN(ret,x);
   return ret;
 }
 
 double tan(double x)
 {
   register double ret;
-  __FTRIG("fptan\n",ret,x);
+  __FTAN(ret,x);
   return ret;
 }
 
 long double tanl(long double x)
 {
   register long double ret;
-  __FTRIG("fptan\n",ret,x);
+  __FTAN(ret,x);
   return ret;
 }
 
-#define __IEEE754_EXP2(ret,x)\
+#define IEEE754_EXP2(ret,x)\
    asm("fxam\n"\
       "	fstsw	%%ax\n"\
       "	movb	$0x45, %%dh\n"\
@@ -679,46 +628,30 @@ long double tanl(long double x)
 float exp2f(float x)
 {
   register float ret;
-  __IEEE754_EXP2(ret,x);
+  IEEE754_EXP2(ret,x);
   return ret;
 }
 
 double exp2(double x)
 {
   register double ret;
-  __IEEE754_EXP2(ret,x);
+  IEEE754_EXP2(ret,x);
   return ret;
 }
 
 long double exp2l(long double x)
 {
   register long double ret;
-  __IEEE754_EXP2(ret,x);
+  IEEE754_EXP2(ret,x);
   return ret;
 }
 
 #define __FDIM(ret,x,y)\
-   asm("fucom	%2\n"\
-      "	fnstsw\n"\
-      "	sahf\n"\
-      "	jp	1f\n"\
-      "	fsubrp	%0, %2\n"\
-      "	jc	2f\n"\
-      "	fstp	%0\n"\
-      "	fldz\n"\
-      "	jmp	2f\n"\
-"1:	fxam\n"\
-      "	fnstsw\n"\
-      "	andb	$0x45, %%ah\n"\
-      "	cmpb	$0x01, %%ah\n"\
-      "	je	3f\n"\
-      "	fxch\n"\
-"3:	fstp	%2\n"\
-"2:"   :\
+   asm("fsubp	%2\n"\
+      "	fabs":\
        "=t"(ret):\
        "0"(y),\
-       "u"(x):\
-       "eax","st(1)")
+       "u"(x))
 
 float fdimf(float x, float y)
 {
@@ -747,7 +680,7 @@ int finitef(float val)
   register uint32_t magic;
   contents = (const uint32_t *)&val;
   magic = 0xFF7FFFFFL;
-  return ((magic-contents[0])^magic) >> 31;    
+  return ((magic-contents[0])^magic) >> 31;
 }
 
 int finite(double val)
@@ -756,32 +689,28 @@ int finite(double val)
   register uint32_t magic;
   contents = (const uint32_t *)&val;
   magic = 0xFFEFFFFFL;
-  return ((magic-contents[1])^magic) >> 31;  
+  return ((magic-contents[1])^magic) >> 31;
 }
 
-int fiitel(long double val)
+int finitel(long double val)
 {
   const uint32_t *contents;
   register uint32_t retval;
   contents = (const uint32_t *)&val;
   retval = 0xFFFF8000L | contents[2];
-  return (++retval) >> 31;    
+  return (++retval) >> 31;
 }
 
 #define __FLOOR(ret,val,cw,new_cw)\
-   asm("fstcw	%2\n"\
-      "	movl	$0x400, %%edx\n"\
-      "	orl	%2, %%edx\n"\
-      "	andl	$0xf7ff, %%edx\n"\
-      "	movl	%%edx, %3\n"\
-      "	fldcw	%3\n"\
+   asm("fstcw	%0":"=m"(cw)::"memory");\
+   new_cw = (cw | 0x400) & 0xf7ff;\
+   asm("fldcw	%3\n"\
       "	frndint\n"\
       "	fldcw	%2"\
       :"=t"(ret)\
       :"0"(val),\
       "m"(cw),\
-      "m"(new_cw)\
-      :"edx")
+      "m"(new_cw))
 
 float floorf(float val)
 {
@@ -904,80 +833,63 @@ long double fminl(long double x, long double y)
   return ret;
 }
 
+/*
+ frexp.s (emx+gcc) -- Copyright (c) 1992-1993 by Steffen Haecker
+                      Modified 1993-1996 by Eberhard Mattes
+*/
+
+#define __FREXP(result,x,eptr)\
+{\
+  register long double minus_one;\
+  asm("fld1\n"\
+      "	fchs":\
+      "=t"(minus_one));\
+   *eptr = 0;\
+   asm("ftst\n"\
+      "	fstsw	%%ax\n"\
+      "	andb	$0x41, %%ah\n"\
+      "	xorb	$0x40, %%ah\n"\
+      "	jz	1f\n"\
+      "	fxtract\n"\
+      "	fxch	%2\n"\
+      "	fistpl	(%3)\n"\
+      "	fscale\n"\
+      "	incl	(%3)\n"\
+"1:	fstp	%2":\
+       "=t"(retval):\
+       "0"(x),\
+       "u"(minus_one),\
+       "r"(eptr):\
+       "eax","memory","st(1)");\
+}
 float frexpf(float x, int *eptr)
 {
-	register unsigned long hx,ix;
-	hx = *(unsigned long *)&x;
-	ix = 0x7fffffff&hx;
-	*eptr = 0;
-	if(!(ix>=0x7f800000||(ix==0)))	/* 0,inf,nan */
-	{
-	if (ix<0x00800000) {		/* subnormal */
-	    x *= two25;
-	    hx = *(unsigned long *)&x;
-	    ix = hx&0x7fffffff;
-	    *eptr = -25;
-	}
-	*eptr += (ix>>23)-126;
-	hx = (hx&0x807fffff)|0x3f000000;
-	*(unsigned long*)&x = hx;
-        }
-	return x;
+  register float retval;
+  __FREXP(retval,x,eptr);
+  return retval;
 }
 
 double frexp(double x, int *eptr)
 {
-	register unsigned long hx, ix, lx;
-        lx = ((unsigned long *)&x)[0];
-        hx = ((unsigned long *)&x)[1];
-	ix = 0x7fffffff&hx;
-	*eptr = 0;
-	if(!(ix>=0x7ff00000||((ix|lx)==0))) /* 0,inf,nan */
-        {
-	if (ix<0x00100000) {		/* subnormal */
-	    x *= two54;
-            hx = ((unsigned long *)&x)[1];
-	    ix = hx&0x7fffffff;
-	    *eptr = -54;
-	}
-	*eptr += (ix>>20)-1022;
-	hx = (hx&0x800fffff)|0x3fe00000;
-        ((unsigned long *)&x)[1] = hx;
-        }
-	return x;
+  register double retval;
+  __FREXP(retval,x,eptr);
+  return retval;
 }
 
 long double frexpl(long double x, int *eptr)
 {
-	register unsigned long se, hx, ix, lx;
-        lx = ((unsigned long *)&x)[0];
-        hx = ((unsigned long *)&x)[1];
-	se = ((unsigned long *)&x)[2];
-	ix = 0x7fff&se;
-	*eptr = 0;
-	if(!(ix==0x7fff||((ix|hx|lx)==0)))/* 0,inf,nan */
-        {
-	if (ix==0x0000) {		/* subnormal */
-	    x *= two65;
-	    se = ((unsigned long *)&x)[2];
-	    ix = se&0x7fff;
-	    *eptr = -65;
-	}
-	*eptr += ix-16382;
-	se = (se & 0x8000) | 0x3ffe;
-	((unsigned long *)&x)[2] = se;
-        }
-	return x;
+  register long double retval;
+  __FREXP(retval,x,eptr);
+  return retval;
 }
 
 #define __ILOGB(ret,x)\
    asm("fxtract\n"\
       "	fstp	%1\n"\
-      "	fistp	%0\n"\
+      "	fistpl	%0\n"\
       "	fwait" :\
       "=m"(ret):\
-      "t"(x)   :\
-      "st")
+      "t"(x))
 
 int ilogbf(float x)
 {
@@ -1038,94 +950,61 @@ long long int llrintl(long double x)
  * otherwise fyl2x with the needed extra computation.
  */
 
-#define __LOG1P(retval,x,limit)\
-   asm(\
-      "fldln2\n"\
-      "	fxch	%%st(1)\n"\
-      "	fld	%0\n"\
-      "	fabs\n"\
-      "	fcomp%z2	%2\n"\
-      "	fnstsw\n"\
-      "	sahf\n"\
-      "	jc	2f\n"\
+#define __LOG1P(retval,x)\
+   asm("fldln2\n"\
+      "	fxch\n"\
       "	fld1\n"\
-      "	faddp	%%st(1)\n"\
-      "	fyl2x\n"\
-      "	jmp	1f\n"\
-"2:	fyl2xp1\n"\
-"1:	fstp	%0":\
-      "=t"(retval) :\
-      "0"(x),\
-      "m"(limit)   :\
-      "eax")
+      "	faddp %%st(1)\n"\
+      "	fyl2x":\
+      "=t"(retval):\
+      "0"(x))
 
 float log1pf(float x)
 {
-  const float limit = 0.29;
   register float retval;
-  __LOG1P(retval,x,limit);
+  __LOG1P(retval,x);
   return retval;
 }
 
 double log1p(double x)
 {
-  const double limit = 0.29;
   register double retval;
-  __LOG1P(retval,x,limit);
+  __LOG1P(retval,x);
   return retval;
 }
 
 long double log1pl(long double x)
 {
-  const double limit = 0.29;
   register long double retval;
-  __LOG1P(retval,x,limit);
+  __LOG1P(retval,x);
   return retval;
 }
 
-#define __LOG2(retval,x,limit)\
-   asm(\
-      "fld	%0\n"\
-      "	fsub	%%st(2), %0\n"\
-      "	fld	%0\n"\
-      "	fabs\n"\
-      "	fcomp%z3	%3\n"\
-      "	fnstsw\n"\
-      "	andb	$0x45, %%ah\n"\
-      "	jz	2f\n"\
-      "	fstp	%1\n"\
-      "	fyl2xp1\n"\
-      "	jmp	1f\n"\
-"2:	fstp	%0\n"\
-      "	fyl2x\n"\
-"1:	fstp	%0":\
+#define __LOG2(retval,x)\
+   asm("fld1\n"\
+      "	fxch\n"\
+      "	fyl2x":\
       "=t"(retval):\
-      "u"(1.),\
-      "0"(x),\
-      "m"(limit):\
-      "eax","st(1)")
+      "0"(x))
 
 float log2f(float x)
 {
-  const float limit = 0.29;
   register float retval;
-  __LOG2(retval,x,limit);
+  __LOG2(retval,x);
   return retval;
 }
 
 double log2(double x)
 {
-  const double limit = 0.29;
   register double retval;
-  __LOG2(retval,x,limit);
+  __LOG2(retval,x);
   return retval;
 }
 
 long double log2l(long double x)
 {
-  const double limit = 0.29;
   register long double retval;
-  __LOG2(retval,x,limit);
+  __LOG2(retval,x);
   return retval;
 }
 
@@ -1183,113 +1062,6 @@ long int lrintl(long double x)
   long int ret;
   __LRINT(ret,x);
   return ret;
-}
-
-/* Adapted for use as nearbyint by Ulrich Drepper <drepper@cygnus.com>.  */
-#define __NEARBYINT(retval,x,new_sw,org_sw)\
-   asm(\
-      "fnstcw	%2\n"\
-      "	movl	%2, %%eax\n"\
-      "	andl	$~0x20, %%eax\n"\
-      "	movl	%%eax, %3\n"\
-      "	fldcw	%3\n"\
-      "	frndint\n"\
-      "	fclex\n"\
-      "	fldcw	%2":\
-      "=t"(retval):\
-      "0"(x),\
-      "m"(new_sw),\
-      "m"(org_sw):\
-      "eax")
-
-float nearbyintf(float x)
-{
-  register float retval;
-  int new_sw,org_sw;
-  __NEARBYINT(retval,x,new_sw,org_sw);
-  return retval;
-}
-
-double nearbyint(double x)
-{
-  register double retval;
-  int new_sw,org_sw;
-  __NEARBYINT(retval,x,new_sw,org_sw);
-  return retval;
-}
-
-long double nearbyintl(long double x)
-{
-  register long double retval;
-  int new_sw,org_sw;
-  __NEARBYINT(retval,x,new_sw,org_sw);
-  return retval;
-}
-
-#define __REMQUO(retval,x,y,quo,xcontents,ycontents,i_const)\
-   asm(".align 4\n"\
-"1:\n"\
-      "	fprem1\n"\
-      "	fstsw	%%ax\n"\
-      "	sahf\n"\
-      "	jp	1b\n"\
-      "	fstp	%1\n"\
-      "	movl	%%eax, %%edx\n"\
-      "	shrl	$8, %%eax\n"\
-      "	shrl	$12, %%edx\n"\
-      "	andl	$3, %%eax\n"\
-      "	andl	$4, %%edx\n"\
-      "	orl	%%eax, %%edx\n"\
-      "	movl	$0xef2960, %%eax\n"\
-      "	shrl	%%cl, %%eax\n"\
-      "	andl	$3, %%eax\n"\
-      "	movl	%4, %%edx\n"\
-      "	xorl	%5, %%edx\n"\
-      "	testl	%6, %%edx\n"\
-      "	jz	2f\n"\
-      "	negl	%%eax\n"\
-"2:\n"\
-      "	movl	%%eax, (%3)"\
-      :"=t"(retval)\
-      :"0"(x),\
-       "u"(y),\
-       "c"(quo),\
-       "g"(xcontents),\
-       "g"(ycontents),\
-       "i"(i_const)\
-      :"eax","edx","st(1)")
-
-float remquof (float x, float y, int *quo)
-{
-  const uint32_t *xcontents;
-  const uint32_t *ycontents;
-  register float retval;
-  xcontents = (const uint32_t *)&x;
-  ycontents = (const uint32_t *)&y;
-  __REMQUO(retval,x,y,quo,xcontents[0],ycontents[0],0x80000000L);
-  return retval;
-}
-
-double remquo (double x, double y, int *quo)
-{
-  const uint32_t *xcontents;
-  const uint32_t *ycontents;
-  register double retval;
-  xcontents = (const uint32_t *)&x;
-  ycontents = (const uint32_t *)&y;
-  __REMQUO(retval,x,y,quo,xcontents[1],ycontents[1],0x80000000L);
-  return retval;
-}
-
-long double remquol (long double x, long double y, int *quo)
-{
-  const uint32_t *xcontents;
-  const uint32_t *ycontents;
-  register long double retval;
-  xcontents = (const uint32_t *)&x;
-  ycontents = (const uint32_t *)&y;
-  __REMQUO(retval,x,y,quo,xcontents[2],ycontents[2],0x8000);
-  return retval;
 }
 
 #define __RINT(ret,x)\
@@ -1373,50 +1145,35 @@ long double significandl(long double x)
 }
 
 #define __SINCOS(x,cosptr,sinptr)\
-  asm ("fsincos\n"\
-      "	fnstsw	%%ax\n"\
-      "	testl	$0x400,%%eax\n"\
-      "	jz	2f\n"\
-      "	fldpi\n"\
-      "	fadd	%0\n"\
-      "	fxch	%1\n"\
-      ".align 4\n"\
-"1:	fprem1\n"\
-      "	fnstsw	%%ax\n"\
-      "	testl	$0x400,%%eax\n"\
-      "	jnz	1b\n"\
-      "	fstp	%1\n"\
-      "	fstp	%0\n"\
-      "	fsincos\n"\
-"2:"                   :\
-      "=t"(cosptr),\
-      "=u"(sinptr)     :\
-      "0"(x):\
-      "st(1)","eax")
+{\
+  register long double sv,cv;\
+  asm("fsincos":"=t"(cv),"=u"(sv):"0"(x):"st","st(1)");\
+  *cosptr = cv;\
+  *sinptr = sv;\
+}
 
 void sincosf(float x,float *sinptr,float *cosptr)
 {
-  __SINCOS(x,*cosptr,*sinptr);
+  __SINCOS(x,cosptr,sinptr);
 }
 
 void sincos(double x,double *sinptr,double *cosptr)
 {
-  __SINCOS(x,*cosptr,*sinptr);
+  __SINCOS(x,cosptr,sinptr);
 }
 
 void sincosl(long double x,long double *sinptr,long double *cosptr)
 {
-  __SINCOS(x,*cosptr,*sinptr);
+  __SINCOS(x,cosptr,sinptr);
 }
 
 #define __TRUNC(ret,x,orig_cw,mod_cw)\
-   asm("fstcw %2\n"\
-      "	fstcw %3\n"\
-      "	orl   $0xC00, %3\n"\
-      "	fldcw %3\n"\
+   asm("fstcw	%0":"=m"(orig_cw)::"memory");\
+   mod_cw = orig_cw | 0xc00;\
+   asm("fldcw	%3\n"\
       "	frndint\n"\
-      "	fldcw %2"    :\
-      "=t"(ret)      :\
+      "	fldcw	%2":\
+      "=t"(ret)    :\
       "0"(x),\
       "m"(orig_cw),\
       "m"(mod_cw))
@@ -1469,4 +1226,382 @@ long double fabsl(long double x)
   register long double ret;
   IEEE754_FABS(ret,x);
   return ret;
+}
+
+static void frac(void)
+{
+  short cw1,cw2;
+   asm("fnstcw	%0\n"
+      "	fwait"
+      :"=m"(cw1));
+  cw2 = (cw1 & 0xf3ff) | 0x0400;
+   asm("fldcw	%1\n"
+      "	fld	%%st\n"
+      "	frndint\n"
+      "	fldcw	%0\n"
+      "	fxch	%%st(1)\n"
+      "	fsub	%%st(1), %%st"
+      ::"m"(cw1),"m"(cw2):"memory");
+}
+
+static void Lpow2( void )
+{
+  double one;
+   asm("fld1":"=t"(one)::"st(1)");
+   asm("call	frac\n"
+      "	f2xm1\n"
+      "	faddl	%0\n"
+      "	fscale\n"
+      "	fstp	%%st(1)\n"
+      :: "m"(one): "memory");
+}
+
+#define __POW10(retval, y)\
+{\
+  double one;\
+   asm("fld1":"=t"(one)::"st(1)");\
+   asm("fldl2t\n"\
+      "	fmulp\n"\
+      "	call	frac\n"\
+      "	f2xm1\n"\
+      "	faddl	%2\n"\
+      "	fscale\n"\
+      "	fstp	%%st(1)\n"\
+      :"=t"(retval)\
+      :"0"(y), "m"(one));\
+}
+
+#define __POW(retval,x,y)\
+{\
+  int yint;\
+   asm("ftst\n"\
+      "	fnstsw	%%ax\n"\
+      "	sahf\n"\
+      "	jbe	1f\n"\
+      "	fyl2x\n"\
+      "	call	Lpow2\n"\
+      "	jmp	6f\n"\
+"1:	jb	4f\n"\
+      "	fstp	%0\n"\
+      "	ftst\n"\
+      "	fnstsw	%%ax\n"\
+      "	sahf\n"\
+      "	ja	3f\n"\
+      "	jb	2f\n"\
+      "	fstp	%0\n"\
+      "	fld1\n"\
+      "	fchs\n"\
+"2:	fsqrt\n"\
+      "	jmp     6f\n"\
+"3:	fstp	%0\n"\
+      "	fldz\n"\
+      "	jmp	6f\n"\
+"4:	fabs\n"\
+      "	fxch	%2\n"\
+      "	call	frac\n"\
+      "	ftst\n"\
+      "	fnstsw	%%ax\n"\
+      "	fstp	%0\n"\
+      "	sahf\n"\
+      "	je	5f\n"\
+      "	fstp	%0\n"\
+      "	fchs\n"\
+      "	jmp	2b\n"\
+"5:	fistl	%3\n"\
+      "	fxch	%2\n"\
+      "	fyl2x\n"\
+      "	call	Lpow2\n"\
+      "	andl	$1, %3\n"\
+      "	jz	6f\n"\
+      "	fchs\n"\
+"6:"\
+      :"=t"(retval)\
+      :"0"(x),"u"(y),"m"(yint)\
+      :"eax","memory","st(1)");\
+}
+
+float powf(float x, float y)
+{
+  register float retval;
+  if(x == (float)10.) __POW10(retval, y)
+  else                __POW(retval,x,y)
+  return retval;
+}
+
+double pow(double x, double y)
+{
+  register double retval;
+  if(x == (double)10.) __POW10(retval, y)
+  else                 __POW(retval,x,y)
+  return retval;
+}
+
+long double powl(long double x, long double y)
+{
+  register long double retval;
+  if(x == (long double)10.) __POW10(retval, y)
+  else                      __POW(retval,x,y)
+  return retval;
+}
+
+float pow10f(float y)
+{
+  register float retval;
+  __POW10(retval, y)
+  return retval;
+}
+
+double pow10(double y)
+{
+  register double retval;
+  __POW10(retval, y)
+  return retval;
+}
+
+long double pow10l(long double y)
+{
+  register long double retval;
+  __POW10(retval, y)
+  return retval;
+}
+
+/*
+ cbrt.c (emx+gcc) -- Copyright (c) 1992-1995 by Eberhard Mattes
+*/
+
+float cbrtf (float x)
+{
+  if (x >= 0)
+    return powf (x, 1.0 / 3.0);
+  else
+    return -powf (-x, 1.0 / 3.0);
+}
+
+double cbrt (double x)
+{
+  if (x >= 0)
+    return pow (x, 1.0 / 3.0);
+  else
+    return -pow (-x, 1.0 / 3.0);
+}
+
+long double cbrtl (long double x)
+{
+  if (x >= 0)
+    return powl (x, 1.0 / 3.0);
+  else
+    return -powl (-x, 1.0 / 3.0);
+}
+
+float acoshf(float x)
+{
+/* return log(x + sqrt(x*x - 1)); */
+  float retval;
+  IEEE754_SQRT(retval, x*x-1);
+  IEEE754_LOG(retval,x + retval);
+  return retval;
+}
+
+double acosh(double x)
+{
+/* return log(x + sqrt(x*x - 1)); */
+  double retval;
+  IEEE754_SQRT(retval, x*x-1);
+  IEEE754_LOG(retval,x + retval);
+  return retval;
+}
+
+long double acoshl(long double x)
+{
+/* return log(x + sqrt(x*x - 1)); */
+  long double retval;
+  IEEE754_SQRT(retval, x*x-1);
+  IEEE754_LOG(retval,x + retval);
+  return retval;
+}
+
+float asinhf(float x)
+{
+/* return x>0 ? log(x + sqrt(x*x + 1)) : -log(sqrt(x*x+1)-x); */
+  float retval;
+  IEEE754_SQRT(retval, x*x+1);
+  if(x>0) IEEE754_LOG(retval,x + retval);
+  else
+  {
+    IEEE754_LOG(retval,retval-x);
+    retval = -retval;
+  }
+  return retval;
+}
+
+double asinh(double x)
+{
+/* return x>0 ? log(x + sqrt(x*x + 1)) : -log(sqrt(x*x+1)-x); */
+  double retval;
+  IEEE754_SQRT(retval, x*x+1);
+  if(x>0) IEEE754_LOG(retval,x + retval);
+  else
+  {
+    IEEE754_LOG(retval,retval-x);
+    retval = -retval;
+  }
+  return retval;
+}
+
+long double asinhl(long double x)
+{
+/* return x>0 ? log(x + sqrt(x*x + 1)) : -log(sqrt(x*x+1)-x); */
+  long double retval;
+  IEEE754_SQRT(retval, x*x+1);
+  if(x>0) IEEE754_LOG(retval,x + retval);
+  else
+  {
+    IEEE754_LOG(retval,retval-x);
+    retval = -retval;
+  }
+  return retval;
+}
+
+float atanhf(float x)
+{
+/*  return log((1+x)/(1-x)) / 2.0;*/
+  float retval;
+  IEEE754_LOG(retval,(1+x)/(1-x));
+  return retval/2.;
+}
+
+double atanh(double x)
+{
+/*  return log((1+x)/(1-x)) / 2.0;*/
+  double retval;
+  IEEE754_LOG(retval,(1+x)/(1-x));
+  return retval/2.;
+}
+
+long double atanhl(long double x)
+{
+/*  return log((1+x)/(1-x)) / 2.0;*/
+  long double retval;
+  IEEE754_LOG(retval,(1+x)/(1-x));
+  return retval/2.;
+}
+
+float coshf(float x)
+{
+  float retval;
+  IEEE754_FABS(retval, x);
+  IEEE754_EXP(retval, retval);
+  return (retval + 1.0/retval) / 2.0;
+}
+
+double cosh(double x)
+{
+  double retval;
+  IEEE754_FABS(retval, x);
+  IEEE754_EXP(retval, retval);
+  return (retval + 1.0/retval) / 2.0;
+}
+
+long double coshl(long double x)
+{
+  long double retval;
+  IEEE754_FABS(retval, x);
+  IEEE754_EXP(retval, retval);
+  return (retval + 1.0/retval) / 2.0;
+}
+
+float sinhf(float x)
+{
+ if(x >= 0.0)
+ {
+   float epos;
+   IEEE754_EXP(epos, x);
+   return (epos - 1.0/epos) / 2.0;
+ }
+ else
+ {
+   float eneg;
+   IEEE754_EXP(eneg, -x);
+   return (1.0/eneg - eneg) / 2.0;
+ }
+}
+
+double sinh(double x)
+{
+ if(x >= 0.0)
+ {
+   double epos;
+   IEEE754_EXP(epos, x);
+   return (epos - 1.0/epos) / 2.0;
+ }
+ else
+ {
+   double eneg;
+   IEEE754_EXP(eneg, -x);
+   return (1.0/eneg - eneg) / 2.0;
+ }
+}
+
+long double sinhl(long double x)
+{
+ if(x >= 0.0)
+ {
+   long double epos;
+   IEEE754_EXP(epos, x);
+   return (epos - 1.0/epos) / 2.0;
+ }
+ else
+ {
+   long double eneg;
+   IEEE754_EXP(eneg, -x);
+   return (1.0/eneg - eneg) / 2.0;
+ }
+}
+
+float tanhf(float x)
+{
+  if (x > 50)
+    return 1;
+  else if (x < -50)
+    return -1;
+  else
+  {
+    float ebig;
+    float esmall;
+    IEEE754_EXP(ebig, x);
+    esmall = 1./ebig;
+    return (ebig - esmall) / (ebig + esmall);
+  }
+}
+
+double tanh(double x)
+{
+  if (x > 50)
+    return 1;
+  else if (x < -50)
+    return -1;
+  else
+  {
+    double ebig;
+    double esmall;
+    IEEE754_EXP(ebig, x);
+    esmall = 1./ebig;
+    return (ebig - esmall) / (ebig + esmall);
+  }
+}
+
+long double tanhl(long double x)
+{
+  if (x > 50)
+    return 1;
+  else if (x < -50)
+    return -1;
+  else
+  {
+    long double ebig;
+    long double esmall;
+    IEEE754_EXP(ebig, x);
+    esmall = 1./ebig;
+    return (ebig - esmall) / (ebig + esmall);
+  }
 }

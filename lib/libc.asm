@@ -1,7 +1,7 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-;$Id: libc.asm,v 1.7 2001/01/21 15:18:46 konst Exp $
+;$Id: libc.asm,v 1.8 2001/02/23 12:39:29 konst Exp $
 ;
 ;hackers' libc
 ;
@@ -29,6 +29,9 @@
 ;			printf() implemented via sprintf(),
 ;			lots of other various fixes (KB)
 ;			finally ready for additions and active development.
+;0.06: 28-Jan-2001	added __start_main - it is called from stub in order
+;			to prepare main() arguments (argc, argv, envp),
+;			PIC fixes (KB)
 
 %undef __ELF_MACROS__
 
@@ -84,16 +87,18 @@
 ;PIC handling
 ;
 
+%define	__EXT_VAR(x) [ebx + (x) wrt ..got]
+%define	__INT_VAR(x) ebx + (x) wrt ..gotpc
+
 %macro __GET_GOT 0
 	call	%%get_GOT
 %%get_GOT:
 	pop	ebx
-;%define	var %{1} wrt ..got
 %define gotpc %%get_GOT wrt ..gotpc
 	add	ebx,_GLOBAL_OFFSET_TABLE_ + $$ - gotpc
 %undef gotpc
-;%undef var
 %endmacro
+
 
 ;adjust cdecl call (1 - 3 parameters)
 ;
@@ -113,7 +118,8 @@
 %ifdef __PIC__
 	push	ebx
 	__GET_GOT
-	cmp	byte [ebx + __cc wrt ..got],0
+	mov	ebx,__EXT_VAR(__cc)
+	cmp	byte [ebx],0
 	pop	ebx
 %else
 	cmp	byte [__cc],0
@@ -168,7 +174,8 @@ __system_call:
 .sk1:
 %ifdef __PIC__
 	__GET_GOT
-	cmp	byte [ebx + __cc wrt ..got],0
+	mov	ebx,__EXT_VAR(__cc)
+	cmp	byte [ebx],0
 %else
 	cmp	byte [__cc],0
 %endif
@@ -225,17 +232,22 @@ __system_call:
 %endif
 	sys_generic
 
-	test	eax,eax
-	jns	.leave
+	cmp	eax,-4095
+	jb	.leave
+
+;	test	eax,eax
+;	jns	.leave
+
 	neg	eax
+
 %ifdef __PIC__
 	__GET_GOT
-	mov	[ebx + errno wrt ..got],eax
+	mov	ebx,__EXT_VAR(errno)
+	mov	[ebx],eax
 %else
 	mov	[errno],eax
 %endif
-	xor	eax,eax
-	dec	eax
+	or	eax,byte -1
 .leave:
 	mov	[__eax + 4],eax		;replace return address with eax
 	popa
@@ -287,7 +299,23 @@ _DECLARE_FUNCTION	strtol
 _DECLARE_FUNCTION	itoa
 _DECLARE_FUNCTION	printf, sprintf
 
+_DECLARE_FUNCTION	__start_main
 
+;
+;
+;ebp	-	main() address
+
+__start_main:
+	pop	ebp			;main() address
+	pop	eax			;argc
+	mov	ebx,esp			;**argv
+	lea	ecx,[esp + eax * 4 + 4]	;**envp
+	push	ecx
+	push	ebx
+	push	eax
+	call	ebp
+	push	eax
+	call	exit
 
 ;**************************************************
 ;*          GLOBAL LIBRARY FUNCTIONS              *
@@ -304,10 +332,11 @@ _fastcall:
 %ifdef	__PIC__
 	push	ebx
 	__GET_GOT
-	mov	[ebx + __cc wrt ..got],al
+	mov	ebx,__EXT_VAR(__cc)
+	mov	[ebx],eax
 	pop	ebx
 %else
-	mov	[__cc],al
+	mov	[__cc],eax
 %endif
 	ret
 
@@ -882,11 +911,8 @@ UDATASEG
 ;store them within caller's image
 ;
 
-global errno:data 4
-global	__cc:data 4
-
-errno	resd	1
-__cc	resd	1	;calling convention (how many registers for fastcall)
+common	errno	4	;guess what
+common	__cc	4	;calling convention (how many registers for fastcall)
 			;0 = cdecl
 
 END

@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.3 2001/01/21 15:18:46 konst Exp $
+; $Id: includes.inc,v 1.4 2001/02/23 12:39:29 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 05-Jan-2001
-; version       : 0.12
+; modified      : 06-Feb-2001
+; version       : 0.13
 ; assembler     : nasm 0.98
 ; description   : generic constants and structures from header files (libc)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -287,6 +287,55 @@
 %assign IPPROTO_PIM		103		; Protocol Independent Multicast
 %assign IPPROTO_RAW		255		; Raw IP packets
 
+;
+; netinet/ip_icmp.h
+;
+
+%assign ICMP_ECHOREPLY          0       ; Echo Reply                   
+%assign ICMP_DEST_UNREACH       3       ; Destination Unreachable      
+%assign ICMP_SOURCE_QUENCH      4       ; Source Quench                
+%assign ICMP_REDIRECT           5       ; Redirect (change route)      
+%assign ICMP_ECHO               8       ; Echo Request                 
+%assign ICMP_TIME_EXCEEDED      11      ; Time Exceeded                
+%assign ICMP_PARAMETERPROB      12      ; Parameter Problem            
+%assign ICMP_TIMESTAMP          13      ; Timestamp Request            
+%assign ICMP_TIMESTAMPREPLY     14      ; Timestamp Reply              
+%assign ICMP_INFO_REQUEST       15      ; Information Request          
+%assign ICMP_INFO_REPLY         16      ; Information Reply            
+%assign ICMP_ADDRESS            17      ; Address Mask Request         
+%assign ICMP_ADDRESSREPLY       18      ; Address Mask Reply           
+%assign NR_ICMP_TYPES           18
+
+; Codes for UNREACH. 
+%assign ICMP_NET_UNREACH        0       ; Network Unreachable          
+%assign ICMP_HOST_UNREACH       1       ; Host Unreachable             
+%assign ICMP_PROT_UNREACH       2       ; Protocol Unreachable         
+%assign ICMP_PORT_UNREACH       3       ; Port Unreachable             
+%assign ICMP_FRAG_NEEDED        4       ; Fragmentation Needed/DF set  
+%assign ICMP_SR_FAILED          5       ; Source Route failed          
+%assign ICMP_NET_UNKNOWN        6
+%assign ICMP_HOST_UNKNOWN       7
+%assign ICMP_HOST_ISOLATED      8
+%assign ICMP_NET_ANO            9
+%assign ICMP_HOST_ANO           10
+%assign ICMP_NET_UNR_TOS        11
+%assign ICMP_HOST_UNR_TOS       12
+%assign ICMP_PKT_FILTERED       13      ; Packet filtered 
+%assign ICMP_PREC_VIOLATION     14      ; Precedence violation 
+%assign ICMP_PREC_CUTOFF        15      ; Precedence cut off 
+%assign NR_ICMP_UNREACH         15      ; instead of hardcoding immediate value 
+
+; Codes for REDIRECT. 
+%assign ICMP_REDIR_NET          0       ; Redirect Net                 
+%assign ICMP_REDIR_HOST         1       ; Redirect Host                
+%assign ICMP_REDIR_NETTOS       2       ; Redirect Net for TOS         
+%assign ICMP_REDIR_HOSTTOS      3       ; Redirect Host for TOS        
+
+; Codes for TIME_EXCEEDED. 
+%assign ICMP_EXC_TTL            0       ; TTL count exceeded           
+%assign ICMP_EXC_FRAGTIME       1       ; Fragment Reass time exceeded 
+
+
 %ifdef __LIBC__
 
 ;
@@ -443,6 +492,24 @@ struc __old_kernel_stat
 .st_atime	ULONG	1
 .st_mtime	ULONG	1
 .st_ctime	ULONG	1
+endstruc
+
+;
+;sys/dirent.h
+;
+
+struc dirent
+%ifdef	__LINUX__
+.d_ino		ULONG	1
+.d_off		ULONG	1
+.d_reclen	USHORT	1
+%else
+.d_fileno	U32	1
+.d_reclen	U16	1
+.d_type		U8	1
+.d_namlen	U8	1
+%endif
+.d_name		CHAR	NAME_MAX + 1
 endstruc
 
 ;

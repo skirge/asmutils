@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.3 2001/01/21 15:18:46 konst Exp $
+; $Id: os_linux.inc,v 1.4 2001/02/23 12:39:29 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 08-Jan-2001
-; version       : 0.12
+; modified      : 05-Feb-2001
+; version       : 0.13
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -505,18 +505,6 @@ struc pt_regs
 %elif __KERNEL__ = 22
 .xss	INT	1
 %endif
-endstruc
-
-;
-;linux/dirent.h
-;
-
-ld_name		equ	256
-struc dirent
-.d_ino		ULONG	1
-.d_off		ULONG	1
-.d_reclen	USHORT	1
-.d_name		CHAR	ld_name
 endstruc
 
 ;

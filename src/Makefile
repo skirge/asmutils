@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.8 2001/01/21 15:18:46 konst Exp $
+# $Id: Makefile,v 1.9 2001/02/23 12:39:29 konst Exp $
 
 #DEBUG = y
 
@@ -10,24 +10,26 @@ BUILD_SRC = y
 
 include ../MCONFIG
 
-FILES = basename cat chmod chroot chown cp cpuinfo dirname echo env extname \
-	factor grep head hostname httpd id kill ln lzss mkdir more mv nc pwd \
-	renice rm sh sleep strings sync tee true uname wc yes\
+FILES = basename cat chmod chroot chown cp cpuinfo dirname echo env extname\
+	factor grep head hostname httpd id kill ln ls lzss mkdir more mv nc\
+	pwd renice rm sh sleep strings sync tee true uname wc yes\
 	md5sum rmdsum rc6crypt\
-	execve report asmutils
+
+BONUS =	execve report asmutils
 
 LINKS = arch cpuspeed domainname false rmdir regs sln
 
 ifdef LINUX
 
-FILES += chvt dmesg df eject ls lsmod mount ps reboot softdog swapon tty update\
-	 window leaves fire256
+FILES += chvt dmesg df eject lsmod mount ps reboot softdog swapon tty update
+
+BONUS += window leaves fire256
 
 LINKS += ccd deallocvt halt poweroff swapoff umount rmmod 
 
 endif
 
-all:	$(FILES) links
+all:	$(FILES) $(BONUS) links
 
 links:	$(FILES)
 	@( mkln() { [ ! -e $$2 ] && [ -x $$1 ] && $(LN) $$1 $$2; };\
@@ -52,4 +54,4 @@ install:$(FILES)
 	$(CP) $(FILES) $(LINKS) ../bin/$(OS)-$(KERNEL)
 
 clean:
-	$(RM) *.o $(FILES) $(LINKS)
+	$(RM) *.o $(FILES) $(BONUS) $(LINKS)

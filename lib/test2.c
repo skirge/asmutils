@@ -1,7 +1,7 @@
 /*
 	Copyright (C) 1999-2001 Konstantin Boldyshev
     
-	$Id: test2.c,v 1.3 2001/01/21 15:18:46 konst Exp $
+	$Id: test2.c,v 1.4 2001/02/23 12:39:29 konst Exp $
 
 	test program for assembly libc
 */
@@ -12,7 +12,7 @@
 
 #include "libc.h"
 
-int main(void)
+int main(int argc, char **argv, char **envp)
 {
     char inp[10], tmp[10];
     char *ptmp;
@@ -36,7 +36,26 @@ int main(void)
 	printf("%d ", (int)strtol(&tmp[0], &ptmp, 10));
     }
 
-    printf("\n\n\tall tests done\n");
+    printf("\n\n\tvariable test\n");
+    write(-1, NULL, 0);
+    printf("errno: %d\n", errno);
 
-    exit(0); /* MUST be called to exit */
+    printf("\n\tenvironment test\nPress ENTER to print envrionment\n");
+    read(STDIN_FILENO, inp, 1);
+
+    len = 0;
+    while(envp[len]) {
+	printf("%s\n", envp[len]);
+	len++;
+    }
+
+    if (argc > 1) {
+	int i;
+	printf("\n\targuments test\n");
+	for (i = 0; i < argc; i++) printf("%s\n", argv[i]);
+    }
+
+    printf("\n\tall tests done\n");
+
+    return 0;
 }

@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: cp.asm,v 1.2 2000/12/10 08:20:36 konst Exp $
+;$Id: cp.asm,v 1.3 2001/02/23 12:39:29 konst Exp $
 ;
 ;hackers' cp
 ;
@@ -389,11 +389,10 @@ strcat:
 
 		UDATASEG
 
-dst		resd	0
-recursive	resb	0
+dst		resd	1
+recursive	resb	1
 
 buf		resb	buf_size
-
 
 stat_buf I_STRUC stat
 .st_dev		USHORT	1
@@ -405,6 +404,21 @@ stat_buf I_STRUC stat
 .st_gid		USHORT	1
 .st_rdev	USHORT	1
 .__pad2		USHORT	1
+%ifdef __BSD__
+.st_atime	ULONG	1
+.st_atimensec	ULONG	1
+.st_mtime	ULONG	1
+.st_mtimensec	ULONG	1
+.st_ctime	ULONG	1
+.st_ctimensec	ULONG	1
+.st_size	ULONG	1
+.st_blocks	ULONG	1
+.__pad3		ULONG	1
+.st_blksize	ULONG	1
+.st_flags	ULONG	1
+.st_gen		ULONG	1
+.st_lspare	ULONG	3
+%else
 .st_size	ULONG	1
 .st_blksize	ULONG	1
 .st_blocks	ULONG	1
@@ -414,6 +428,7 @@ stat_buf I_STRUC stat
 .__unused2	ULONG	1
 .st_ctime	ULONG	1
 .__unused3	ULONG	1
+%endif
 .__unused4	ULONG	1
 .__unused5	ULONG	1
 I_END

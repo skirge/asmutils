@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.3 2001/01/21 15:18:46 konst Exp $
+; $Id: syscall.inc,v 1.4 2001/02/23 12:39:29 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 16-Jan-2000
-; version	: 0.12
+; modified	: 21-Feb-2001
+; version	: 0.13
 ; assembler	: nasm 0.98
 ; description	: system call macros
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -79,6 +79,13 @@
 %assign P %3
 %endif
 
+;Note:
+;This BSD related part is optimized for size by moving all 'push'es
+;and add 'esp,x' to __syscall_gate. However this will cause problems
+;with syscalls with more than 6 args, fortunately there are no such
+;monsters yet :)
+
+%if __OPTIMIZE__=__O_SPEED__
 %if P>0
  %if P>1
   %if P>2
@@ -93,13 +100,14 @@
 	push	edi
     %endif
 	push	esi
-   %endif
+  %endif
 	push	edx
   %endif
 	push	ecx
  %endif
 	push	ebx
 %endif
+%endif	;__OPTIMIZE__
 
 %endif
 
@@ -112,11 +120,14 @@ extern %{1}
 %else		;__BSD__ & __BEOS__
 
 	call	__syscall_gate	;CODESEG macro in system.inc
-	_add	esp, (%{2}) * 4
+
+%if __OPTIMIZE__=__O_SPEED__
+	add	esp,byte (%{2}) * 4
+%endif
 
 ;	push	eax		;we are not using a.out
 ;	call	7:0		;
-;	_add	esp, (%{2} + 1) * 4
+;	add	esp,byte (%{2} + 1) * 4
 
 %endif
 
@@ -544,6 +555,10 @@ extern %{1}
 
 %macro sys_getdomainname 0-2
 	__syscall getdomainname, 2, %0, %1, %2
+%endmacro
+
+%macro sys_setuid 0-1
+	__syscall setuid, 1, %0, %1
 %endmacro
 
 ;
