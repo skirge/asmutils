@@ -1,7 +1,7 @@
 ;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Yuri Ivliev <yuru@black.cat.kazan.su>
 ;
-;$Id: pwd.asm,v 1.6 2001/02/23 12:39:29 konst Exp $
+;$Id: pwd.asm,v 1.7 2001/03/18 07:08:25 konst Exp $
 ;
 ;hackers' pwd
 ;
@@ -175,51 +175,8 @@ Path	CHAR	lPath		;path buffer
 
 BackPath	CHAR	lBackPath	;back path buffer
 
-de		I_STRUC dirent	;buffer for directory scanning
-.d_ino		ULONG	1
-.d_off		ULONG	1
-.d_reclen	USHORT	1
-.d_name		CHAR	ld_name
-I_END
-
-st		I_STRUC stat		;buffer for stat information
-.st_dev		USHORT	1
-.__pad1		USHORT	1
-.st_ino		ULONG	1
-.st_mode	USHORT	1
-.st_nlink	USHORT	1
-.st_uid		USHORT	1
-.st_gid		USHORT	1
-.st_rdev	USHORT	1
-.__pad2		USHORT	1
-%ifdef __BSD__
-.st_atime	ULONG	1
-.st_atimensec	ULONG	1
-.st_mtime	ULONG	1
-.st_mtimensec	ULONG	1
-.st_ctime	ULONG	1
-.st_ctimensec	ULONG	1
-.st_size	ULONG	1
-.st_blocks	ULONG	1
-.__pad3		ULONG	1
-.st_blksize	ULONG	1
-.st_flags	ULONG	1
-.st_gen		ULONG	1
-.st_lspare	ULONG	3
-%else
-.st_size	ULONG	1
-.st_blksize	ULONG	1
-.st_blocks	ULONG	1
-.st_atime	ULONG	1
-.__unused1	ULONG	1
-.st_mtime	ULONG	1
-.__unused2	ULONG	1
-.st_ctime	ULONG	1
-.__unused3	ULONG	1
-%endif
-.__unused4	ULONG	1
-.__unused5	ULONG	1
-I_END
+de	B_STRUC dirent,.d_off,.d_name
+st	B_STRUC stat,.st_dev,.st_ino
 
 Inode		UINT	1
 Dev		USHORT	1

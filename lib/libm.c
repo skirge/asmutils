@@ -6,7 +6,7 @@
     - DJGPP for DOS <www.delorie.com>
     - EMX for OS2 by Eberhard Mattes
 
-    $Id: libm.c,v 1.2 2001/02/23 12:39:29 konst Exp $
+    $Id: libm.c,v 1.3 2001/03/18 07:08:25 konst Exp $
 
  White C but not asm?
  1. Today gcc doesnot handle floating point as comercial compilers do.
@@ -17,7 +17,7 @@
 */
 
 /*
-  Missed: drem(l,f), erf(l,f), erfc(l,f), expm1(l,f), fpclassify, gamma(l,f),
+  Missing:drem(l,f), erf(l,f), erfc(l,f), expm1(l,f), fpclassify, gamma(l,f),
           infnan, isfinite, isgreater,  isgreaterequal, isinf(l,f), isless,
           islessequal,  islessgreater, isnan(l,f), isnormal, isunordered,
           j0(l,f),  j1(l,f), jn(l,f), ldexp(l,f), lgamma(l,f) lgamma(l,f)_r,
@@ -25,6 +25,7 @@
           nextafter(l,f),  nexttoward(l,f), round(l,f), scalb(l,f), signbit,
           tgamma(l,f), y0(l,f),  y1(l,f),  yn(l,f)
 */
+
 
 typedef unsigned int uint32_t;
 
@@ -1228,7 +1229,7 @@ long double fabsl(long double x)
   return ret;
 }
 
-static void frac(void)
+static void frac( void )
 {
   short cw1,cw2;
    asm("fnstcw	%0\n"

@@ -2,7 +2,7 @@
 			       asmutils
 			       ********
 
-			    (version 0.13)
+			    (version 0.14)
 
 			http://linuxassembly.org
 
@@ -107,4 +107,4 @@ Other stuff
 
  Do not forget to send feedback & bugreports to project maintainer.
 
- $Id: README,v 1.10 2001/02/23 12:39:29 konst Exp $
+ $Id: README,v 1.11 2001/03/18 07:08:25 konst Exp $

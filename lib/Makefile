@@ -2,9 +2,9 @@
 #
 # Makefile for libc (GNU make is required)
 #
-# $Id: Makefile,v 1.8 2001/02/23 12:39:29 konst Exp $
+# $Id: Makefile,v 1.9 2001/03/18 07:08:25 konst Exp $
 
-#DEBUG = y
+DEBUG = y
 
 BUILD_LIB = y
 
@@ -27,7 +27,7 @@ LIBM_OBJS = libm.o
 LIBM_A = libm.a
 LIBM_SO = ./libm.so.0
 
-TESTS = test1 test2
+CTESTS = test1 test2
 
 CLEAN_CFLAGS := -Wall -O1 -m386
 #CLEAN_CFLAGS := -Wall -O1 -Os -march=i386 #will produce the smallest code on gcc 2.95+
@@ -64,7 +64,7 @@ ifdef	BUILD_STATIC
 		-o $@-static-fastcall $< $(STUB_OBJS) $(LIBC_A)
 endif
 
-all:	libc tests crypto libm
+all:	libc testc crypto libm testm
 
 libc:	$(LIBC_OBJS) $(STUB_OBJS)
 ifdef BUILD_STATIC
@@ -98,9 +98,23 @@ endif
 #	ld -s -o aaa $(CRYPTOFILES) libcrypto.a
 
 ifdef AOUT
-tests:
+testc:
+testm:
 else
-tests: $(TESTS)
+testc: $(CTESTS)
+
+#
+# Build it with usual libc for now
+#
+
+testm:	testm.c
+ifdef	BUILD_SHARED
+	$(CC) $(CLEAN_CFLAGS) -o $@-shared $< $(LIBM_SO)
+endif
+ifdef	BUILD_STATIC
+	$(CC) $(CLEAN_CFLAGS) -static -o $@-static $< $(LIBM_A)
+endif
+
 endif
 
 install:

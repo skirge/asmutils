@@ -1,6 +1,6 @@
-;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: execve.asm,v 1.3 2000/12/10 08:20:36 konst Exp $
+;$Id: execve.asm,v 1.4 2001/03/18 07:08:25 konst Exp $
 ;
 ;execve/regs
 ;
@@ -164,32 +164,32 @@ s_inside	equ	$-inside
 
 
 START:
-	pushfd
-	pop	dword [r.eflags]
 	mov	[r.eax],eax
 	mov	eax,r
-	mov	[eax+r.ebx-r],ebx
-	mov	[eax+r.ecx-r],ecx
-	mov	[eax+r.edx-r],edx
-	mov	[eax+r.esi-r],esi
-	mov	[eax+r.edi-r],edi
-	mov	[eax+r.ebp-r],ebp
-	mov	[eax+r.esp-r],esp
-	mov	[eax+r.cs-r],cs
-	mov	[eax+r.ds-r],ds
-	mov	[eax+r.es-r],es
-	mov	[eax+r.fs-r],fs
-	mov	[eax+r.gs-r],gs
-	mov	[eax+r.ss-r],ss
+	pushfd
+	pop	dword [eax+regs.eflags]
+	mov	[eax+regs.ebx],ebx
+	mov	[eax+regs.ecx],ecx
+	mov	[eax+regs.edx],edx
+	mov	[eax+regs.esi],esi
+	mov	[eax+regs.edi],edi
+	mov	[eax+regs.ebp],ebp
+	mov	[eax+regs.esp],esp
+	mov	[eax+regs.cs],cs
+	mov	[eax+regs.ds],ds
+	mov	[eax+regs.es],es
+	mov	[eax+regs.fs],fs
+	mov	[eax+regs.gs],gs
+	mov	[eax+regs.ss],ss
 
 	pop	ebp
-	mov	[eax+r.argc-r],ebp
+	mov	[eax+regs.argc],ebp
 	pop	esi
-	mov	[eax+r.argv0-r],esi
+	mov	[eax+regs.argv0],esi
 	pop	edi
-	mov	[eax+r.argv1-r],edi
+	mov	[eax+regs.argv1],edi
 	mov	edx,[esp+ebp*4]
-	mov	[eax+r.envp0-r],edx
+	mov	[eax+regs.envp0],edx
 	
 	push	edi			;restore argv/argc back
 	push	esi
@@ -227,13 +227,14 @@ do_execve:
 	mov	edi,0x55667788
 	mov	ebp,0x9900AABB
 
-	mov	[r.ebx],ebx
-	mov	[r.ecx],ecx
-	mov	[r.edx],edx
+	mov	eax,r
+	mov	[eax+regs.ebx],ebx
+	mov	[eax+regs.ecx],ecx
+	mov	[eax+regs.edx],edx
 
-	mov	[r.esi],esi
-	mov	[r.edi],edi
-	mov	[r.ebp],ebp
+	mov	[eax+regs.esi],esi
+	mov	[eax+regs.edi],edi
+	mov	[eax+regs.ebp],ebp
 
 	pusha
 	sys_write STDOUT,before,s_before
@@ -268,7 +269,7 @@ r I_STRUC regs
 .argv0	resd	1
 .argv1	resd	1
 .envp0	resd	1
-iend
+I_END
 
 tmpstr	resd	10
 

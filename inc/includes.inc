@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.4 2001/02/23 12:39:29 konst Exp $
+; $Id: includes.inc,v 1.5 2001/03/18 07:08:25 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 06-Feb-2001
-; version       : 0.13
+; modified      : 27-Feb-2001
+; version       : 0.14
 ; assembler     : nasm 0.98
 ; description   : generic constants and structures from header files (libc)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -440,77 +440,6 @@ endstruc
 %assign	S_IFSOCK 0140000q	;socket
 %assign	S_IFWHT  0160000q	;whiteout
 %assign	S_ISVTX	 0001000q	;save swapped text even after use
-
-struc stat
-.st_dev		USHORT	1
-.__pad1		USHORT	1
-.st_ino		ULONG	1
-.st_mode	USHORT	1
-.st_nlink	USHORT	1
-.st_uid		USHORT	1
-.st_gid		USHORT	1
-.st_rdev	USHORT	1
-.__pad2		USHORT	1
-%ifdef __BSD__
-.st_atime	ULONG	1
-.st_atimensec	ULONG	1
-.st_mtime	ULONG	1
-.st_mtimensec	ULONG	1
-.st_ctime	ULONG	1
-.st_ctimensec	ULONG	1
-.st_size	ULONG	1
-.st_blocks	ULONG	1
-.__pad3		ULONG	1
-.st_blksize	ULONG	1
-.st_flags	ULONG	1
-.st_gen		ULONG	1
-.st_lspare	ULONG	3
-%else
-.st_size	ULONG	1
-.st_blksize	ULONG	1
-.st_blocks	ULONG	1
-.st_atime	ULONG	1
-.__unused1	ULONG	1
-.st_mtime	ULONG	1
-.__unused2	ULONG	1
-.st_ctime	ULONG	1
-.__unused3	ULONG	1
-%endif
-.__unused4	ULONG	1
-.__unused5	ULONG	1
-endstruc
-
-struc __old_kernel_stat
-.st_dev		USHORT	1
-.st_ino		USHORT	1
-.st_mode	USHORT	1
-.st_nlink	USHORT	1
-.st_uid		USHORT	1
-.st_gid		USHORT	1
-.st_rdev	USHORT	1
-.st_size	ULONG	1
-.st_atime	ULONG	1
-.st_mtime	ULONG	1
-.st_ctime	ULONG	1
-endstruc
-
-;
-;sys/dirent.h
-;
-
-struc dirent
-%ifdef	__LINUX__
-.d_ino		ULONG	1
-.d_off		ULONG	1
-.d_reclen	USHORT	1
-%else
-.d_fileno	U32	1
-.d_reclen	U16	1
-.d_type		U8	1
-.d_namlen	U8	1
-%endif
-.d_name		CHAR	NAME_MAX + 1
-endstruc
 
 ;
 ;sys/resource.h

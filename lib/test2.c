@@ -1,16 +1,19 @@
 /*
 	Copyright (C) 1999-2001 Konstantin Boldyshev
     
-	$Id: test2.c,v 1.4 2001/02/23 12:39:29 konst Exp $
+	$Id: test2.c,v 1.5 2001/03/18 07:08:25 konst Exp $
 
 	test program for assembly libc
 */
 
 #include <stdio.h>
+//#include <stdlib.h>		because of __strtol_internal
 #include <string.h>
 #include <unistd.h>
 
 #include "libc.h"
+
+extern char *getenv(char *);
 
 int main(int argc, char **argv, char **envp)
 {
@@ -48,6 +51,8 @@ int main(int argc, char **argv, char **envp)
 	printf("%s\n", envp[len]);
 	len++;
     }
+
+    printf("\n\tgetenv(\"HOME\") test\n%s\n", getenv("HOME"));
 
     if (argc > 1) {
 	int i;

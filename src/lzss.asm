@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Cecchinel Stephan <interzone@pacwan.fr>
 ;
-;$Id: lzss.asm,v 1.4 2001/01/21 15:18:46 konst Exp $
+;$Id: lzss.asm,v 1.5 2001/03/18 07:08:25 konst Exp $
 ;
 ;hackers' lzss
 ;
@@ -342,7 +342,7 @@ sendbit:
 	inc	ecx
 	and	eax,ecx
 	lea	edi,[edi-(ring_buff-outbuff)]
-	mov	ecx,[edi+(bit_pos-outbuff)]]
+	mov	ecx,[edi+(bit_pos-outbuff)]
 	test	ecx,ecx
 	jz	.send2
 	shl	eax,cl

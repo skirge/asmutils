@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.4 2001/02/23 12:39:29 konst Exp $
+; $Id: os_linux.inc,v 1.5 2001/03/18 07:08:25 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 05-Feb-2001
-; version       : 0.13
+; modified      : 04-Mar-2001
+; version       : 0.14
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -17,6 +17,23 @@
 
 %ifndef __LINUX_INC
 %define __LINUX_INC
+
+%macro	DO_SYSCALL 0
+	int	0x80
+%endmacro
+
+%macro	SYSCALL_GATE 0
+%endmacro
+
+;
+;linux/posix_types.h
+;
+
+%assign	FD_SETSIZE	1024
+
+struc fd_set
+	U32	FD_SETSIZE / 32
+endstruc
 
 ;
 ;linux/reboot.h
@@ -288,7 +305,7 @@ endstruc
 %assign	TCSADRAIN	1
 %assign	TCSAFLUSH	2
 
-%assign NCCS 19    
+%assign NCCS 19
 struc termios
 .c_iflag	UINT	1	; input mode flags
 .c_oflag	UINT	1	; output mode flags
@@ -304,6 +321,86 @@ endstruc
 
 %assign	TCGETS	0x5401
 %assign	TCSETS	0x5402
+%assign	TCSETSW	0x5403
+
+;
+;asm/stat.h
+;
+
+struc stat
+.st_dev		USHORT	1
+.__pad1		USHORT	1
+.st_ino		ULONG	1
+.st_mode	USHORT	1
+.st_nlink	USHORT	1
+.st_uid		USHORT	1
+.st_gid		USHORT	1
+.st_rdev	USHORT	1
+.__pad2		USHORT	1
+.st_size	ULONG	1
+.st_blksize	ULONG	1
+.st_blocks	ULONG	1
+.st_atime	ULONG	1
+.__unused1	ULONG	1
+.st_mtime	ULONG	1
+.__unused2	ULONG	1
+.st_ctime	ULONG	1
+.__unused3	ULONG	1
+.__unused4	ULONG	1
+.__unused5	ULONG	1
+endstruc
+
+struc __old_kernel_stat
+.st_dev		USHORT	1
+.st_ino		USHORT	1
+.st_mode	USHORT	1
+.st_nlink	USHORT	1
+.st_uid		USHORT	1
+.st_gid		USHORT	1
+.st_rdev	USHORT	1
+.st_size	ULONG	1
+.st_atime	ULONG	1
+.st_mtime	ULONG	1
+.st_ctime	ULONG	1
+endstruc
+
+;
+;asm/signal.h
+;
+
+%assign SA_NOCLDSTOP	0x00000001
+%assign SA_NOCLDWAIT	0x00000002
+%assign SA_SIGINFO	0x00000004
+%assign SA_ONSTACK	0x08000000
+%assign SA_RESTART	0x10000000
+%assign SA_NODEFER	0x40000000
+%assign SA_RESETHAND	0x80000000
+%assign SA_RESTORER	0x04000000
+
+%assign SA_NOMASK	SA_NODEFER
+%assign SA_ONESHOT	SA_RESETHAND
+
+struc sigset_t
+		U32	_NSIG / 32
+endstruc
+
+struc sigaction
+.sa_handler	ULONG	1
+.sa_flags	ULONG	1
+.sa_restorer	ULONG	1
+.sa_mask	resb	sigset_t_size
+endstruc
+
+;
+;sys/dirent.h
+;
+
+struc dirent
+.d_ino		ULONG	1
+.d_off		ULONG	1
+.d_reclen	USHORT	1
+.d_name		CHAR	256
+endstruc
 
 ;
 ;linux/fb.h
@@ -404,6 +501,28 @@ struc fb_var
 .vmode		U32	1
 .reserved	U32	6																							
 	
+endstruc
+
+;
+;linux/time.h
+;
+
+%assign	ITIMER_REAL	0
+%assign	ITIMER_VIRTUAL	1
+%assign	ITIMER_PROF	2
+
+struc itimerval
+.it_interval_sec:	ULONG	1
+.it_interval_usec:	ULONG	1
+.it_value_sec:		ULONG	1
+.it_value_usec:		ULONG	1
+endstruc
+
+struc itimerspec
+.it_interval_sec:	ULONG	1
+.it_interval_nsec:	ULONG	1
+.it_value_sec:		ULONG	1
+.it_value_nsec:		ULONG	1
 endstruc
 
 ;
@@ -831,6 +950,55 @@ endstruc
 	_push	%1
 	sys_socketcall SYS_LISTEN,esp
 	_add	esp,(%0 * 4)
+%endmacro
+
+%macro	sys_sendto 6
+	_push	%6
+	_push	%5
+	_push	%4
+	_push	%3
+	_push	%2
+	_push	%1
+	sys_socketcall SYS_SENDTO,esp
+	_add	esp,(%0 * 4)
+%endmacro
+
+%macro	sys_recvfrom 6
+	_push	%6
+	_push	%5
+	_push	%4
+	_push	%3
+	_push	%2
+	_push	%1
+	sys_socketcall SYS_RECVFROM,esp
+	_add	esp,(%0 * 4)
+%endmacro
+
+;
+;Linux specific syscalls
+;
+
+%macro sys_llseek 0-5
+	__syscall llseek, 5, %0, %1, %2, %3, %4, %5
+%endmacro
+
+;
+;arch/i386/kernel/ldt.c
+;
+
+%macro sys_modify_ldt 0-3
+	__syscall modify_ldt, 3, %0, %1, %2, %3
+%endmacro
+;
+;arch/i386/kernel/vm86.c
+;
+
+%macro sys_vm86old 0-1
+	__syscall vm86old, 1, %0, %1
+%endmacro
+
+%macro sys_vm86 0-2
+	__syscall vm86, 2, %0, %1, %2
 %endmacro
 
 %endif	;__LINUX_INC

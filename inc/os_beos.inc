@@ -1,11 +1,11 @@
 ; Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_beos.inc,v 1.1 2000/09/03 16:13:53 konst Exp $
+; $Id: os_beos.inc,v 1.2 2001/03/18 07:08:25 konst Exp $
 ;
 ; file          : os_beos.inc
 ; created       : 21-Feb-2000
-; modified      : 23-Jul-2000
-; version       : 0.10
+; modified      : 11-Mar-2001
+; version       : 0.14
 ; assembler     : nasm 0.98
 ; description   : beos kernel constants (R4.5.2)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -58,6 +58,33 @@
 %define __BEOS_INC
 
 ;%error "Hey, are you crazy? Never play with fire!"
+
+%macro DO_SYSCALL 0
+%if __OPTIMIZE__=__O_SIZE__
+	push	ebp
+	push	edi
+	push	esi
+	push	edx
+	push	ecx
+	push	ebx
+	push	eax
+%endif
+	int	0x25
+%if __OPTIMIZE__=__O_SIZE__
+	add	esp,byte 7*4
+%endif
+%endmacro
+
+%macro	SYSCALL_GATE 0
+__syscall_gate:
+
+	DO_SYSCALL
+	ret
+%endmacro
+
+;
+;
+;
 
 %assign SYS_open		0
 %assign SYS_close		1

@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: uname.asm,v 1.5 2000/12/10 08:20:36 konst Exp $
+;$Id: uname.asm,v 1.6 2001/03/18 07:08:25 konst Exp $
 ;
 ;hackers' uname/arch	[GNU replacement]
 ;
@@ -21,6 +21,7 @@
 ;0.04: 03-Sep-2000	portable utsname
 ;0.05: 22-Oct-2000	sysctl based part (TH),
 ;			size improvemets (KB)
+;0.06: 04-Mar-2001	use B_STRUC (KB)
 
 %include "system.inc"
 
@@ -199,14 +200,7 @@ oldlenp		DWORD	1
 
 %else
 
-h I_STRUC utsname
-.sysname	CHAR	SYS_NMLN
-.nodename	CHAR	SYS_NMLN
-.release	CHAR	SYS_NMLN
-.version	CHAR	SYS_NMLN
-.machine	CHAR	SYS_NMLN
-.domainname	CHAR	SYS_NMLN
-I_END
+h B_STRUC utsname,.sysname,.nodename,.release,.version,.machine,.domainname
 
 %endif
 

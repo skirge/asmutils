@@ -1,6 +1,6 @@
 ;Copyright (C) 1995-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: window.asm,v 1.7 2001/02/23 12:39:29 konst Exp $
+;$Id: window.asm,v 1.8 2001/03/18 07:08:25 konst Exp $
 ;
 ;text window example
 
@@ -348,44 +348,30 @@ gotoXY:
 
 vread:
 	pusha
-	call	gotoXY
-	lea	esi,[edi - vMem + 4]
-	mov	ecx,ebx
-	shl	edx,1
-	sys_pread [sHandle]
+	call	vprepare
+	sys_pread
 	popa
 	ret
 
 vwrite:
 	pusha
-	call	gotoXY
-	lea	esi,[edi - vMem + 4]
-	mov	ecx,ebx
-	shl	edx,1
-	sys_pwrite [sHandle]
+	call	vprepare
+	sys_pwrite
 	popa
 	ret
 
+vprepare:
+	call	gotoXY
+	lea	esi,[edi + 4]
+	sub	esi,vMem
+	mov	ecx,ebx
+	shl	edx,1
+	mov	ebx,[sHandle]
+	ret
+
+
 
 UDATASEG
-
-tattr I_STRUC termios
-.c_iflag	UINT	1
-.c_oflag	UINT	1
-.c_cflag	UINT	1
-.c_lflag	UINT	1
-.c_line		UCHAR	1
-.c_cc		UCHAR	NCCS
-I_END
-
-sattr I_STRUC termios
-.c_iflag	UINT	1
-.c_oflag	UINT	1
-.c_cflag	UINT	1
-.c_lflag	UINT	1
-.c_line		UCHAR	1
-.c_cc		UCHAR	NCCS
-I_END
 
 sMaxY		resb	1
 sMaxX		resb	1
@@ -398,5 +384,9 @@ tmp		resd	1
 
 vMem		resb	MAX_X * MAX_Y * 2
 vMemS		resb	MAX_X * MAX_Y * 2
+
+tattr B_STRUC termios,.c_iflag,.c_oflag,.c_lflag,.c_cc
+
+sattr B_STRUC termios
 
 END

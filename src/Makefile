@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.9 2001/02/23 12:39:29 konst Exp $
+# $Id: Makefile,v 1.10 2001/03/18 07:08:25 konst Exp $
 
 #DEBUG = y
 
@@ -10,9 +10,10 @@ BUILD_SRC = y
 
 include ../MCONFIG
 
-FILES = basename cat chmod chroot chown cp cpuinfo dirname echo env extname\
-	factor grep head hostname httpd id kill ln ls lzss mkdir more mv nc\
-	pwd renice rm sh sleep strings sync tee true uname wc yes\
+FILES = basename cat chmod chroot chown cp cpuinfo date dd dirname echo env\
+	extname	factor grep head hexdump hostname httpd id init kill ln ls\
+	lzss mkdir more mv nc ping pwd renice rm sh sleep strings sync tee\
+	true uname wc yes\
 	md5sum rmdsum rc6crypt\
 
 BONUS =	execve report asmutils
@@ -23,7 +24,7 @@ ifdef LINUX
 
 FILES += chvt dmesg df eject lsmod mount ps reboot softdog swapon tty update
 
-BONUS += window leaves fire256
+BONUS += window leaves fire256 snake
 
 LINKS += ccd deallocvt halt poweroff swapoff umount rmmod 
 
@@ -32,7 +33,7 @@ endif
 all:	$(FILES) $(BONUS) links
 
 links:	$(FILES)
-	@( mkln() { [ ! -e $$2 ] && [ -x $$1 ] && $(LN) $$1 $$2; };\
+	-@( mkln() { [ ! -e $$2 ] && [ -x $$1 ] && $(LN) $$1 $$2; };\
 	mkln hostname domainname;\
 	mkln ln sln;\
 	mkln mkdir rmdir;\

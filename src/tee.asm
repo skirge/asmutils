@@ -1,21 +1,26 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: tee.asm,v 1.4 2000/09/03 16:13:54 konst Exp $
+;$Id: tee.asm,v 1.5 2001/03/18 07:08:25 konst Exp $
 ;
 ;hackers' tee		[GNU replacement]
-;
-;0.01: 04-Jul-1999	initial release
-;0.02: 27-Jul-1999	files are created with permissions of 664
-;0.03: 20-Aug-2000	"-i" bugfix, sys_sigaction instead of sys_signal (TH)
 ;
 ;syntax: tee [-ai] [file...]
 ;
 ;-a	append to files instead of overwriting
 ;-i	ignore interrupt signals
-
+;
 ;returns error count
+;
+;Note that this tee can handle about 1000 specified files only,
+;however it is more than enough.
+;
+;0.01: 04-Jul-1999	initial release
+;0.02: 27-Jul-1999	files are created with permissions of 664
+;0.03: 20-Aug-2000	"-i" bugfix, sys_sigaction instead of sys_signal (TH)
 
 %include "system.inc"
+
+%assign	BUFSIZE	0x2000
 
 CODESEG
 
@@ -71,7 +76,7 @@ open_done:
 	xor	eax,eax
 	stosd
 read_loop:
-	sys_read STDIN,Buf,BufSize
+	sys_read STDIN,buf,BUFSIZE
 	test	eax,eax
 	js	read_error
 	jz	close
@@ -104,8 +109,7 @@ sa_struct	dd	SIG_IGN,0,0,0
 
 UDATASEG
 
-BufSize	equ	8192
-Buf	resb	BufSize
+buf	resb	BUFSIZE
 
 ;well, here is our malloc() :-)
 handles	resd	1

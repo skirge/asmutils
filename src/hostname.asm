@@ -1,20 +1,21 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: hostname.asm,v 1.4 2000/09/03 16:13:54 konst Exp $
+;$Id: hostname.asm,v 1.5 2001/03/18 07:08:25 konst Exp $
 ;
 ;hackers' hostname/domainname
-;
-;0.01: 05-Jun-1999	initial release
-;0.02: 17-Jun-1999	size improvements
-;0.03: 04-Jun-1999	domainname added
-;0.04: 18-Sep-1999	elf macros support 
-;0.05: 03-Sep-2000	portable utsname, BSD port
 ;
 ;syntax: hostname [name]
 ;	 domainname [name]
 ;
 ;if name parameter is omited it displays name, else sets it to name
 ;you must be root to set host/domain name
+;
+;0.01: 05-Jun-1999	initial release
+;0.02: 17-Jun-1999	size improvements
+;0.03: 04-Jun-1999	domainname added
+;0.04: 18-Sep-1999	elf macros support 
+;0.05: 03-Sep-2000	portable utsname, BSD port
+;0.06: 04-Mar-2001	size improvements
 
 %include "system.inc"
 
@@ -46,26 +47,30 @@ START:
 	jmps	_exit
 
 .getname:
-%ifdef __BSD__
+
 	mov	esi,h
+
+%ifdef __BSD__
 	sys_gethostname esi,MAXHOSTNAMELEN - 1
 	dec	edi
 	jnz	.done_get
 	sys_getdomainname
 %else
-	sys_uname h
-
-	_mov	edx,0	;not needed, edx was not touched yet
-	mov	esi,h.nodename
+	sys_uname esi
+	_add	esi,utsname.nodename
+;	lea	esi,[esi+utsname.nodename]
 	dec	edi
 	jnz	.done_get
-	mov	esi,h.domainname
+	_add	esi,utsname.domainname-utsname.nodename
+
 %endif
 .done_get:
+	_mov	edx,0		;not needed, edx was not touched yet
+.strlen:
 	lodsb
 	inc	edx
 	or	al,al
-	jnz	.done_get
+	jnz	.strlen
 	mov	byte [esi-1],__n
 	sub	esi,edx
 	sys_write STDOUT,esi
@@ -74,13 +79,6 @@ _exit:
 
 UDATASEG
 
-h I_STRUC utsname
-.sysname	CHAR	SYS_NMLN
-.nodename	CHAR	SYS_NMLN
-.release	CHAR	SYS_NMLN
-.version	CHAR	SYS_NMLN
-.machine	CHAR	SYS_NMLN
-.domainname	CHAR	SYS_NMLN
-I_END
+h B_STRUC utsname,.nodename,.domainname
 
 END

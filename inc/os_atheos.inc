@@ -1,11 +1,11 @@
 ; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_atheos.inc,v 1.2 2001/01/21 15:18:46 konst Exp $
+; $Id: os_atheos.inc,v 1.3 2001/03/18 07:08:25 konst Exp $
 ;
 ; file          : os_atheos.inc
 ; created       : 23-Oct-2000
-; modified      : 09-Jan-2001
-; version       : 0.12
+; modified      : 01-Mar-2001
+; version       : 0.14
 ; assembler     : nasm 0.98
 ; description   : atheos kernel constants
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -17,6 +17,17 @@
 
 %ifndef __ATHEOS_INC
 %define __ATHEOS_INC
+
+%macro	DO_SYSCALL 0
+	int	0x80
+%endmacro
+
+%macro	SYSCALL_GATE 0
+%endmacro
+
+;
+;
+;
 
 %assign	SYS_idle			0
 %assign	SYS_open			1
@@ -215,6 +226,7 @@
 %assign SYS_uname		SYS_getuid
 %assign SYS_sethostname		SYS_getuid
 %assign SYS_setdomainname	SYS_getuid
+%assign	SYS_brk			SYS_sbrk
 
 ;
 ;net/socket.h

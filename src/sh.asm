@@ -1,7 +1,7 @@
 ;Copyright (C) 2000	Alexandr Gorlov <alexandr@fssrf.spb.ru>, <ct@mail.ru>
 ;			Karsten Scheibler <karsten.scheibler@bigfoot.de>
 ;
-;$Id: sh.asm,v 1.1 2000/12/10 08:20:36 konst Exp $
+;$Id: sh.asm,v 1.2 2001/03/18 07:08:25 konst Exp $
 ;
 ;small shell
 ;
@@ -224,6 +224,9 @@ tty_initialize:
 ;TODO: set STDIN options (blocking, echo, icanon etc ...) only on linux ?
 ;      set signal handlers
 ;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			sys_fcntl  STDIN, F_GETFL
+			and	dword eax, ~O_NONBLOCK
+			sys_fcntl  STDIN, F_SETFL, eax
 			ret
 
 
@@ -433,7 +436,7 @@ execute_builtin:
 			sys_exit  1
 
 .wait:			sys_wait4  0xffffffff, NULL, NULL, NULL
-			ret
+			jmp	tty_initialize
 
 
 

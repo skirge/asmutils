@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: softdog.asm,v 1.4 2001/02/23 12:39:29 konst Exp $
+;$Id: softdog.asm,v 1.5 2001/03/18 07:08:25 konst Exp $
 ;
 ;hackers' softdog (software watchdog)
 ;
@@ -76,9 +76,6 @@ softdog	db	'/dev/watchdog',EOL
 
 UDATASEG
 
-t I_STRUC timespec
-.tv_sec		ULONG	1
-.tv_nsec	ULONG	1
-I_END
+t B_STRUC timespec,.tv_sec
 
 END

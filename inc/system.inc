@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.4 2001/02/23 12:39:29 konst Exp $
+; $Id: system.inc,v 1.5 2001/03/18 07:08:25 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 26-Jan-2001
-; version	: 0.13
+; modified	: 11-Mar-2001
+; version	: 0.14
 ; assembler	: nasm 0.98
 ; description	: generic (not OS specific) macros, sections, headers, etc.
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -30,6 +30,8 @@
 ;0.11: 24-Oct-2000	AtheOS stuff
 ;0.12: 19-Jan-2001	_xchg (PR), _jmp (KB)
 ;0.13: 21-Feb-2001	modified __syscall_gate (KB)
+;0.14: 11-Feb-2001	added B_STRUC macro (aka ELF_BSTRUC from elf.inc) (BR),
+;			moved __syscall_gate to os_xxx.inc files (KB)
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
@@ -158,48 +160,10 @@ __date	db	STAMP_DATE, EOL, __n
 %endif
 
 ;
-; syscall gates
+; syscall gate, if any
 ;
 
-__syscall_gate:
-
-%ifdef	__BSD__
-%if __OPTIMIZE__=__O_SIZE__
-;we can't use pusha - we need correct order
-	push	ebp
-	push	edi
-	push	esi
-	push	edx
-	push	ecx
-	push	ebx
-	push	eax
-%endif
-	int	0x80
-	jnc	.__ok
-	neg	eax
-.__ok:
-%if __OPTIMIZE__=__O_SIZE__
-	add	esp,byte 7*4
-%endif
-	ret
-
-
-%elifdef __BEOS__
-%if __OPTIMIZE__=__O_SIZE__
-	push	ebp
-	push	edi
-	push	esi
-	push	edx
-	push	ecx
-	push	ebx
-	push	eax
-%endif
-	int	0x25
-%if __OPTIMIZE__=__O_SIZE__
-	add	esp,byte 7*4
-%endif
-	ret
-%endif
+SYSCALL_GATE
 
 ;Here's startup code plugin. It should prepare the stack
 ;in a [ argc | argv[0]... | envp[0].. ] way for your OS.
@@ -345,7 +309,36 @@ iend
 %endif
 %endmacro
 
+; (BR)
+; B_STRUC is a more succinct method for using a Nasm structure
+; definition within a DATA section. The first argument names a
+; previously defined structure. The following arguments indicate
+; the members of that structure to declare here.
 ;
+; Please note that the fields of the structure must have been defined
+; as local labels (i.e., with a dot prefix).
+
+%ifdef __ELF_MACROS__
+
+%define	B_STRUC ELF_BSTRUC
+
+%else
+
+%macro B_STRUC 1-*
+%push foo
+%define %$strucname %1
+%%top_%$strucname:
+%rep %0 - 1
+%rotate 1
+resb %{$strucname}%1 - ($ - %%top_%$strucname)
+%1:
+%endrep
+resb %{$strucname}_size - ($ - %%top_%$strucname)
+%pop
+%endmacro
+
+%endif
+
 ;------------------------------------------------------------------
 ; General purpose macros
 ;------------------------------------------------------------------

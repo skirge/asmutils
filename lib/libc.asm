@@ -1,7 +1,7 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-;$Id: libc.asm,v 1.8 2001/02/23 12:39:29 konst Exp $
+;$Id: libc.asm,v 1.9 2001/03/18 07:08:25 konst Exp $
 ;
 ;hackers' libc
 ;
@@ -32,12 +32,14 @@
 ;0.06: 28-Jan-2001	added __start_main - it is called from stub in order
 ;			to prepare main() arguments (argc, argv, envp),
 ;			PIC fixes (KB)
+;0.07: 25-Feb-2001	added __VERBOSE__, memcmp(), getenv() (KB)
 
 %undef __ELF_MACROS__
 
 %include "system.inc"
 
-%define __PIC__
+%define __PIC__		;build PIC version
+;%define	__VERBOSE__	;treat stack with care
 
 ;
 ; macro used for function declaration
@@ -165,12 +167,18 @@ extern _GLOBAL_OFFSET_TABLE_
 __system_call:
 	pusha
 
-	mov	eax,[__esp]		;load number of parameters into eax
+	mov	eax,[__esp]		;load number of syscall args into eax
 	mov	eax,[eax]
 	movzx	eax,byte [eax]
 	test	al,al
-	jz	.ssn
+	jz	.ssn			;no args
+%ifdef	__VERBOSE__
+	jns	.sk1			;usual call
+	neg	al			;always cdecl call
+	jmps	.cdecl
+%else
 	js	.cdecl
+%endif
 .sk1:
 %ifdef __PIC__
 	__GET_GOT
@@ -184,41 +192,58 @@ __system_call:
 %define _STACK_ADD 8 + 4*8
 
 .cdecl:
-	neg	al
-	mov	ebx,[esp + _STACK_ADD]
+	mov	ebx,[esp + _STACK_ADD]		;1st arg
+%ifdef	__VERBOSE__
 	dec	eax
 	jz	.ssn
-	mov	ecx,[esp + _STACK_ADD + 4]
+%endif
+	mov	ecx,[esp + _STACK_ADD + 4]	;2nd arg
+%ifdef	__VERBOSE__
 	dec	eax
 	jz	.ssn
-	mov	edx,[esp + _STACK_ADD + 8]
+%endif
+	mov	edx,[esp + _STACK_ADD + 8]	;3rd arg
+%ifdef	__VERBOSE__
 	dec	eax
 	jz	.ssn
-	mov	esi,[esp + _STACK_ADD + 12]
+%endif
+	mov	esi,[esp + _STACK_ADD + 12]	;4th arg
+%ifdef	__VERBOSE__
 	dec	eax
 	jz	.ssn
-	mov	edi,[esp + _STACK_ADD + 16]
+%endif
+	mov	edi,[esp + _STACK_ADD + 16]	;5th arg
+%ifdef	__VERBOSE__
 	dec	eax
 	jz	.ssn
-	mov	ebp,[esp + _STACK_ADD + 20]
+%endif
+	mov	ebp,[esp + _STACK_ADD + 20]	;6th arg
 	jmps	.ssn
 
 .fc:
-	mov	ebx,[__eax]
+	mov	ebx,[__eax]			;1st arg
+%ifdef	__VERBOSE__
 	dec	eax
 	jz	.ssn
-	xchg	ecx,edx
+%endif
+	xchg	ecx,edx				;2nd & 3rd arg
+%ifdef	__VERBOSE__
 	dec	eax
 	jz	.ssn
 	dec	eax
 	jz	.ssn
-	mov	esi,[esp + _STACK_ADD]
+%endif
+	mov	esi,[esp + _STACK_ADD]		;4th arg
+%ifdef	__VERBOSE__
 	dec	eax
 	jz	.ssn
-	mov	edi,[esp + _STACK_ADD + 4]
+%endif
+	mov	edi,[esp + _STACK_ADD + 4]	;5th arg
+%ifdef	__VERBOSE__
 	dec	eax
 	jz	.ssn
-	mov	ebp,[esp + _STACK_ADD + 8]
+%endif
+	mov	ebp,[esp + _STACK_ADD + 8]	;6th arg
 
 %undef _STACK_ADD
 
@@ -293,11 +318,12 @@ _DECLARE_SYSCALL	getgid,	0
 
 _DECLARE_FUNCTION	_fastcall
 
-_DECLARE_FUNCTION	memcpy, memset
+_DECLARE_FUNCTION	memcpy, memset, memcmp
 _DECLARE_FUNCTION	strlen
 _DECLARE_FUNCTION	strtol
 _DECLARE_FUNCTION	itoa
 _DECLARE_FUNCTION	printf, sprintf
+_DECLARE_FUNCTION	getenv
 
 _DECLARE_FUNCTION	__start_main
 
@@ -308,8 +334,15 @@ _DECLARE_FUNCTION	__start_main
 __start_main:
 	pop	ebp			;main() address
 	pop	eax			;argc
-	mov	ebx,esp			;**argv
 	lea	ecx,[esp + eax * 4 + 4]	;**envp
+%ifdef	__PIC__
+	__GET_GOT
+	mov	ebx,__EXT_VAR(__envp)
+	mov	[ebx],ecx
+%else
+	mov	[__envp],ecx
+%endif
+	mov	ebx,esp			;**argv
 	push	ecx
 	push	ebx
 	push	eax
@@ -356,6 +389,8 @@ memset:
 	xchg	eax,edx
 
 	__ADJUST_CDECL3 4*3,edx,eax,ecx
+
+.real:
 
 %if __OPTIMIZE__=__O_SPEED__
 	cmp	ecx,byte 20	;if length is below 20 , better use byte fill
@@ -432,7 +467,7 @@ memcpy:
 	mov	edi,eax
 	mov	esi,edx
 	__ADJUST_CDECL3 _STACK_ADD,edi,esi,ecx
-
+.real:
 	cld
 	rep	movsb
 
@@ -447,6 +482,75 @@ memcpy:
 
 	ret
 
+;int memcmp(void *s1, void *s2, size_t n)
+;
+;compare memory areas
+;
+;<ESI	*s1
+;<EDI	*s2
+;<ECX	n
+
+memcmp:
+	push	esi
+	push	edi
+	push	ecx
+
+	__ADJUST_CDECL3 4*3,esi,edi,ecx
+.real:
+	cld
+	rep	cmpsb
+	jz	.ret
+	sbb	eax,eax
+	or	eax,byte 1
+.ret:
+	pop	ecx
+	pop	edi
+	pop	esi
+	ret
+
+;char *getenv(char *)
+;
+;<ESI	*s
+
+getenv:
+	pusha
+
+	mov	edi,eax
+	__ADJUST_CDECL3 4*8,edi
+
+%ifdef	__PIC__
+	__GET_GOT
+	mov	ebx,__EXT_VAR(__envp)
+	mov	ebx,[ebx]
+%else
+	mov	ebx,[__envp]
+%endif
+	mov	edx,edi
+	cld
+	xor	eax,eax
+        or	ecx,byte -1
+	repne	scasb
+	not	ecx
+	dec	ecx
+	mov	eax,ecx
+
+.next_var:
+	mov	ecx,eax
+	mov	esi,edx
+	mov	edi,[ebx]
+	test	edi,edi
+	jz	.ret
+	rep	cmpsb
+	jz	.found
+	add	ebx,byte 4
+	jmps	.next_var
+.found:
+	inc	edi		;assume = is next
+.ret:
+	mov	[__eax],edi
+	popa
+	ret
+
 ;size_t strlen(const char *s)
 ;
 ;<EDX	*s
@@ -454,10 +558,11 @@ memcpy:
 ;>EAX
 
 strlen:
+	push	edx
 	__ADJUST_CDECL3 0,eax
 
 	mov	edx,eax
-
+.real:
 %if __OPTIMIZE__=__O_SPEED__
 	push	ecx
 	test	dl,3
@@ -517,7 +622,7 @@ strlen:
 	dec	eax
 
 %endif		;__OPTIMIZE__
-
+	pop	edx
 	ret
 
 ;itoa (unsigned long value, char *string, int radix)
@@ -534,6 +639,9 @@ itoa:
 	mov	edi,edx
 
 	__ADJUST_CDECL3 4*8,eax,edi,ecx
+
+.real:
+
 .now:
 	call	.printB
 	mov	byte [edi],0	;zero terminate the string 
@@ -603,6 +711,8 @@ sprintf:
 	jz	.store
 	cmp	al,'s'
 	jnz	.boucle
+	test	ebx,ebx		;NULL check
+	jz	.allok
 .copyit:			;copy string in args to output buffer
 	mov	al,[ebx]
 	test	al,al		;string is null terminated
@@ -868,8 +978,7 @@ StrToLong:
 	pop	ebx
 	ret
 
-Oldstrlen:
-	_enter
+strlen2:
 %if  __OPTIMIZE__=__O_SIZE__
 	push	edi
 	mov	edi,[esp + 8]
@@ -892,7 +1001,7 @@ Oldstrlen:
 	push	ecx
 	mov	esi,[esp + 12]
 	xor	eax,eax
-        or	ecx,byte -1
+        or	ecx,-1
 	repne	scasb
 	not	ecx
 	mov	eax,ecx
@@ -912,7 +1021,9 @@ UDATASEG
 ;
 
 common	errno	4	;guess what
+
 common	__cc	4	;calling convention (how many registers for fastcall)
 			;0 = cdecl
+common	__envp	4	;envp, for getenv()
 
 END

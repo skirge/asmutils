@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.4 2001/02/23 12:39:29 konst Exp $
+; $Id: syscall.inc,v 1.5 2001/03/18 07:08:25 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 21-Feb-2001
-; version	: 0.13
+; modified	: 11-Mar-2001
+; version	: 0.14
 ; assembler	: nasm 0.98
 ; description	: system call macros
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -119,7 +119,7 @@ extern %{1}
 
 %else		;__BSD__ & __BEOS__
 
-	call	__syscall_gate	;CODESEG macro in system.inc
+	call	__syscall_gate	;defined in os_xxx.inc
 
 %if __OPTIMIZE__=__O_SPEED__
 	add	esp,byte (%{2}) * 4
@@ -173,14 +173,6 @@ extern %{1}
 
 %macro sys_iopl 0-1
 	__syscall iopl, 1, %0, %1
-%endmacro
-
-;
-;arch/i386/kernel/ldt.c
-;
-
-%macro sys_modify_ldt 0-3
-	__syscall modify_ldt, 3, %0, %1, %2, %3
 %endmacro
 
 ;
@@ -261,18 +253,6 @@ extern %{1}
 
 %macro sys_uname 0-1
 	__syscall uname, 1, %0, %1
-%endmacro
-
-;
-;arch/i386/kernel/vm86.c
-;
-
-%macro sys_vm86old 0-1
-	__syscall vm86old, 1, %0, %1
-%endmacro
-
-%macro sys_vm86 0-2
-	__syscall vm86, 2, %0, %1, %2
 %endmacro
 
 ;--------------------------------------------------------------------------
@@ -585,6 +565,8 @@ extern %{1}
 	__syscall brk, 1, %0, %1
 %endmacro
 
+%define sys_break sys_brk
+
 ;
 ;kernel/exit.c
 ;
@@ -643,6 +625,18 @@ extern %{1}
 
 %macro sys_get_kernel_syms 0-1
 	__syscall get_kernel_syms, 1, %0, %1
+%endmacro
+
+;
+;kernel/itimer.c
+;
+
+%macro sys_getitimer 0-2
+	__syscall getitimer, 2, %0, %1, %2
+%endmacro
+
+%macro sys_setitimer 0-3
+	__syscall setitimer, 3, %0, %1, %2, %3
 %endmacro
 
 ;--------------------------------------------------------------------------
@@ -713,6 +707,14 @@ extern %{1}
 
 %macro	sys_listen 2
 	__syscall listen, 2, %0, %1, %2
+%endmacro
+
+%macro	sys_sendto 6
+	__syscall sendto, 6, %0, %1, %2, %3, %4, %5, %6
+%endmacro
+
+%macro	sys_recvfrom 6
+	__syscall recvfrom, 6, %0, %1, %2, %3, %4, %5, %6
 %endmacro
 
 %endif	;__LINUX__

@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.6 2001/01/21 16:30:15 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.7 2001/03/18 07:08:25 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -22,8 +22,8 @@
     </affiliation>
 </author>
 
-<releaseinfo>Version 0.5</releaseinfo>
-<pubdate role="cvs">$Date: 2001/01/21 16:30:15 $</pubdate>
+<releaseinfo>Version 0.6</releaseinfo>
+<pubdate role="cvs">$Date: 2001/03/18 07:08:25 $</pubdate>
 
 <copyright>
 <year>1999-2001</year><holder>Konstantin Boldyshev</holder>
@@ -114,7 +114,7 @@ understanding of <application>asmutils</application> source code.
 <para>
 Asmutils are build with the usual compile suite and <command>nasm</command>.
 Except <command>nasm</command> you will need
-<command>make</command>,
+GNU <command>make</command>,
 <command>ld</command>,
 <command>sh</command>,
 <command>ln</command>,
@@ -134,7 +134,7 @@ nasm 0.98
 ld from GNU binutils 2.9 (on Linux)
 </para></listitem>
 <listitem><para>
-GNU make 3.77
+GNU make 3.79
 </para></listitem>
 </itemizedlist>
 </para>
@@ -239,7 +239,8 @@ without this file you'll have to write in usual boring way.
 <function>UDATASEG</function>,
 <function>END</function>,
 <function>I_STRUC</function>,
-<function>I_END</function>
+<function>I_END</function>,
+<function>B_STRUC</function>
 macros are here, some other will be added.
 </para>
 
@@ -387,6 +388,7 @@ NEVER use <function>__syscall</function> macro in your program directly
 This is a VERY BAD thing to do.
 This will MAKE YOUR CODE UNPORTABLE!
 Therefore please use only <function>sys_xxx</function> macros!
+See also <link linkend="s-contrib-source">this</link> section .
 </para></warning>
 
 <para>
@@ -402,9 +404,8 @@ use sys_syscallname as macro name.
 <para>
 <emphasis>Currently this file applies only to Linux.</emphasis>
 ELF macros are defined here.
-These macros can be (and are, by default) used
-to reduce final size of executable. Almost all of them
-(except <function>ELF_BSTRUC</function> and <function>ELF_AT</function>)
+These macros can be (and are, by default) used to reduce the final size
+of an executable. Almost all of them (except <function>ELF_AT</function>)
 are integrated into existing program structure.
 To enable them you just need to have <literal>ELF_MACROS = y</literal>
 line in <filename>MCONFIG</filename> (enabled by default),
@@ -421,9 +422,10 @@ Rules are simple: use following section order:
 <function>UDATASEG</function>,
 <function>END</function>,
 and use <function>I_STRUC</function> and <function>I_END</function>
-to define structures in <function>UDATASEG</function>
+to define structures in <function>UDATASEG</function>,
+or even better, <function>B_STRUC</function> macro,
 instead of <literal>istruc</literal> and <literal>iend</literal>
-(take any <application>asmutils</application> source as an example).
+(take any <application>asmutils</application> source as an example),
 Alternatively, you can use macros from elf.inc directly if you want,
 but then you can't compile your source using usual nasm/ld procedure.
 If you want to go this way, take the time and read carefully
@@ -554,7 +556,7 @@ Then rebuild your code, and try one of the available debuggers:
 
 <para>
 There's an early version of the
-<ulink url="http://www.ellipse.magenet.com/ald.html">Assembly Language Debugger</ulink>,
+<ulink url="http://ellipse.mcs.drexel.edu/ald.html">Assembly Language Debugger</ulink>,
 which is designed to work with assembly code,
 and is portable enough to run on Linux and *BSD.
 It is already functional and should be the right choice, check it out!
@@ -674,7 +676,7 @@ and look what is already done.
 Even if the program you want to contribute is not there, look at the
 <ulink url="http://linuxassembly.org/asmutils.html">ChangeLog</ulink>,
 or CVS <filename>cvs.linuxassembly.org:/cvsroot/asm</filename>
-using ssh and pserver, module name is "asmutils":
+using ssh, module name is "asmutils":
 <screen>
 $ export CVS_RSH=ssh
 $ cvs -d:pserver:anonymous@cvs.linuxassembly.org:/cvsroot/asm login
@@ -692,7 +694,7 @@ do not duplicate effort of other hackers.
 
 </section>
 
-<section><title>Source code requirements</title>
+<section id="s-contrib-source"><title>Source code requirements</title>
 
 <para>
 Here are few obvious requirements for the source code:
@@ -736,6 +738,10 @@ no 0 instead of <literal>STDIN</literal>,
 9 instead of <literal>SIGKILL</literal>,
 and so on
 </para></listitem>
+<listitem><para>
+no OS specific calls, until a task can be done in a more generic way;
+try to use only POSIX/BSD syscall subset
+</para></listitem>
 </itemizedlist>
 </para>
 
@@ -775,6 +781,16 @@ First, try to test your program. If it still works, rest a day, then look
 at it again.. I mean, I know you're very excited that your program works,
 but just try to look what now you can improve; do not send maintainer a new
 version every day, this will save him (and you) from the mess of versions.
+</para>
+
+<para>
+Try to include some documentation in the source.
+If your code uses 486+ instructions, please specify CPU reqiurements
+(especially if MMX, 3DNOW, SSE, etc are used).
+Include comments along your code, especially around somewhat
+cryptic parts that you feel are hard to understand initially.
+(but do not document every step, like
+<function>xor eax,eax	;set eax to zero</function>, etc).
 </para>
 
 <para>
@@ -863,7 +879,7 @@ it will be zeroed out by kernel.
 <para>
 Use <function>_mov</function> macro instead of
 <literal>mov</literal> instruction
-(if you do not assign one register to another),
+(if you do not just assign one register to another),
 this will track several special cases and produce smaller code.
 </para>
 
@@ -879,8 +895,8 @@ will produce greater code than <function>inc eax</function>.
 </para>
 
 <para>
-Here are some assembly examples you can use instead of
-<literal>cmp</literal> instruction to produce smaller code:
+As a sample, here are some assembly examples you can use instead
+of <literal>cmp</literal> instruction to produce smaller code:
 
 <screen>
 ;if eax < 0 (signed compare)
@@ -945,6 +961,11 @@ Seek, and you may find more..
 <para><revhistory>
 
 <revision>
+<revnumber>0.6</revnumber><date>10 Mar 2001</date><authorinitials>konst</authorinitials>
+<revremark>various notes on contributions</revremark>
+</revision>
+
+<revision>
 <revnumber>0.5</revnumber><date>17 Jan 2001</date><authorinitials>konst</authorinitials>
 <revremark>additions to "Debugging" section</revremark>
 </revision>
@@ -1003,7 +1024,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.6 2001/01/21 16:30:15 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.7 2001/03/18 07:08:25 konst Exp $
 </literal></para>
 </appendix>
 

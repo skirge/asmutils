@@ -2,7 +2,7 @@
 #
 # MCONFIG -- Configuration stuff for asmutils
 #
-# $Id: MCONFIG,v 1.4 2001/02/23 12:39:29 konst Exp $
+# $Id: MCONFIG,v 1.5 2001/03/18 07:08:25 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -45,7 +45,7 @@ ELF_MACROS = y
 
 #---------------------------------------------------------------------------#
 
-VERSION = 0.12
+VERSION = 0.14
 
 ${OS} = y
 
@@ -137,7 +137,7 @@ ASFLAGS += -f elf
 ifndef DEBUG
 LDFLAGS += -s
 endif
-STRIP = strip -x -R .note -R .comment
+STRIP = strip -s -R .note -R .comment
 #STRIP = sstrip
 endif
 

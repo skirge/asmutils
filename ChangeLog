@@ -1,3 +1,17 @@
+18-Mar-2001:	asmutils 0.14
+
+	- date, hexdump, ls (BR)
+	- init (KS)
+	- dd (RM)
+	- ping (JM)
+	- factor: increased upper limit to 2^64-1, size improvement (BR)
+	- mount: support for mount options (RM)
+	- libc: added getenv(), optionally treat stack with care (KB)
+	- libm: added testm (NK)
+	- special bonus: textmode game snake (BR)
+	- Asmutils-HOWTO: misc updates (KB)
+
+
 23-Feb-2001:	asmutils 0.13
 
 	- sleep: added nanoseconds support (KB)

@@ -3,7 +3,7 @@ long-term:
 - write new utils and improve existing
 - develop libc
 - develop multicall binary
-- port more code to *BSD & ELKS (?)
+- port more code to *BSD
 - merge basename, dirname, extname (?)
 
 short-term:
