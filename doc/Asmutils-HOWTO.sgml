@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.16 2002/02/19 07:16:22 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.17 2002/02/20 15:34:06 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -23,7 +23,7 @@
 </author>
 
 <releaseinfo>Version 0.8</releaseinfo>
-<pubdate role="cvs">$Date: 2002/02/19 07:16:22 $</pubdate>
+<pubdate role="cvs">$Date: 2002/02/20 15:34:06 $</pubdate>
 
 <copyright>
 <year>1999-2002</year><holder>Konstantin Boldyshev</holder>
@@ -178,8 +178,12 @@ and devising your all to developers of your libc.
 They say, life ain't easy.
 </para>
 <para>
-Now that being said.. Some (and perhaps most) utilities
+Now that being said.. Some (and perhaps most of) utilities
 <emphasis>will</emphasis> compile and work as usual.
+</para>
+<para>
+Also, note that building asmutils libc with <function>SYSCALL=LIBC</function>
+is not a hmm.. reasonable idea at all.
 </para></note>
 
 <note><para>
@@ -1099,7 +1103,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.16 2002/02/19 07:16:22 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.17 2002/02/20 15:34:06 konst Exp $
 </literal></para>
 </appendix>
 
