@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@feld.cvut.cz>
 ;
-;$Id: dd.asm,v 1.1 2001/03/18 07:08:25 konst Exp $
+;$Id: dd.asm,v 1.2 2001/05/16 09:47:01 konst Exp $
 ;
 ;hackers' dd
 ;
@@ -213,7 +213,7 @@ START:
 	cmp 	al,'b'
 	jz 	.mul_512
 	cmp 	al,'k'
-	jz	near .error ;we don't know others yet
+	jnz	near .error		;we don't know others yet
 
 .mul_1024:
 	shl	ebx,1
