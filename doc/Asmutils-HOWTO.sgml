@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.15 2002/02/02 08:49:25 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.16 2002/02/19 07:16:22 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -23,7 +23,7 @@
 </author>
 
 <releaseinfo>Version 0.8</releaseinfo>
-<pubdate role="cvs">$Date: 2002/02/02 08:49:25 $</pubdate>
+<pubdate role="cvs">$Date: 2002/02/19 07:16:22 $</pubdate>
 
 <copyright>
 <year>1999-2002</year><holder>Konstantin Boldyshev</holder>
@@ -862,7 +862,10 @@ of existing -- to particular util maintainer first.
 
 <para>
 Since <application>asmutils</application> programs are usually quite small,
-please send full source of program instead of patches when possible.
+please send full source of program instead of patches when possible;
+if you choose to send a patch, make sure that it is
+<emphasis>against the latest CVS version</emphasis>,
+i.e. do a checkout right before creating your patch.
 </para>
 
 <para>
@@ -1023,7 +1026,7 @@ Seek, and you may find more..
 <para><revhistory>
 
 <revision>
-<revnumber>0.8</revnumber><date>02 Jan 2002</date><authorinitials>konst</authorinitials>
+<revnumber>0.8</revnumber><date>18 Feb 2002</date><authorinitials>konst</authorinitials>
 <revremark>more notes on contributions, updates and cleanups</revremark>
 </revision>
 
@@ -1096,7 +1099,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.15 2002/02/02 08:49:25 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.16 2002/02/19 07:16:22 konst Exp $
 </literal></para>
 </appendix>
 
