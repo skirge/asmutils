@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.21 2002/02/19 12:31:39 konst Exp $
+; $Id: os_linux.inc,v 1.22 2002/02/20 15:29:30 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 02-Feb-2002
+; modified      : 20-Feb-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : Linux kernel (2.0+) constants and structures
@@ -346,18 +346,23 @@ struc Stat			;guess why uppercase S?
 .__unused5	ULONG	1
 %elif __SYSCALL__=__S_LIBC__
 .st_dev		ULONG	2
+.__pad1		USHORT	1
 .st_ino		ULONG	1
-.st_mode	USHORT	1
-.st_nlink	USHORT	1
-.st_uid		USHORT	1
-.st_gid		USHORT	1
+.st_mode	UINT	1
+.st_nlink	UINT	1
+.st_uid		UINT	1
+.st_gid		UINT	1
 .st_rdev	ULONG	2
+.__pad2		USHORT	1
 .st_size	ULONG	1
 .st_blksize	ULONG	1
 .st_blocks	ULONG	1
 .st_atime	ULONG	1
+.__unused1	ULONG	1
 .st_mtime	ULONG	1
+.__unused2	ULONG	1
 .st_ctime	ULONG	1
+.__unused3	ULONG	1
 %endif
 endstruc
 
@@ -414,13 +419,18 @@ endstruc
 ;
 
 struc dirent
+%if __SYSCALL__=__S_KERNEL__
 .d_ino		ULONG	1
 .d_off		ULONG	1
 .d_reclen	USHORT	1
-%if __SYSCALL__=__S_LIBC__
-.d_type		UCHAR	1
-%endif
 .d_name		CHAR	256
+%elif __SYSCALL__=__S_LIBC__
+.d_ino		ULONG	2
+.d_off		ULONG	2
+.d_reclen	USHORT	1
+.d_type		UCHAR	1
+.d_name		CHAR	256
+%endif
 endstruc
 
 

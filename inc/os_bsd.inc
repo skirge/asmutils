@@ -1,10 +1,10 @@
 ; Copyright (C) 2001-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_bsd.inc,v 1.9 2002/02/02 12:33:38 konst Exp $
+; $Id: os_bsd.inc,v 1.10 2002/02/20 15:29:30 konst Exp $
 ;
 ; file          : os_bsd.inc
 ; created       : 12-Nov-2001
-; modified      : 02-Jan-2002
+; modified      : 20-Feb-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : common BSD defines
@@ -339,8 +339,12 @@ endstruc
 	__syscall getdirentries, 5, %0, %1, %2, %3, %4, %5
 %endmacro
 
-%macro	sys_sbrk	0-1
+%macro sys_sbrk	0-1
 	__syscall sbrk, 1, %0, %1
+%endmacro
+
+%macro sys_break 0-1
+	__syscall break, 1, %0, %1
 %endmacro
 
 %macro sys_sysctl 0-6
