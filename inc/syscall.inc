@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.11 2001/11/24 09:45:27 konst Exp $
+; $Id: syscall.inc,v 1.12 2001/12/30 17:18:47 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 24-Nov-2001
+; modified	: 23-Dec-2001
 ; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: system call macros
@@ -539,6 +539,14 @@ extern %{1}
 ;--------------------------------------------------------------------------
 
 %ifndef __LINUX__	;linux has its own implementation in os_linux.inc
+
+;
+;sys/reboot.h
+;
+
+%macro sys_reboot 0-1
+	__syscall reboot, 1, %0, %1
+%endmacro
 
 ;
 ;sys/socket.h
