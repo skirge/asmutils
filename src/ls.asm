@@ -14,7 +14,7 @@
 ;; -b  show non-graphic characters using C-style backslash sequences
 ;; -R  recursively list contents of subdirectories
 ;;
-;; $Id: ls.asm,v 1.5 2001/03/18 07:08:25 konst Exp $
+;; $Id: ls.asm,v 1.6 2001/08/20 15:22:03 konst Exp $
 
 %include "system.inc"
 
@@ -302,13 +302,10 @@ lsfile:
 		lea	edx, [byte ecx + 4]
 		push	esi
 		lea	esi, [DATAOFF(sts.st_nlink)]
-%ifdef __BSD__
 		lodsw
 .numoutloop:	call	[esp]
+%ifdef __BSD__
 		lodsd
-%else
-.numoutloop:	lodsw
-		call	[esp]
 %endif
 		mov	dl, 7
 		dec	ebx

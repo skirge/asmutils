@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@feld.cvut.cz>
 ;
-;$Id: dd.asm,v 1.2 2001/05/16 09:47:01 konst Exp $
+;$Id: dd.asm,v 1.3 2001/08/20 15:22:03 konst Exp $
 ;
 ;hackers' dd
 ;
@@ -161,7 +161,7 @@ START:
 	sys_read edi,buf,[bs]
 	test 	eax,eax
 	jz 	.no_more_data
-	js 	.do_error
+	js 	near .do_error
 	mov 	ebx,ebp
 	mov 	edx,eax
 	sys_write

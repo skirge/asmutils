@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.7 2001/08/19 12:42:50 konst Exp $
+; $Id: syscall.inc,v 1.8 2001/08/20 15:24:36 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 16-Aug-2001
+; modified	: 20-Aug-2001
 ; version	: 0.15
 ; assembler	: nasm 0.98
 ; description	: system call macros
@@ -79,13 +79,19 @@
 %assign P %3
 %endif
 
+%ifdef	__LIBC__
+%define	PUSH_ARGS
+%elif	__OPTIMIZE__=__O_SPEED__
+%define	PUSH_ARGS
+%endif
+
 ;Note:
 ;This BSD related part is optimized for size by moving all 'push'es
 ;and add 'esp,x' to __syscall_gate. However this will cause problems
 ;with syscalls with more than 6 args, fortunately there are no such
 ;monsters yet :)
 
-%if __OPTIMIZE__=__O_SPEED__
+%ifdef	PUSH_ARGS
 %if P>0
  %if P>1
   %if P>2
@@ -107,7 +113,7 @@
  %endif
 	push	ebx
 %endif
-%endif	;__OPTIMIZE__
+%endif	;PUSH_ARGS
 
 %endif
 
@@ -115,15 +121,10 @@
 
 extern %{1}
 	call	%{1}
-	_add	esp, (%{2}) * 4
 
 %else		;__BSD__ & __BEOS__
 
-	call	__syscall_gate	;defined in os_xxx.inc
-
-%if __OPTIMIZE__=__O_SPEED__
-	add	esp,byte (%{2}) * 4
-%endif
+	call	__syscall_gate	;defined in os_osname.inc
 
 ;	push	eax		;we are not using a.out
 ;	call	7:0		;
@@ -131,8 +132,11 @@ extern %{1}
 
 %endif
 
+%ifdef	PUSH_ARGS
+	add	esp,byte (%{2}) * 4
 %endif
 
+%endif
 
 %endmacro
 

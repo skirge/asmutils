@@ -2,7 +2,7 @@
 #
 # MCONFIG -- Configuration stuff for asmutils
 #
-# $Id: MCONFIG,v 1.7 2001/08/19 12:49:39 konst Exp $
+# $Id: MCONFIG,v 1.8 2001/08/20 15:25:43 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -14,7 +14,7 @@
 
 CPU = 386
 
-# Target Operating System (LINUX/FREEBSD/NETBSD/OPENBSD/QNXRTP/BEOS/ATHEOS/LIBC)
+# Target Operating System (LINUX/FREEBSD/NETBSD/OPENBSD/BEOS/ATHEOS/LIBC)
 
 OS = LINUX
 
@@ -28,20 +28,22 @@ OPTIMIZE = SIZE
 
 # Enable debug build
 
-#DEBUG = y
+DEBUG = y
 
 # Include version stamp into binaries
 
 #STAMP = y
 
-# Use custom startup code
-# (currently works only with C style main() stack and BeOS)
+# Use custom startup code.
+# Currently it works only with C style main() stack with OS=LIBC,
+# when you can't build with -nostartupfiles.
+# You will also need this on BeOS.
 #STARTUP = y
 
 # LINUX only
 #
 # ELF hack for smaller binaries
-ELF_MACROS = y
+#ELF_MACROS = y
 
 #---------------------------------------------------------------------------#
 

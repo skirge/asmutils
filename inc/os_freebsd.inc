@@ -1,11 +1,11 @@
 ; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_freebsd.inc,v 1.2 2001/03/18 07:08:25 konst Exp $
+; $Id: os_freebsd.inc,v 1.3 2001/08/20 15:24:36 konst Exp $
 ;
 ; file          : os_freebsd.inc
 ; created       : 08-Feb-2000
-; modified      : 11-Mar-2001
-; version       : 0.14
+; modified      : 20-Aug-2001
+; version       : 0.15
 ; assembler     : nasm 0.98
 ; description   : FreeBSD kernel (3.2+) defined constants and structures
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -471,6 +471,17 @@ struc termios
 endstruc
 
 %assign TIOSZ	NCCS+4*6
+
+%assign	ECHOE		0x00000002
+%assign	ECHOK		0x00000004
+%assign ECHO		0x00000008
+%assign	ECHONL		0x00000010
+%assign	ISIG		0x00000080
+%assign	ICANON		0x00000100
+%assign	IEXTEN		0x00000400
+%assign EXTPROC         0x00000800
+%assign TOSTOP		0x00400000
+%assign	NOFLSH		0x80000000
 
 ;
 ;sys/iocomm.h

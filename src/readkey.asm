@@ -1,6 +1,6 @@
 ; Copyright (C) 2001, Tiago Gasiba (ee97034@fe.up.pt)
 ;
-; $Id: readkey.asm,v 1.1 2001/08/19 12:41:59 konst Exp $
+; $Id: readkey.asm,v 1.2 2001/08/20 15:22:03 konst Exp $
 ;
 ; hacker's readkey
 ;
@@ -61,17 +61,20 @@ START:
 	loop	.outro
 
 	mov	byte [oldtermios+8],0xa
+	mov	word [prefix],"0x"
 
-	sys_write	STDOUT,oldtermios-2,11	; write string
+	sys_write	STDOUT,prefix,11	; write string
 
 	sys_exit	0
 
-
-	db	'0x'				; to save some initializing
-
 UDATASEG
+
+prefix:
+	resb	2
+
 oldtermios:
 	B_STRUC termios,.c_iflag,.c_oflag
 newtermios:
 	B_STRUC termios,.c_iflag,.c_oflag
+
 END

@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 by Joshua Hudson
 ;
-;$Id: which.asm,v 1.1 2001/08/14 18:55:38 konst Exp $
+;$Id: which.asm,v 1.2 2001/08/20 15:22:03 konst Exp $
 ;
 ;hacker's which
 ;
@@ -101,7 +101,11 @@ START:
 .chwhich:				; For each path,
 	mov	esi, [ebp]
 	or	esi, esi
+%ifdef	__LONG_JUMPS__
+	jz	near .whdone
+%else
 	jz	.whdone
+%endif
 	mov	al, [esi]
 	or	al, al
 	jz	.whdone
@@ -140,7 +144,8 @@ START:
 	mov	edx, edi
 	sub	edx, pathbuf
 	sys_write	STDOUT, pathbuf
-.whdone	ret
+.whdone:
+	ret
 	
 .notroot:
 	cmp	bx, [sts.st_uid]	; Can it be executed

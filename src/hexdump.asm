@@ -5,7 +5,7 @@
 ;; With no parameters, hexdump reads from standard input.
 ;; hexdump returns zero on success, or an error code otherwise.
 ;;
-;; $Id: hexdump.asm,v 1.1 2001/03/18 07:08:25 konst Exp $
+;; $Id: hexdump.asm,v 1.2 2001/08/20 15:22:03 konst Exp $
 
 %include "system.inc"
 
@@ -44,7 +44,7 @@ fileloop:
 
 		pop	ebx
 		or	ebx, ebx
-%ifdef	__BSD__
+%ifdef	__LONG_JUMPS__
 		jz	near finish
 %else
 		jz	finish
@@ -160,7 +160,7 @@ nodot:		call	ecx
 ;; moves on to the next file.
 
 eof:		sys_close
-%ifdef	__BSD__
+%ifdef	__LONG_JUMPS__
 		jmp	fileloop
 %else
 		jmp	short fileloop

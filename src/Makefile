@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.15 2001/08/19 12:41:59 konst Exp $
+# $Id: Makefile,v 1.16 2001/08/20 15:22:03 konst Exp $
 
 #DEBUG = y
 
@@ -12,7 +12,8 @@ include ../MCONFIG
 
 FILES = basename cat chmod chroot chown cp cpuinfo date dc dd dirname echo env\
 	extname	factor fromdos grep head hexdump hostname httpd id init kill\
-	ln ls lzss mkdir mknod more mv nc od paste ping pwd readlink renice rm\
+	ln ls lzss mkdir mknod more mv nc od paste ping pwd\
+	readelf readkey	readlink renice rm\
 	sh sleep strings sync tail tee touch true uname wc which whoami yes\
 	md5sum rmdsum rc6crypt\
 
@@ -22,7 +23,7 @@ LINKS = arch cpuspeed domainname false mkfifo rmdir regs sln todos
 
 ifdef LINUX
 
-FILES += chvt dmesg df eject lsmod mount ps readelf readkey reboot softdog swapon tty update
+FILES += chvt dmesg df eject lsmod mount ps reboot softdog swapon tty update
 
 BONUS += window leaves fire256 snake
 

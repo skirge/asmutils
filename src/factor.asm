@@ -5,7 +5,7 @@
 ;; Prints the prime factors of each N. With no arguments, reads N
 ;; from standard input. The valid range is 0 <= N < 2^64.
 ;;
-;; $Id: factor.asm,v 1.3 2001/03/18 07:08:25 konst Exp $
+;; $Id: factor.asm,v 1.4 2001/08/20 15:22:03 konst Exp $
 
 %include "system.inc"
 
@@ -276,7 +276,7 @@ finalwrite:	sys_write STDOUT
 
 ;; Here is the program's entry point.
 
-_start:
+START:
 
 ;; argc and argv[0] are removed from the stack and discarded. ebp is
 ;; initialized to point to the data.

@@ -1,12 +1,12 @@
 ; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ; Copyright (C) 2000 Tani Hosokawa <unknown@riverstyx.net>
 ;
-; $Id: os_openbsd.inc,v 1.3 2001/03/18 07:08:25 konst Exp $
+; $Id: os_openbsd.inc,v 1.4 2001/08/20 15:24:36 konst Exp $
 ;
 ; file          : os_openbsd.inc
 ; created       : 18-Aug-2000
-; modified      : 11-Mar-2001
-; version       : 0.14
+; modified      : 20-Aug-2001
+; version       : 0.15
 ; assembler     : nasm 0.98
 ; description   : OpenBSD kernel (2.7+) defined constants and structures
 ; author        : Tani Hosokawa <unknown@riverstyx.net>
@@ -440,7 +440,6 @@ __syscall_gate:
 %assign	MFSNAMELEN	16	;length of fs type name, including null
 %assign	MNAMELEN	90	;length of buffer for returned name
 
-
 struc statfs
 .f_spare2	LONG	1	;placeholder
 .f_bsize	LONG	1	;fundamental file system block size
@@ -525,6 +524,17 @@ struc termios
 endstruc
 
 %assign TIOSZ	NCCS+4*6
+
+%assign	ECHOE		0x00000002
+%assign	ECHOK		0x00000004
+%assign ECHO		0x00000008
+%assign	ECHONL		0x00000010
+%assign	ISIG		0x00000080
+%assign	ICANON		0x00000100
+%assign	IEXTEN		0x00000400
+%assign EXTPROC         0x00000800
+%assign TOSTOP		0x00400000
+%assign	NOFLSH		0x80000000
 
 ;
 ;sys/iocomm.h
