@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.24 2002/03/14 17:40:13 konst Exp $
+; $Id: os_linux.inc,v 1.25 2002/06/11 08:29:34 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 14-Mar-2002
+; modified      : 10-Jun-2002
 ; version       : 0.17
 ; assembler     : nasm 0.98
 ; description   : Linux kernel (2.0+) constants and structures
@@ -1141,6 +1141,30 @@ struc utmp
 endstruc
 
 ;
+;sys/sysinfo.h
+;
+
+struc sysinfo
+.uptime     LONG    1
+.loads      ULONG   3
+.totalram   ULONG   1
+.freeram    ULONG   1
+.sharedram  ULONG   1
+.bufferram  ULONG   1
+.totalswap  ULONG   1
+.freeswap   ULONG   1
+.procs      USHORT  1
+%if __KERNEL__ <= 22
+.pad        CHAR    22
+%else
+.totalhigh  ULONG   1
+.freehigh   ULONG   1
+.mem_unit   ULONG   1
+.pad        CHAR    8
+%endif
+endstruc
+
+;
 ;system calls
 ;
 
@@ -1314,6 +1338,10 @@ endstruc
 %endmacro
 
 %endif
+
+%macro sys_vhangup 0
+	__syscall vhangup, 0
+%endmacro
 
 ;
 ;kernel/sys.c
