@@ -1,13 +1,12 @@
 ;Copyright (C) 2001, Tiago Gasiba (ee97034@fe.up.pt)
 ;
-;$Id: less.asm,v 1.3 2001/09/24 16:10:39 konst Exp $
+;$Id: less.asm,v 1.4 2001/09/24 16:49:19 konst Exp $
 ;
 ;hackers' less
 ;
 ;syntax:
 ;	less file
 ; or    less < file
-;
 ;
 ;TODO:
 ;	- add "/" (search)
@@ -95,7 +94,7 @@ main:
 		je	.terminar
 
 		cmp	eax,KEY_UP		; KEY_UP event
-		je	event_key_up
+		je	near event_key_up
 
 		cmp	eax,KEY_PGDOWN		; KEY_PGDOWN event
 		je	near event_key_pgdown

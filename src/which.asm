@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 by Joshua Hudson
 ;
-;$Id: which.asm,v 1.2 2001/08/20 15:22:03 konst Exp $
+;$Id: which.asm,v 1.3 2001/09/24 16:49:19 konst Exp $
 ;
 ;hacker's which
 ;
@@ -108,7 +108,7 @@ START:
 %endif
 	mov	al, [esi]
 	or	al, al
-	jz	.whdone
+	jz	near .whdone
 	mov	edi, pathbuf
 	call	.strccpy		; Copy into buffer
 	dec	edi
@@ -128,7 +128,7 @@ START:
 	mov	ecx, [sts.st_mode - 2]
 	shr	ecx, 28
 	and	ecx, byte ~4
-	jz	.nextwhich		; Can't execute a directory
+	jz	near .nextwhich		; Can't execute a directory
 ;*** Check permissions
 	mov	eax, [sts.st_mode]
 	and	eax, byte 73		; mode 0111

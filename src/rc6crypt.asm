@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Cecchinel Stephan <interzone@pacwan.fr>
 ;
-;$Id: rc6crypt.asm,v 1.4 2001/02/23 12:39:29 konst Exp $
+;$Id: rc6crypt.asm,v 1.5 2001/09/24 16:49:19 konst Exp $
 ;
 ;hackers' rc6crypt
 ;
@@ -86,7 +86,7 @@ arg_ok:
 	sys_write STDOUT,texterr,ltexterr
 	_jmp	_exit
 .read_ok:
-	jz	.next_f2
+	jz	near .next_f2
 	
 	pusha
 	mov	ecx,eax

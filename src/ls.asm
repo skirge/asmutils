@@ -14,7 +14,7 @@
 ;; -b  show non-graphic characters using C-style backslash sequences
 ;; -R  recursively list contents of subdirectories
 ;;
-;; $Id: ls.asm,v 1.6 2001/08/20 15:22:03 konst Exp $
+;; $Id: ls.asm,v 1.7 2001/09/24 16:49:19 konst Exp $
 
 %include "system.inc"
 
@@ -596,8 +596,11 @@ lsdir:
 		sys_getdents
 %endif
 		or	eax, eax
+%ifdef __LONG_JUMPS__
+		jle	near getdentsend
+%else
 		jle	getdentsend
-
+%endif
 ;; The program examines each directory entry in the inner loop, during
 ;; which the current state is saved on the stack. (ebx contains the
 ;; file handle, ecx contains the current pointer into the dirents
@@ -678,7 +681,11 @@ lsdir:
 		movzx	edx, word [byte ecx + dirent.d_reclen]
 		add	ecx, edx
 		sub	eax, edx
+%ifdef	__LONG_JUMPS__
+		jle	near .getdentsloop
+%else
 		jle	.getdentsloop
+%endif
 		jmp	short .direntloop
 
 

@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: uname.asm,v 1.6 2001/03/18 07:08:25 konst Exp $
+;$Id: uname.asm,v 1.7 2001/09/24 16:49:19 konst Exp $
 ;
 ;hackers' uname/arch	[GNU replacement]
 ;
@@ -91,7 +91,7 @@ args:
 	jmps	.inner_stage
 .a:
 	cmp	al,'a'
-	jnz	_exit
+	jnz	near _exit
 	mov	dl,SYSNAME|NODENAME|RELEASE|VERSION|MACHINE|PROCESSOR
 	jmps	.inner_stage
 

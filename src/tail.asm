@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Jani Monoses <jani@astechnix.ro>
 ;
-;$Id: tail.asm,v 1.2 2001/07/20 07:04:18 konst Exp $
+;$Id: tail.asm,v 1.3 2001/09/24 16:49:19 konst Exp $
 ;
 ;hackers' tail
 ;
@@ -44,7 +44,7 @@ START:
 .file:
 		sys_open	ebx,O_RDONLY
 		test	eax,eax
-		js	.exit
+		js	near .exit
 		mov	ebp,eax		;save file descriptor
 
 ;if regular file seek to last BUFSIZE bytes.Especially good for large files.

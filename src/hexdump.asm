@@ -5,7 +5,7 @@
 ;; With no parameters, hexdump reads from standard input.
 ;; hexdump returns zero on success, or an error code otherwise.
 ;;
-;; $Id: hexdump.asm,v 1.2 2001/08/20 15:22:03 konst Exp $
+;; $Id: hexdump.asm,v 1.3 2001/09/24 16:49:19 konst Exp $
 
 %include "system.inc"
 
@@ -51,7 +51,11 @@ fileloop:
 %endif
 		sys_open EMPTY,O_RDONLY
 		or	eax, eax
+%ifdef	__LONG_JUMPS__
+		js	near quit
+%else
 		js	quit
+%endif
 		xchg	eax, ebx
 usestdin:	xor	ebp, ebp
 

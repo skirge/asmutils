@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@fel.cvut.cz>,<ruik@atlas.cz>
 ;
-;$Id: watch.asm,v 1.1 2001/09/17 20:15:29 konst Exp $
+;$Id: watch.asm,v 1.2 2001/09/24 16:49:19 konst Exp $
 ;
 ;hackers' watch
 ;
@@ -27,9 +27,9 @@ START:
 	sys_write STDOUT,erase_screen,4
 	xchg 	ebp,ebx
     	cmp 	word [ebx],'-n'
-	jz .interval_change
+	jz	near .interval_change
 	cmp 	dword [ebx],'--in'
-	jz .separate_interval
+	jz	near .separate_interval
 ;	xor 	ebp,ebp ;put there a default 
 ;	inc 	ebp
 ;	inc 	ebp
@@ -55,7 +55,7 @@ START:
 	test 	eax,eax
 	jnz .wait
 	sys_execve EMPTY,EMPTY,EMPTY
-	jmps .error
+	jmp	.error
 .wait:	
 	push 	ebx
 	push 	ecx
@@ -77,7 +77,7 @@ START:
 	pop 	esi
 	call .atoi
 	pop 	ebx
-	jmps .args_done
+	jmp	.args_done
 .separate_interval:
 	xchg 	ebx,esi
 .find_eq:
@@ -88,7 +88,7 @@ START:
 	jnz .find_eq
 	call .atoi
 	pop 	ebx
-	jmps .args_done
+	jmp	.args_done
 	
 .help:  sys_write STDOUT,help,help_len
 	jmps .exit

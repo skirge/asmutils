@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.7 2001/08/20 15:24:36 konst Exp $
+; $Id: system.inc,v 1.8 2001/09/24 16:49:19 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 20-Aug-2001
+; modified	: 24-Sep-2001
 ; version	: 0.15
 ; assembler	: nasm 0.98
 ; description	: generic (not OS specific) macros, sections, headers, etc.
@@ -32,7 +32,7 @@
 ;0.13: 21-Feb-2001	modified __syscall_gate (KB)
 ;0.14: 11-Feb-2001	added B_STRUC macro (aka ELF_BSTRUC from elf.inc) (BR),
 ;			moved __syscall_gate to os_xxx.inc files (KB)
-;0.15: 16-Aug-2001	fixed LIBC stuff (KB)
+;0.15: 24-Sep-2001	fixed LIBC stuff, added __LONG_JUMPS__ (KB)
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
@@ -83,6 +83,11 @@
 %ifndef __OPTIMIZE__
 %assign	__OPTIMIZE__ __O_SIZE__	;size/speed
 %endif
+
+%if __OPTIMIZE__=__O_SPEED__
+%define	__LONG_JUMPS__
+%endif
+
 
 ;--------------------------------------------------------------------------
 ;

@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: mount.asm,v 1.3 2001/03/18 07:08:25 konst Exp $
+;$Id: mount.asm,v 1.4 2001/09/24 16:49:19 konst Exp $
 ;
 ;hackers' mount/umount
 ;
@@ -91,7 +91,7 @@ START:
 	sys_write STDOUT,EMPTY,eax
 ;	sys_close ebp 			;system will do dirty work :)
 	xor 	eax,	eax   		;good end 
-	jmps	.exit
+	jmp	.exit
 
 options	db	'ronsndnesyremlnanibi' ;compressed options the sequence exactly match bits flags
 options_len 	equ $-options

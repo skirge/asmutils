@@ -2,7 +2,7 @@
 ;				Karsten Scheibler <karsten.scheibler@bigfoot.de>
 ;				Rudolf Marek <marekr2@feld.cvut.cz>
 ;
-;$Id: sh.asm,v 1.5 2001/09/24 16:10:39 konst Exp $
+;$Id: sh.asm,v 1.6 2001/09/24 16:49:19 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -166,8 +166,13 @@ get_cmdline:
 			;-------------
 			call	cmdline_parse
 			test	dword eax, eax
+%ifdef	__LONG_JUMPS__		;fucking nasm!!!!!
+			jz	near get_cmdline
+			js	near get_cmdline.incomplete_prompt ;this is somewhat broken
+%else
 			jz	get_cmdline
 			js	get_cmdline.incomplete_prompt ;this is somewhat broken
+%endif
 
 			;---------------
 			;execute cmdline
@@ -353,16 +358,19 @@ tty_restore:
 ;****************************************************************************
 ; This code is xterm & linux console compatible. It means VT100 and DEC 
 ; maybe.
-%ifdef __LINUX__
+
 ;>AL out
+%ifdef __LINUX__
 get_char:
 		        sys_read STDIN,getchar,1
 			mov 	al,[ecx]
 			ret
+%endif
 
 ;IN EDI buffer 
 ;OUT filled with null term str with\n
 cmdline_get:
+%ifdef __LINUX__
 			mov 	edi,cmdline.buffer1 
 			mov 	word [edi],0
 .do_nothing_loop:
@@ -372,9 +380,9 @@ cmdline_get:
 			cmp 	al,ESC
 			jz  near .esc_seq_start
 			cmp     al,BACKSPACE
-			jz    .back_space
+			jz	near .back_space
 			cmp     al,DEL
-			jz    .back_space
+			jz	near .back_space
 			sys_write STDOUT,getchar,1
 			mov 	al,[getchar]
 			cmp 	al,ENTER
@@ -468,7 +476,7 @@ cmdline_get:
 			jz .beep
 			sys_write STDOUT,edi,1  	;reprint the charter
 			inc 	edi 
-			jmp  short .big_fat_jump2
+			jmp	.big_fat_jump2
 .beep:	
 			sys_write STDOUT,beep,1 	;beeeeeeeeeep
 			jmp short .big_fat_jump3
@@ -779,7 +787,7 @@ cmdline_get:
 			xor	dword eax, eax
 .end:			mov	byte  [cmdline.buffer1 + eax], 0
 			ret
- %endif
+ %endif	;__LINUX__
 
 
 ;****************************************************************************
@@ -1155,13 +1163,15 @@ cmdline:
 .arguments_offset:		ULONG	1
 ;fdset: 				resb fd_set_size
 ;timer: B_STRUC itimerval
+
+environ_count resd 1
+
 %ifdef __LINUX__
 termattrs B_STRUC termios,.c_lflag
 getchar_buff: resb 3
 getchar resb 3
 file_buff resb file_buff_size
 write_after_slash resd 1 
-environ_count resd 1
 first_chance resb 1
 file_name resb 255
 file_equal resb 255
