@@ -1,6 +1,6 @@
 ; Copyright (c) 2001 Thomas M. Ogrisegg
 ;
-; $Id: finger.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
+; $Id: finger.asm,v 1.3 2002/02/14 13:38:15 konst Exp $
 ;
 ; finger - user information lookup program
 ;
@@ -9,7 +9,7 @@
 ;
 ; License          :     GNU General Public License
 ; Author           :     Thomas Ogrisegg
-; E-Mail           :     thomas.ogrisegg@sbg.ac.at
+; E-Mail           :     tom@rhadamanthys.org
 ; Created          :     12/02/01
 ; Processor        :     i386+
 ; SusV2-compliant  :     no

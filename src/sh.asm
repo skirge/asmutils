@@ -1,8 +1,8 @@
-;Copyright (C) 2000, 2001	Alexandr Gorlov <alexandr@fssrf.spb.ru>, <ct@mail.ru>
-;				Karsten Scheibler <karsten.scheibler@bigfoot.de>
-;				Rudolf Marek <marekr2@feld.cvut.cz>,
+;Copyright (C) 2000-2002 Alexandr Gorlov <ct@mail.ru>
+;			 Karsten Scheibler <karsten.scheibler@bigfoot.de>
+;			 Rudolf Marek <marekr2@fel.cvut.cz>
 ;
-;$Id: sh.asm,v 1.8 2002/02/02 08:49:25 konst Exp $
+;$Id: sh.asm,v 1.9 2002/02/14 13:38:15 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -15,19 +15,31 @@
 ;	command
 ;	{and|or} command
 ;	...
+; Now you can enjoy basic redirection support !
+;
+;  ls|grep asm|grep s>>list 
+;  
+;or just:
+;
+;  ls|sort
+;  cat<my_input
+;  cat sh.asm > my_output
+;  cat sh.asm>>my_appended_output  (spaces between > | < aren't mandatory)
 ;
 ; Comment (may not be in conditional):
 ;	: text without shell special characters
 ;
 ;example: sh
 ;
-;0.01: 07-Oct-2000	initial release (AG + KS)
+;0.01: 07-Oct-2000	initial release (AG,KS)
 ;0.02: 26-Jul-2001      Added char-oriented commandline, tab-filename filling,
 ;			partial export support, 
 ;			partial CTRL+C handling (RM)
 ;0.03: 16-Sep-2001      Added history handling (runtime hist), 
 ;			improved signal handling (RM)
 ;0.04: 30-Jan-2002	Added and/or internals and scripting (JH)
+;0.05: 10-Feb-2002      Added pipe mania & redir support, 
+;			shell inherits parent's env if any (RM)
 
 %include "system.inc"
 
@@ -36,7 +48,7 @@
 %endif
 
 ;%undef HISTORY save 192 bytes + dynamic memory for cmdlines
-
+;All your base are belong to us !
 
 ;****************************************************************************
 ;****************************************************************************
@@ -54,16 +66,15 @@
 %assign CMDLINE_BUFFER2_SIZE		010000h  ;so much ?
 %assign CMDLINE_PROGRAM_PATH_SIZE	001000h
 %assign CMDLINE_MAX_ARGUMENTS		(CMDLINE_BUFFER1_SIZE / 2)
-%assign CMDLINE_MAX_ENVIRONMENT		20
+%assign CMDLINE_MAX_ENVIRONMENT		50
 
 
-%assign ENTER 0ah
-%assign BACKSPACE 08h
-%assign DEL 7fh
-%assign TABULATOR 9h
-
-%assign ESC 01bh
-%assign file_buff_size 0512
+%assign ENTER 		0ah
+%assign BACKSPACE 	08h
+%assign DEL 		7fh
+%assign TABULATOR 	09h
+%assign ESC 		01bh
+%assign file_buff_size 	0512
 
 
 ;%define DATAOFF(addr)           byte ebp + ((addr) - score)
@@ -100,10 +111,12 @@ START:
 			
 			pop 	edi ;prg name
 			call    environ_initialize
-			pop	edi	; shell_script
+			pop	ebp			; shell_script
+			call	environ_inherit		; copy parent's env to our struc			
+			mov 	edi,ebp
 			or	edi, edi
 			jz	.interactive_shell
-
+	
 			;-----------------
 			;open shell script
 			;-----------------
@@ -147,10 +160,11 @@ select_prompt:		sys_getuid
 			;set values for cmdline_parse
 			;----------------------------
 
-conspired_to_run	xor	dword eax, eax
+conspired_to_run:	xor	dword eax, eax
 			mov	dword [cmdline.flags], eax
 			mov	dword [cmdline.argument_count], eax
 			mov	dword [cmdline.buffer2_offset], eax
+			mov	dword [cmdline.buffer1_offset], eax
 			mov	dword [cmdline.arguments_offset], eax
 
 			;---------------------------------
@@ -257,7 +271,28 @@ environ_initialize:
 			stosb 
 			ret
 
-
+environ_inherit:
+			pop	ebx ;EIP 
+			or 	ebp,ebp
+			jz .ok_next_is_env
+.pop_next:		;get rid of rest args
+			pop 	eax
+			or	eax,eax
+			jnz   	.pop_next
+			push 	eax
+.ok_next_is_env:	
+			pop	eax
+			or	eax,eax
+			jz	.env_done
+			mov 	edx,[environ_count]
+			mov 	[cmdline.environment+edx*4],eax
+			inc 	edx
+			cmp 	edx,CMDLINE_MAX_ENVIRONMENT
+			mov 	[environ_count],edx
+			jnz .ok_next_is_env
+			;int 3 ;too much environ...
+.env_done:		
+			jmp ebx
 ;****************************************************************************
 ;****************************************************************************
 ;*
@@ -342,6 +377,8 @@ tty_initialize:
 ;TODO: set STDIN options (blocking, echo, icanon etc ...) only on linux ?
 ;      set signal handlers
 ;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			;db 08h,' ',08h we dont suppose to have writeble CS
+			mov  dword [backspace],0x20082008
 %ifdef __LINUX__
 			mov	edx, termattrs
 			sys_ioctl STDIN, TCGETS
@@ -400,8 +437,10 @@ get_char:
 		        sys_read [script_id],getchar,1
 			cmp	[script_id], byte 0
 			je	.noeof
-			or	al, al
-			js	near cmd_exit
+			or	eax, eax
+			;js	near cmd_exit
+			jz	near cmd_exit
+			
 .noeof			mov 	al,[ecx]
 			ret
 %endif
@@ -836,79 +875,173 @@ cmdline_get:
 ;* <=eax  number of parameters (0 = none, 0ffffffffh = line incomplete)
 ;****************************************************************************
 ;!!!!!!!!!!!!!!!!!!!!!!
-;TODO: ' \ < > 2> * ` $
+;TODO: ' \  2> * ` $
 ;!!!!!!!!!!!!!!!!!!!!!!
 
 cmdline_parse_flags:
 .seperator:		equ	001h
 .quota1:		equ	002h
 .quota2:		equ	004h
-			
+.redir_stdin:		equ	008h
+.redir_stdout:		equ	010h
+.redir_append:          equ     020h			
 
 cmdline_parse:
-			mov	dword ebx, [cmdline.flags]
+cmdline_parse_restart:
+			mov	dword esi, cmdline.buffer1
+			add	dword esi, [cmdline.buffer1_offset] ;we need this when piping
+
+			mov	dword ebx, [cmdline.flags]  ;this is used when incomplete cmd line
 			mov	dword ecx, eax
 			mov	dword edx, [cmdline.argument_count]
-			mov	dword esi, cmdline.buffer1
 			mov	dword edi, cmdline.buffer2
 			mov	dword ebp, [cmdline.arguments_offset]
 			add	dword edi, [cmdline.buffer2_offset]
 
-.next_character:	lodsb
+.next_character:	lodsb			;load next cahr from buffer
 			test	byte  al, al
-			jz	.end
-			test	dword ebx, cmdline_parse_flags.seperator
+			jz	near  .end      ;we are done
+			test	dword ebx, cmdline_parse_flags.seperator ;are we in argument or between ?
 			jnz	.check_seperator
-			cmp	byte  al, 0x09
+			cmp	byte  al, 0x09		;between
 			je	.skip_character
 			cmp	byte  al, 0x0a
 			je	.end
 			cmp	byte  al, 0x20
 			je	.skip_character
-			mov	dword [cmdline.arguments + 4 * ebp], edi
-			inc	dword ebp
+			push    dword .skip_character  ;used by redir where to return
+			cmp	byte  al, '>'
+			je	near .redir_stdout
+			cmp	byte  al, '<'
+			je	near .redir_stdin
+			pop     dword   [esp-4] ;interessting ... pop [esp] throw it away
+			cmp	byte  al, '|'
+			je	near  .pipe     ;Pipe Mania !
+			mov	dword [cmdline.arguments + 4 * ebp], edi ;ok time to create new arg
+			inc	dword ebp ;take notice that we have more args from now
 			inc	dword edx
-			or	dword ebx, cmdline_parse_flags.seperator
+			or	dword ebx, cmdline_parse_flags.seperator ;set in separator flag
 
-.check_seperator:	cmp	byte  al, '"'
+.check_seperator:	cmp	byte  al, '"'  ;handle correctly the " between " " nothing to parse
 			jne	.not_quota1
 			xor	dword ebx, cmdline_parse_flags.quota1
-			jmp	.skip_character
-.not_quota1:		test	dword ebx, cmdline_parse_flags.quota1
+			jmps	.skip_character
+.not_quota1:		test	dword ebx, cmdline_parse_flags.quota1 
 			jnz	.copy_character
-			cmp	byte  al, 0x09
+			cmp	byte  al, 0x09  ;are we at the end of arg ?
 			je	.seperate
 			cmp	byte  al, 0x0a
 			je	.end
+;****
+			push    dword .seperate
+			cmp	byte  al, '>'
+			je	 .redir_stdout
+			cmp	byte  al, '<'
+			je	 .redir_stdin
+			pop     dword   [esp-4] ;interessting ...
+			cmp	byte  al, '|'
+			je	near .pipe
+;****			
 			cmp	byte  al, 0x20
 			jne	.copy_character
 .seperate:		xor	dword eax, eax
-			and	dword ebx, ~cmdline_parse_flags.seperator
-.copy_character:	stosb
+			and	dword ebx, ~cmdline_parse_flags.seperator ;arg end here lets see 
+.copy_character:	stosb 						  ;if we have more...
 .skip_character:	dec	dword ecx
-			jnz	.next_character
+			jnz	near .next_character
 
 .end:			test	dword ebx, cmdline_parse_flags.quota1
-			jnz	.incomplete
+			jnz	near .incomplete			;save all int. val and 
+;TODO: both redirections at once					;signal uncomplete cmdline
 			xor	dword eax, eax
-			mov	dword [cmdline.arguments + 4 * ebp], eax
 			stosb
+			test   dword ebx, cmdline_parse_flags.redir_stdout ;get ready for redirs
+			jnz  .redir_stdout_doit
+			test   dword ebx, cmdline_parse_flags.redir_stdin
+			jnz .redir_stdin_doit
+			jmps .time_to_end
+.redir_stdin:
+			or	dword ebx, cmdline_parse_flags.redir_stdin 
+;			jmps	.skip_character
+			ret
+.redir_stdout:		
+			mov 	eax,ebx
+			or	dword ebx, cmdline_parse_flags.redir_stdout
+			cmp 	eax,ebx		;was redir already set ?? (second >) if so set append 
+			jnz 	.return_back
+.set_append:		or 	dword ebx, cmdline_parse_flags.redir_append
+			;jmps	.skip_character
+.return_back:		ret
+
+.redir_stdin_doit:
+			dec ebp
+			dec edx
+			sys_open [cmdline.arguments + 4 * ebp],O_RDONLY|O_LARGEFILE
+		        mov	[cmdline.redir_stdin],eax
+			jmps .time_to_end
+.redir_stdout_doit:
+			dec ebp
+			dec edx
+			mov	ecx,O_WRONLY|O_CREAT|O_LARGEFILE
+			test  dword ebx,cmdline_parse_flags.redir_append
+			jz .trunc
+			or 	ecx,O_APPEND
+			jmps	.ok_open		
+.trunc:
+			or 	ecx,O_TRUNC
+.ok_open:
+			sys_open [cmdline.arguments + 4 * ebp],EMPTY, S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH
+		        mov	[cmdline.redir_stdout],eax
+			jmps .time_to_end
+
+
+.time_to_end:		;when cmdline is whole done reset int struc to defaults
+			xor	eax,eax
+			mov	dword [cmdline.arguments + 4 * ebp], eax
 			mov	dword [cmdline.flags], eax
 			mov	dword [cmdline.argument_count], eax
 			mov	dword [cmdline.buffer2_offset], eax
+			mov	dword [cmdline.buffer1_offset], eax
 			mov	dword [cmdline.arguments_offset], eax
 			mov	dword eax, edx
-			ret
-
-.incomplete:		xor	dword eax, eax
+			ret 	;leave parser
+			
+.incomplete:		xor	dword eax, eax ;time to save all internals
+			mov	dword [cmdline.buffer1_offset], eax
 			dec	dword eax
 			mov	dword [cmdline.flags], ebx
 			sub	dword edi, cmdline.buffer2
 			mov	dword [cmdline.argument_count], edx
 			mov	dword [cmdline.buffer2_offset], edi
 			mov	dword [cmdline.arguments_offset], ebp
-			ret
 
+			ret ;leave parser
+    
+
+.pipe:
+			push 	ecx ;how many chars left ??? Decrease by one ?
+			push    edx ;size
+			xor	dword eax, eax
+			stosb
+			call    .time_to_end 	
+;			mov	dword [cmdline.arguments + 4 * ebp], eax
+;			mov	dword [cmdline.flags], eax
+;			mov	dword [cmdline.argument_count], eax
+;			mov	dword [cmdline.buffer2_offset], eax
+;			mov	dword [cmdline.arguments_offset], eax
+;			mov	dword eax, edx
+;			push	eax
+			sub	esi,cmdline.buffer1
+			mov	dword [cmdline.buffer1_offset], esi
+			sys_pipe pipe_pair		;create pipe		
+		        mov 	eax,[pipe_pair.write]
+		        mov	[cmdline.redir_stdout],eax
+			pop	eax
+			call	cmdline_execute ;both redir_'s are set to 0 there
+		        mov 	eax,[pipe_pair.read]
+		        mov	[cmdline.redir_stdin],eax
+			pop     eax ;chars left
+			jmp     cmdline_parse_restart
 
 
 ;****************************************************************************
@@ -941,9 +1074,10 @@ execute_builtin:
 			;mov	dword [cmdline.environment], eax
 			;mov	dword [cmdline.environment+4], eax
 
-			;----
-			;fork
-			;----
+			;----    |
+			;fork    |
+			;----   /|\
+			;      | | |
 ;***
 			call  tty_restore
 			sys_fork
@@ -954,7 +1088,20 @@ execute_builtin:
 			;try to execute directly if the name contains a '/'
 			;--------------------------------------------------
 
-.execute_extern:	mov	dword edi, [cmdline.arguments]
+.execute_extern:	
+			xor 	eax,eax
+			cmp dword	[cmdline.redir_stdout],eax
+			jz	.no_stdout_redir
+			sys_dup2 [cmdline.redir_stdout],STDOUT
+			sys_close EMPTY
+.no_stdout_redir:
+			xor	eax,eax
+			cmp dword	[cmdline.redir_stdin],eax
+			jz	.no_stdin_redir
+			sys_dup2 [cmdline.redir_stdin],STDIN
+			sys_close EMPTY			
+.no_stdin_redir:
+			mov	dword edi, [cmdline.arguments]
 			call	string_length
 			mov	dword edi, [cmdline.arguments]
 			mov	byte  al, '/'
@@ -968,7 +1115,8 @@ execute_builtin:
 			;-------------------------------------
 			;walk through paths and try to execute
 			;-------------------------------------
-
+			;TODO: grab paths from ENV ?
+			
 .scan_paths:		mov	dword ebp, 4
 			mov	dword esi, builtin_cmds.paths
 .next_path:		mov	dword edi, cmdline.program_path
@@ -998,7 +1146,25 @@ execute_builtin:
 .error:			sys_write  STDERR, text.cmd_not_found, text.cmd_not_found_length
 			sys_exit  1
 
-.wait:			mov 	[pid],eax
+.wait:			
+			mov 	[pid],eax
+			
+			mov ebx, [cmdline.redir_stdin]
+			mov ecx, [cmdline.redir_stdout]
+			or ebx,ebx
+			jz .no_close_in
+			sys_close EMPTY
+.no_close_in:
+			cmp ecx,1  ;FIX ME: I'm suspecting this is obsolote
+			jz .no_close_out
+			or ecx,ecx  
+			jz .no_close_out
+			sys_close ecx
+.no_close_out:
+			;sys_exit 0			
+			xor 	eax,eax
+			mov	[cmdline.redir_stdin],eax
+			mov	[cmdline.redir_stdout],eax	
 			xor	ebx,ebx		; Code updated to support
 			dec	ebx		; background processes
 			_mov	ecx, rtn	; JH
@@ -1027,7 +1193,7 @@ execute_builtin:
 ;****************************************************************************
 ;* cmd_export ***************************************************************
 ;****************************************************************************
-;TODO
+;TODO: var redefinition/del
 cmd_export:
 		mov 	edx,[environ_count]
 		mov	dword edi, [cmdline.arguments + 4]
@@ -1089,13 +1255,17 @@ cmd_export:
 ;****************************************************************************
 ;* cmd_and, cmd_or **********************************************************
 ;****************************************************************************
-cmd_and:
+cmd_and:		;int 3
+			;nop
 			cmp	[rtn], dword 0
 			jne	cmd_and_nogo
 
 ; Stupid hack to call executor
 cmd_and_go:		mov	esi, cmdline.arguments
 			mov	edi, esi
+			xor	eax,eax
+			cmp 	[esi+4],eax ;someone is trying to kill us...
+			jz	cmd_and_nogo
 copyloop:		add	edi, byte 4 
 			mov	eax, [edi]
 			mov	[esi], eax
@@ -1106,7 +1276,7 @@ copyloop:		add	edi, byte 4
 			call	cmdline_execute		; Execute the program
 cmd_and_nogo:		ret
 
-cmd_or			cmp	[rtn], dword 0
+cmd_or:			cmp	[rtn], dword 0
 			jne	cmd_and_go
 			ret
 
@@ -1176,8 +1346,10 @@ text:
 .prompt_length			equ	2
 .cmd_not_found:			db	"command not found", 10
 .cmd_not_found_length:		equ	$ - .cmd_not_found
+%ifdef DEBUG
 .break:				db	__n,">>SIGINT received<<,sending SIGTERM", 10
 .break_length:			equ	$ - .break
+%endif
 .suicide:			db	__n,"Suicide is painless..."
 .suicide_length:			equ	$ - .suicide
 
@@ -1185,8 +1357,8 @@ text:
 .cd_failed_length:		equ	$ - .cd_failed
 .logout:			db	"logout", 10
 .logout_length:			equ	$ - .logout
-.scerror			db	"couldn't open scriptfile", 10
-.scerror_length			equ	$ - .scerror
+.scerror:			db	"couldn't open scriptfile", 10
+.scerror_length:		equ	$ - .scerror
 
 builtin_cmds:
 				align	4
@@ -1198,13 +1370,13 @@ builtin_cmds:
 				dd	.or, cmd_or
 				dd	.colon, cmd_colon
 				dd	0, 0
-.and				db	"and", 0
-.or				db	"or", 0
-.colon				db	":", 0
+.and:				db	"and", 0
+.or:				db	"or", 0
+.colon:				db	":", 0
 .exit:				db	"exit", 0
 .logout:			db	"logout", 0
 .cd:				db	"cd", 0
-.export				db      "export",0
+.export:			db      "export",0
 .paths:				db	"/bin", 0
 				db	"/sbin", 0
 				db	"/usr/bin", 0
@@ -1214,13 +1386,8 @@ builtin_cmds:
 erase_line      db     0x1b,"[2K",0xd
 insert_char 	db     0x1b,"[1@]"
 delete_one_char db 0x8,0x1b,"[1P"
-backspace:
-cur_move_tmp 	db 08h,' ',08h
 beep   		db 07h
 cur_dir db "./",0
-
-;try_hook db 0
-;tabulator_str db 09,00
 
 ;****************************************************************************
 ;****************************************************************************
@@ -1234,6 +1401,9 @@ cur_dir db "./",0
 ;DATASEG
 
 UDATASEG
+backspace:
+;cur_move_tmp 	db 08h,' ',08h
+cur_move_tmp resd 1
 cmdline:
 .buffer1:			CHAR	CMDLINE_BUFFER1_SIZE
 .buffer2:			CHAR	CMDLINE_BUFFER2_SIZE
@@ -1245,9 +1415,15 @@ cmdline:
 .flags:				ULONG	1
 .argument_count:		ULONG	1
 .buffer2_offset:		ULONG	1
+.buffer1_offset:		ULONG	1
 .arguments_offset:		ULONG	1
+.redir_stdin:                   ULONG   1
+.redir_stdout:    		ULONG   1
 ;fdset: 				resb fd_set_size
 ;timer: B_STRUC itimerval
+pipe_pair:
+.read 	ULONG 1
+.write 	ULONG 1
 
 environ_count resd 1
 

@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.36 2002/01/17 08:16:24 konst Exp $
+# $Id: Makefile,v 1.37 2002/02/14 13:38:15 konst Exp $
 
 #DEBUG = y
 
@@ -10,9 +10,9 @@ BUILD_SRC = y
 
 include ../MCONFIG
 
-FILES = basename cat chmod chroot chown cpuinfo cut date dc dd dirname\
+FILES = basename cat chmod chroot chown cmp cpuinfo cut date dc dd dirname\
 	echo env extname factor fromdos grep head hexdump hostname\
-	id init kill ln lzss mkdir mknod nice nohup od rot13 paste\
+	id init kill ln lzss mkdir mknod nice nm nohup od rot13 paste\
 	readelf readlink reboot renice sh sleep strings sync\
 	tail tar tee tr true uname wc whoami yes\
 	md5sum rmdsum rc6crypt\
@@ -28,7 +28,7 @@ BONUS =	execve report asmutils
 
 ifdef LINUX
 FILES += chvt dmesg df eject fdisk finger ifconfig killall lsmod mesg ps\
-	 softdog swapon tty update
+	 softdog swapon sysctl tty update
 LINKS += ccd deallocvt killall5 pidof rmmod route swapoff 
 BONUS += window leaves fire256 snake game
 endif

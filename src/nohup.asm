@@ -1,6 +1,6 @@
 ; Copyright (C) 2001, 2002 Thomas M. Ogrisegg
 ;
-; $Id: nohup.asm,v 1.1 2002/01/11 17:52:24 konst Exp $
+; $Id: nohup.asm,v 1.2 2002/02/14 13:38:15 konst Exp $
 ;
 ; nohup - invoke a utility immun to hangups
 ;
@@ -9,7 +9,7 @@
 ;
 ; License           :       GNU General Public License
 ; Author            :       Thomas Ogrisegg
-; E-Mail            :       thomas.ogrisegg@sbg.ac.at
+; E-Mail            :       tom@rhadamanthys.org
 ; Version           :       1.0
 ; SuSV2-Compliant   :       yes
 ; GNU-compatible    :       yes

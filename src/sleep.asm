@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: sleep.asm,v 1.5 2002/02/02 08:49:25 konst Exp $
+;$Id: sleep.asm,v 1.6 2002/02/14 13:38:15 konst Exp $
 ;
 ;hackers' sleep		[GNU replacement]
 ;
@@ -51,10 +51,10 @@ START:
 .done:
 	mov	eax,ebx
 	test	edx,edx
-	jz	do_exit
+	jnz	.ok
 	test	eax,eax
 	jz	do_exit
-
+.ok:
 	_mov	ebx,1
 	mov	cl,byte [esi - 1]
 

@@ -1,6 +1,6 @@
 ; Copyright (C) 2001, 2002 Thomas M. Ogrisegg
 ;
-; $Id: test.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
+; $Id: test.asm,v 1.3 2002/02/14 13:38:15 konst Exp $
 ;
 ; test - evaluate expression
 ;
@@ -12,7 +12,7 @@
 ;
 ; License          :     GNU General Public License
 ; Author           :     Thomas Ogrisegg
-; E-Mail           :     thomas.ogrisegg@sbg.ac.at
+; E-Mail           :     tom@rhadamanthys.org
 ; Version          :     0.4
 ; Created          :     01/06/02
 ; SusV2-compliant  :     not yet

@@ -1,6 +1,6 @@
 ; Copyright (C) 2002 Thomas M. Ogrisegg
 ;
-; $Id: killall.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
+; $Id: killall.asm,v 1.3 2002/02/14 13:38:15 konst Exp $
 ;
 ; hackers' killall/killall5/pidof
 ;
@@ -23,7 +23,7 @@
 ;
 ; License            :        GNU General Public License
 ; Author             :        Thomas Ogrisegg
-; E-Mail             :        thomas.ogrisegg@sbg.ac.at
+; E-Mail             :        tom@rhadamanthys.org
 ; Version            :        0.6
 ; SUSV2-Compliant    :        not in SUSV2
 ; GNU-compatible     :        nearly

@@ -1,6 +1,6 @@
-; Copyright (c) 2001 Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
+; Copyright (c) 2001 Thomas M. Ogrisegg <tom@rhadamanthys.org>
 ;
-; $Id: rot13.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
+; $Id: rot13.asm,v 1.3 2002/02/14 13:38:15 konst Exp $
 ;
 ; Enc/Decrypt strings by rotating characters (with 13).
 ; Often used in Usenet articles

@@ -1,23 +1,27 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: grep.asm,v 1.4 2002/02/02 08:49:25 konst Exp $
+;$Id: grep.asm,v 1.5 2002/02/14 13:38:15 konst Exp $
 ;
 ;hackers' grep
 ;
-;syntax: grep [-q] PATTERN [file...]
+;syntax: grep [-q] [-v] PATTERN [file...]
 ;
 ;-q	be quiet (supress output, only set exit code)
+;-v	invert matching (select non-matching lines)
 ;
 ;there's no support for regexp, only pure string patterns.
 ;returns 0 on success (if pattern was found), 1 otherwise
 ;
 ;0.01: 19-Dec-1999	initial release (dumb and slow version)
+;0.02: 14-Feb-2002	added -v option
 
 %include "system.inc"
 
 CODESEG
 
-_q	equ	00000001b
+%assign	_q	00000001b
+%assign	_v	00000010b
+
 %assign	BUFSIZE	0x4000
 
 do_exit:
@@ -31,14 +35,20 @@ START:
 	dec	ebx
 	jz	do_exit
 	pop	esi
+.s0:
 	pop	edi		;get pattern
 
 	cmp	word [edi],"-q"
-	jnz	.proceed
-
-	pop	edi
+	jnz	.s2
+	or	[flag],byte _q
+.s1:
 	dec	ebx
-	mov	[flag],byte _q
+	jmps	.s0
+.s2:
+	cmp	word [edi],"-v"
+	jnz	.proceed
+	or	[flag],byte _v
+	jmps	.s1
 
 .proceed:
 	dec	ebx
@@ -63,9 +73,16 @@ START:
 	jnz	.next_file
 
 	call	strstr
-	or	eax,eax
+
+	test	[flag],byte _v
+	setz	bl
+	test	eax,eax
+	setz	bh
+
+	xor	bl,bh
 	jz	.mainloop
 
+.match:
 	mov	[retcode],byte 0
 	test	[flag],byte _q
 	jnz	.mainloop

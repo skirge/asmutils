@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@fel.cvut.cz>, <ruik@atlas.cz>
 ;
-;$Id: tar.asm,v 1.1 2001/10/02 06:00:52 konst Exp $
+;$Id: tar.asm,v 1.2 2002/02/14 13:38:15 konst Exp $
 ;
 ;hackers' tar
 ;
@@ -14,7 +14,6 @@
 ;All comments/feedback welcome.
 
 %include "system.inc"
-
 
 ;A tar archive consists of 512-byte blocks.
 ;  Each file in the archive has a header block followed by 0+ data blocks.
@@ -103,6 +102,7 @@
 
 %assign BUFF_DIV  011
 %assign BUFF_SIZE 2<<(BUFF_DIV-1)
+
 CODESEG
 
 
@@ -377,7 +377,9 @@ use: db "Usage: tar [OPT] FILENAME",__n
      db "            -x extract tar arcive",__n
 use_len equ $-use  
 arrow db " |-> "
+
 UDATASEG
+
 tar_handle resd 1
 file_handle resd 1
 tar:
@@ -399,4 +401,5 @@ tar:
 .prefix		resb 0155		
 
 buffer resb BUFF_SIZE
- END                                                                     
+
+END

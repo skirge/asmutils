@@ -1,6 +1,6 @@
-;Copyright (C) 2001 Thomas M. Ogrisegg (thomas.ogrisegg@sbg.ac.at)
+;Copyright (C) 2001 Thomas M. Ogrisegg <tom@rhadamanthys.org>
 ;
-;$Id: mesg.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
+;$Id: mesg.asm,v 1.4 2002/02/14 13:38:15 konst Exp $
 ;
 ;syntax: mesg [y|n]
 ;
