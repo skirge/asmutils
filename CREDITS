@@ -21,7 +21,7 @@ D: original project author and current maintainer
 
 N: Alexandr Gorlov (AG)
 E: winct@mail.ru
-D: df.asm
+D: df.asm dirname.asm
 
 N: Bart Hanssens (BH)
 E: antares@mail.dma.be
@@ -29,7 +29,7 @@ D: eject.asm kill.asm
 
 N: Yuri Ivliev (YI)
 E: yuru@black.cat.kazan.su
-D: pwd for Linux 2.0
+D: pwd.asm (stat based part)
 
 N: Indrek Mandre (IM)
 E: indrek.mandre@tallinn.ee
@@ -37,13 +37,17 @@ D: basename.asm chvt.asm dmesg.asm false.asm lsmod.asm
 D: httpd.asm rmmod.asm true.asm yes.asm
 D: hackbin.pl testbasename.pl (in < 0.06)
 
-N: Edward Popkov (EP)
+N: Edward Popkov (EP)
 E: evpopkov@carry.neonet.lv
 D: env.asm
 
 N: Brian Raiter (BR)
 E: breadbox@muppetlabs.com
 D: factor.asm, elf.inc
+
+N: H-Peter Recktenwald (PR)
+E: phpr@snafu.de
+D: cpuinfo.asm extname.asm eject.asm (ccd extension)
 
 N: Cecchinel Stephan (CS)
 E: inter.zone@free.fr

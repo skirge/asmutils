@@ -1,13 +1,13 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.4 2000/03/02 08:52:01 konst Exp $
+; $Id: system.inc,v 1.5 2000/04/07 18:36:01 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 28-Feb-2000
-; version	: 0.08
+; modified	: 05-Apr-2000
+; version	: 0.09
 ; assembler	: nasm 0.98
-; description	: configuration, sections, headers, etc.
+; description	: generic (not OS specific) macros, sections, headers, etc.
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
 ; comment	: you must include this file to do anything else
 ;
@@ -24,7 +24,7 @@
 ;0.07: 07-Feb-2000	_push, configuration moved to makefile
 ;0.08: 28-Feb-2000	added stack convertion routine, libc support,
 ;			various bugfixes (_mov and co)
-
+;0.09: 14-Mar-2000	jmps, syscall gates
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
@@ -117,6 +117,23 @@ __ver	db	STAMP_VERSION, EOL
 %ifdef STAMP_DATE
 	db	__t
 __date	db	STAMP_DATE, EOL, __n
+%endif
+
+;
+; syscall gates
+;
+
+%ifdef	__FREEBSD__
+__syscall_gate:
+	int	0x80
+	jnc	.__ok
+	neg	eax
+.__ok:
+	ret
+%elifdef __BEOS__
+__syscall_gate:
+	int	0x25
+	ret
 %endif
 
 ;Here's startup code plugin. It should prepare the stack
@@ -228,38 +245,16 @@ iend
 %endif
 %endmacro
 
+;
 ;------------------------------------------------------------------
-;intellectual register assignment (generate smallest possible code)
+; General purpose macros
 ;------------------------------------------------------------------
 
-%macro __setreg32_08_lo 3
-%ifnidn	%3,EMPTY
-	xor	%2,%2
-	mov	%1,%3
-%endif
-%endmacro
+;short jump
 
-%macro __setreg32_08_hi 3
-%ifnidn	%3,EMPTY
-	xor	%2,%2
-	mov	%1,(%3 / 0x100)
-%endif
-%endmacro
+%define	jmps jmp short
 
-%macro __setreg32_16 3
-%ifnidn	%3,EMPTY
-    %if %3=0xFFFF
-        xor	%2,%2
-	dec	%1
-    %else
-	mov	%2,%3
-    %endif
-%endif
-%endmacro
-
-;--------------------------------------------------------------------------
-;			here it is.. long weird macro
-;--------------------------------------------------------------------------
+;intellectual register assignment, generates smaller code.. long weird macro.
 ;warning: macro may touch flags!
 
 %macro _mov 2-3
@@ -344,6 +339,35 @@ iend
 	mov	%1,%2
     %endif
  %endif
+%endif
+%endmacro
+
+;
+; _mov helpers
+;
+
+%macro __setreg32_08_lo 3
+%ifnidn	%3,EMPTY
+	xor	%2,%2
+	mov	%1,%3
+%endif
+%endmacro
+
+%macro __setreg32_08_hi 3
+%ifnidn	%3,EMPTY
+	xor	%2,%2
+	mov	%1,(%3 / 0x100)
+%endif
+%endmacro
+
+%macro __setreg32_16 3
+%ifnidn	%3,EMPTY
+    %if %3=0xFFFF
+        xor	%2,%2
+	dec	%1
+    %else
+	mov	%2,%3
+    %endif
 %endif
 %endmacro
 
@@ -510,7 +534,7 @@ iend
 %endif
 	push dword %2
 	call %1
-	%assign _params _params*4
+%assign _params _params*4
 	_add esp,_params
 %endmacro
 
@@ -544,12 +568,12 @@ GLOBAL %{1}
 %if %0 > 9
 %define %10 dword[ebp+40]
 %endif
-	push ebp
-	mov ebp, esp
+	push	ebp
+	mov	ebp,esp
 %endmacro
 
 %macro ENDP 0
-	pop ebp
+	pop	ebp
 	ret
 %endmacro
 

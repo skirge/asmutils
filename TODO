@@ -1,7 +1,14 @@
+long-term:
+
 - write new utils and improve existing
 - develop libc
 - port code to *BSD and BeOS
 - write a shell
 - make a multicall binary
+
+short-term:
+
+- bring df and eject to FreeBSD
+- what happened to fasctall libc??
 
 do not tell me I am crazy hacker, I know :-)

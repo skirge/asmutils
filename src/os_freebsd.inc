@@ -1,11 +1,11 @@
 ; Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_freebsd.inc,v 1.3 2000/03/02 08:52:01 konst Exp $
+; $Id: os_freebsd.inc,v 1.4 2000/04/07 18:36:01 konst Exp $
 ;
 ; file          : os_freebsd.inc
 ; created       : 08-Feb-2000
-; modified      : 28-Feb-2000
-; version       : 0.08
+; modified      : 06-Apr-2000
+; version       : 0.09
 ; assembler     : nasm 0.98
 ; description   : freebsd kernel defined constants and structures
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -18,9 +18,9 @@
 %ifndef __FREEBSD_INC
 %define __FREEBSD_INC
 
-;
-;FreeBSD 3.2 syscalls
 ;created from	Id: syscalls.master,v 1.55.2.1 1999/05/05 22:53:05 dt Exp
+;
+;sys/syscall.h
 ;
 
 %define	SYS_syscall	0
@@ -278,6 +278,13 @@
 %define	SYS_kldsym	337
 %define	SYS_MAXSYSCALL	338
 
+;
+;
+;
+
+%macro sys_getfsstat 0-3
+	__syscall getfsstat, 3, %0, %1, %2, %3
+%endmacro
 
 ;
 ;sys/socket.h
@@ -296,5 +303,56 @@
 %assign	SO_TIMESTAMP	0x0400		;timestamp received dgram traffic
 
 %assign	SOL_SOCKET	0xffff		;options for socket level
+
+;
+;sys/mount.h
+;
+
+%assign	MNT_WAIT	1
+%assign MNT_NOWAIT	2
+
+%assign	MFSNAMELEN	16	;length of fs type name, including null
+%assign	MNAMELEN	90	;length of buffer for returned name
+
+
+struc statfs
+.f_spare2	LONG	1	;placeholder
+.f_bsize	LONG	1	;fundamental file system block size
+.f_iosize	LONG	1	;optimal trasfer block size
+.f_blocks	LONG	1	;total data blocks in file system
+.f_bfree	LONG	1	;free blocks in fs
+.f_bavail	LONG	1	;free blocks avail to non-superuser
+.f_files	LONG	1	;total file nodes in file system
+.f_ffree	LONG	1	;free file nodes in fs
+.f_fsid		LONG	1	;file system id
+.f_owner	LONG	1	;user that mounted the filesystem
+.f_type		INT	1	;type of filesystem
+.f_flags	INT	1	;copy of mount flags
+.f_spare	LONG	2	;spare for later
+.f_fstypename	CHAR	MFSNAMELEN	;fs type name
+.f_mntonname	CHAR	MNAMELEN	;mount point
+.f_mntfromname	CHAR	MNAMELEN	;mounted filesystem
+endstruc
+
+;
+;sys/cdio.h
+;
+
+%define	IOCPARM_MASK	0x1fff		;parameter length, at most 13 bits
+%define	IOCPARM_LEN(x)	(((x) >> 16) & IOCPARM_MASK)
+%define	IOCBASECMD(x)	((x) & ~(IOCPARM_MASK << 16))
+%define	IOCGROUP(x)	(((x) >> 8) & 0xff)
+
+%define	IOC_VOID	0x20000000	;no parameters
+%define	IOC_OUT		0x40000000	;copy out parameters
+%define	IOC_IN		0x80000000	;copy in parameters
+%define	IOC_INOUT	(IOC_IN|IOC_OUT)
+%define	IOC_DIRMASK	0xe0000000	;mask for IN/OUT/VOID
+
+;#define	_IOC(inout,group,num,len) 
+;	((inout | ((len & IOCPARM_MASK) << 16) | ((group) << 8) | (num)))
+;#define	_IO(g,n)	_IOC(IOC_VOID,	(g), (n), 0)
+;#define	CDIOCEJECT	_IO('c',24)
+
 
 %endif	;__FREEBSD_INC

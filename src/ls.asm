@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: ls.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: ls.asm,v 1.3 2000/04/07 18:36:01 konst Exp $
 ;
 ;hackers' ls
 ;
@@ -9,6 +9,9 @@
 ;			'/' in the arguments
 ;0.03: 10-Feb-2000	symlinks listing bugfix, thanks to
 ;			Franck Lesage <lesage@nexus.pulp.eu.org>
+;
+;0.04: 22-Mar-2000      Alexandr Gorlov <winct@mail.ru>
+;			ls -l is handled properly (no . is required)
 ;
 ;syntax: ls [option] [dir, dir, dir...]
 ;        The only supported option by now is -l which is, as you might have 
@@ -41,11 +44,11 @@
 START:
 		; Assume current dir		
 		mov	ebx,srcdir
-		mov	dword [ebx],0x2F2E
+		mov	dword [ebx],0x2F2E	; "./"
 
 		pop	eax			; get argc
 		dec	eax		
-		jz	open_file
+		jz	open_file		; Нет аргументов
 		pop	eax			; get argv[0]
 		
 get_next_arg:
@@ -53,10 +56,17 @@ get_next_arg:
 		test	ebx,ebx			; got more?
 		jz	near no_more_args
 
-		cmp	word [ebx],"-l"
+.test_arg:	cmp	word [ebx],"-l"
 		jnz	not_an_opt
 		inc	byte [long_form]
-		jmp	get_next_arg
+
+; AG change code from this string ;]
+		pop	ebx
+		test	ebx, ebx		; Is args here? 
+		jne	.test_arg		; Then .test_arg
+		mov	ebx, srcdir		; Else curent dir
+		jmp	open_file
+; AG end changing code here :(
 
 not_an_opt:		
 		mov	edi,srcdir		; save filename in srcdir 

@@ -1,6 +1,6 @@
-;Copyright (C) 2000 Edward Popkov <evpopkov@carry.neonet.lv>
+;Copyright (C) 2000 Edward Popkov <evpopkov@carry.neonet.lv>
 ;
-;$Id: env.asm,v 1.1 2000/03/02 08:52:01 konst Exp $
+;$Id: env.asm,v 1.2 2000/04/07 18:36:01 konst Exp $
 ;
 ;hackers' env
 ;
@@ -31,7 +31,7 @@ START:
 	mov	[esi-1],byte 0xa
 	inc	edx
 	sys_write STDOUT
-	jmp short .env
+	jmps	.env
 
 _exit:
 	sys_exit_true

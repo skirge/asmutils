@@ -1,6 +1,6 @@
 ;Copyright (C) 1995-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: window.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: window.asm,v 1.4 2000/04/07 18:36:01 konst Exp $
 ;
 ;text window example
 
@@ -202,15 +202,18 @@ cDefAttr	equ	0x07
 
 cScreenDevice	db	"/dev/vcsa0",EOL
 
+_exit:
+	sys_exit eax
+
 open_screen:
 	pushad
 	sys_open cScreenDevice, O_RDWR
 	mov	[sHandle],eax
+	test	eax,eax
+	js	_exit
 	sys_read eax,sMaxY,4
-
 	_mov	ecx,xy(0,0)
 	call	gotoXY
-
 	popad
 	ret
 

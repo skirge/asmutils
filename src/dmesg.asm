@@ -1,59 +1,99 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: dmesg.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: dmesg.asm,v 1.4 2000/04/07 18:36:01 konst Exp $
 ;
 ;hackers' dmesg
 ;
 ;0.01: 17-Jun-1999	initial release
-;0.02: 04-Jul-1999	fixed bug with 2.0 kernel
+;0.02: 04-Jul-1999	fixed bug with 2.0 kernel, removed leading <n> (KB)
+;0.03: 14-Mar-2000	
+;			fixed the "-c" option bug,
+;			empty kernel buffer coredump,
+;			added "-n" option
+;			by Christopher Li <chrisl@turbolinux.com.cn>
 ;
-;syntax: dmesg [-c]
+;			check for unsuccessful sys_syslog,
+;			clear buffer *after* print,
+;			fast output (buffer-at-once) (KB)
+;
+;syntax: dmesg [-c] [-n level]
 ;
 ;example: dmesg
 ;         dmesg -c
+;	  dmesg -n 1
 ;
 ;-c	clears the kernel buffer
+;-n	set the console log level
 ;
-;TODO: add support to -n option
 
 %include "system.inc"
 
 CODESEG
 
 START:
+	_mov	ebp,0		;-c flag
 	_mov	ebx,3		;just print the buffer [3]
 	pop	edi		;edi holds argument count
 	dec	edi
 	jz	.forward
 	pop	eax		;our own name
 	pop	eax
-	cmp	word [eax],"-c"
+	cmp	word [eax],"-n"
+	jnz	.clear
+	dec	edi
 	jz	.forward
-	inc	ebx		;clear the kernel buffer [4] (-c argument)
+	pop	ecx		;the log level
+	xor	edx,edx
+	mov	dl, byte [ecx]
+	sub	dl,"0"
+	jna	.forward	;less than 0, skip
+	cmp	dl,8
+	ja	.forward	;more than 8, skip
+	_mov	ebx,8		;set the console level
+	jmps	.syslog
+.clear:
+	cmp	word [eax],"-c"
+	jnz	.forward
+	inc	ebp
 .forward:
-	sys_syslog EMPTY, Buf, BufSize
-;	mov	edx,eax
-;	sys_write STDOUT,Buf
-	xchg	edi,ecx
-	xchg	esi,eax
+	mov	edx,BufSize
+.syslog:
+	sys_syslog EMPTY, Buf 
+	test	eax,eax
+	js	.quit
+	jz	.quit
+	mov	edi,BufNew
+	mov	ebx,edi		;save for later use
+	mov	esi,ecx
+	mov	ecx,eax
 .write:
-	cmp	byte [edi],'<'
-	jnz	.do_write
-	cmp	byte [edi+2],'>'
-	jnz	.do_write
-	_add	edi,3
-	_sub	esi,3
-.do_write:
-	sys_write STDOUT,edi,1
-	inc	edi
-	dec	esi
-	jnz	.write
+	lodsb
+	cmp	al, '<'
+	jnz	.store
+	cmp	byte [esi + 1], '>'
+	jnz	.store
+	lodsw
+	lodsb
+	_sub	ecx,3
+.store:
+	stosb
+	loopnz	.write
 
+	sub	edi,ebx
+	sys_write STDOUT,ebx,edi
+
+	or	ebp,ebp
+	jz	.quit
+
+	sys_syslog 4		;clear the kernel buffer [4] (-c argument)
+
+.quit:
 	sys_exit_true
 
 UDATASEG
 
 BufSize	equ	8192
 Buf	resb	BufSize
+BufNew	resb	BufSize
 
 END

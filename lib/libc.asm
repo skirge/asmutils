@@ -1,21 +1,20 @@
 ;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: libc.asm,v 1.4 2000/03/02 08:52:01 konst Exp $
+;$Id: libc.asm,v 1.5 2000/04/07 18:36:01 konst Exp $
 ;
 ;linux libc :)
+;
+;main feature: cdecl and fastcall can be configured AT RUNTIME.
 ;
 ;0.01: 10-Sep-1999	initial alpha pre beta 0 non-release
 ;0.02: 24-Dec-1999	first working version
 ;0.03: 21-Feb-2000	fastcall support
 ;
-;WARNING!!! THIS IS VERY ALPHA VERSION OF LIBC!
-;THIS SOURCE IS PROVIDED ONLY FOR CRAZY HACKERS!
+;WARNING!!! THIS IS VERY ALPHA VERSION OF LIBC
+;THIS SOURCE IS PROVIDED ONLY FOR CRAZY HACKERS
+;EVERYTHING HERE IS SUBJECT TO CHANGE WITHOUT NOTICE
 ;
-;NO COMMENTS. EVERYTHING HERE IS SUBJECT TO CHANGE.
-;
-;libc.asm and clib.asm will merge
-;
-;main feature: cdecl and fastcall can be configured AT RUNTIME !
+;Do not ask me to explain what is written here.
 
 %undef __ELF_MACROS__
 
@@ -39,10 +38,7 @@
 %macro _DECLARE_SYSCALL 2
     global %1:function
 
-;
-;dirty weird trick
-;
-    db	%2
+    db	%2	;dirty trick
 %1:
     call __enter
     sys_%{1}
@@ -71,7 +67,7 @@ CODESEG
 
     _DECLARE_FUNCTION	strlen
 
-    _DECLARE_SYSCALL	open,	-3
+    _DECLARE_SYSCALL	open,	-3	;<0 means always cdecl
     _DECLARE_SYSCALL	close,	1
     _DECLARE_SYSCALL	read,	3
     _DECLARE_SYSCALL	write,	3

@@ -5,7 +5,7 @@
 		 collection of different unix utilities
 		    written in pure assembly language
 
-			    (version 0.08)
+			    (version 0.09)
 
 			http://linuxassembly.org
 
@@ -16,7 +16,6 @@
 ; AUTHORS ARE NOT RESPONSIBLE FOR ANY DAMAGE THEY CAN DO TO YOUR SYSTEM.
 ; THEY WORKED ON MY BOX, BUT THEY CAN CRASH YOURS.
 ; NO WARRANTY. THIS IS DEVELOPMENT VERSION, USE SOLELY AT YOUR OWN RISK.
-
 
 
 Copyright information
@@ -36,16 +35,25 @@ See the GNU General Public License for more details
 (http://www.gnu.org/copyleft/gpl.html).
 
 
+Description
+===========
 
-Do I need this?
-===============
+asmutils is a set of different utilities written in assembly language,
+targeted on embedded systems and small distributions (like rescue or
+installation disks). It features the smallest possible size and memory
+requirements, the fastest speed and good functionality.
+Currently project supports Linux and FreeBSD (BeOS support is
+in the works), however it is quite portable to any i386 OS. 
 
-In general case you don't.
+Another goal of this package is to provide PORTABLE source code library,
+and to encourage assembly programmers to write for Linux/UNIX.
+Usually UNIX is associated with C, and no one wants to deal with assembly..
+Browse the source, look -- it is simple. Read the docs, start to write,
+and you will like it; assembly programming is a lot of fun, especially
+when you deal with UNIX-like operating systems.
 
-This package is great for small distributions (rescue, embedded,
-etc). It contains extremely small and fast replacements for several unix
-utilities. Usual way for small system is to replace binaries with shell
-scripts; however scripts require much more memory and are slow.
+Usual way for small system is to replace binaries with shell scripts;
+however scripts require much more memory and are slow.
 This package provides:
 
     1) binaries
@@ -54,16 +62,10 @@ This package provides:
     4) are fast as kernel
     5) need only few KBytes of RAM
 
-Several utilities are fully GNU compliant, examine NOTES for details.
+Several utilities are fully compliant with usual, examine NOTES for details.
 
-So, it's better to say in such a way: if you need this, you know it.
-
-Another goal of this package is to provide PORTABLE source code library,
-and to encourage assembly programmers to write for Linux/UNIX.
-Usually UNIX is associated with C, and noone wants to deal with assembly..
-Browse the source, look -- it is simple. Read the docs, start to write,
-and you will like it :)
-
+Anyway, you can try to fallback to libc functions instead of using direct
+system calls by defining OS=LIBC in Makefile, if your really want to do so.
 
 
 How to install
@@ -78,20 +80,11 @@ How to install
 	   you just need to write startup stack preparation
 	   for your executable format on your own)
 
-	Currently project supports Linux and FreeBSD,
-	however	it is quite portable to any i386 OS.
-	Anyway, you can try to fallback to libc functions
-	instead of using direct system calls (OS=LIBC in Makefile),
-	thus becoming able to run project on "unsupported" OS.
-
- WARNING: Before using any command first look at its syntax!
-	  Some utils can work not as you may expect!
-
- Syntax of command can be obtained from appropriate source
- from [src] directory, do not expect any answer from program
- on --help or --version switches. Lazy people can just launch
- "syntax" script in [bin] directory.
+ WARNING:
  
+ Before using any utility first DO LOOK AT ITS SYNTAX; some utils may work
+ not as you expected. Syntax can be obtained from appropriate source from
+ src directory (do not expect any answer from program on --help switch).
  
  Asmutils include few sets of precompiled binaries, for Linux 2.0/2.2
  and FreeBSD. Rule is simple -- use the one which suits your kernel.
@@ -99,33 +92,24 @@ How to install
  Installation itself is simple too: take precompiled binaries from
  [bin] directory for your kernel and copy them where you need.
 
-
  If you want to compile source you will need:
 
-  - nasm 0.98 or higher
+  - nasm 0.98
   - ld from GNU binutils 2.9
-  - GNU make 3.77 or higher  
-  - some shell
+  - GNU make 3.77
+  - possibly something else
 
  Older/other versions may work too, just these are versions I used.
- If you want to compile libc version, you will also need gcc.
-  
- cd [src], edit Makefile, issue make (or gmake) and hopefully all will be done.
- You may also read Asmutils Source Guide (doc/asmutils-source-guide.html)
- if you want to learn some details on compilation (size/speed optimization,
- different kernel versions, etc).
-
+ Examine Asmutils-HOWTO for details on compilation process, then
+ cd [src], edit Makefile, run make and hopefully all will be done.
 
 
 Other stuff
 ===========
 
- Current release notes are available from
- http://linuxassemmbly.org/asmutils.html
-
- Contributions are welcome! If you wish to contribute please read
- doc/HOWTO-CONTRIBUTE and doc/asmutils-source-guide.html files.
+ Contributions are welcome! If you wish to contribute
+ please read Asmutils HOWTO in doc directory!
 
  Do not forget to send feedback & bugreports to project maintainter.
 
- $Id: README,v 1.4 2000/03/02 08:52:01 konst Exp $
+ $Id: README,v 1.5 2000/04/07 18:36:01 konst Exp $

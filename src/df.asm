@@ -1,12 +1,14 @@
 ;Copyright (C) 1999-2000 Alexandr Gorlov <winct@mail.ru>
-;Partial copyright (c) 1999 Kir Smirnov <ksm@mail.ru>
+;Partial Copyright (C) 1999 Kir Smirnov <ksm@mail.ru>
 ;
-;$Id: df.asm,v 1.2 2000/03/02 08:52:01 konst Exp $
+;$Id: df.asm,v 1.3 2000/04/07 18:36:01 konst Exp $
 ;
 ;hackers' df
 ;
 ;0.01: 29-Jul-1999	initial release
 ;0.02: 11-Feb-2000	bugfixes 
+;0.03: 06-Apr-2000	portability fixes, removed sys_brk,
+;			initial FreeBSD support (KB)
 ;
 ;syntax: df --help
 ;
@@ -30,7 +32,7 @@ msg_usage	db	'Usage: df [OPTIONS]... [FILE]...', lf
 		db	'	--version	output version information and exit',lf
 len_msg_usage	equ $ - msg_usage
 
-msg_version	db	'df (asmutils) 0.02', lf
+msg_version	db	'df (asmutils) 0.03', lf
 len_msg_version	equ $ - msg_version
 
 msg_info	db	'Filesystem           1k-blocks      Used Available Use% Mounted on',lf
@@ -43,9 +45,6 @@ len_msg_info	equ $ - msg_info
 mtab_open	db	'Error: Can not open /etc/mtab',lf
 _l1	equ	$ - mtab_open
 %assign	len_mtab_open _l1
-brk_err		db	'Error: Can not allocate memory.',lf
-_l2	equ	$ - brk_err
-%assign	len_brk_err _l2
 read_err	db	'Error: reading failed.',lf
 _l3	equ	$ - read_err
 %assign	len_read_err _l3
@@ -84,6 +83,19 @@ START:
 	
 	sys_write STDOUT,msg_info,len_msg_info
 
+%ifdef	__FREEBSD__
+	mov	esi,r_buf
+	sys_getfsstat esi,0x4000,MNT_WAIT
+;	test	eax,eax
+;	js	_exit
+;	mov	ecx,eax
+;.nextfs:
+;	sys_write STDOUT, esi.f_mntfromname,MNAMELEN
+;	add	esi,sizeof_statfs	
+;	loop	.nextfs
+	jmp	_exit
+
+%else
 	sys_open mtab, O_RDONLY	;В eax дескриптор !!!
 	test	eax,eax
 	jns	.main60		;Не смог открыть /etc/mtab
@@ -92,60 +104,22 @@ START:
 	jmp	error_exit
 
 .main60:
-	push eax
-	sys_lseek eax,0,SEEK_END
-
-	push eax
-	push eax
-	xor ebx, ebx
-	sys_brk
-	mov dword [r_buf], eax
-	pop ebx
-	add ebx, eax
-	inc ebx
-	sys_brk
-	or eax, eax
-	jnz .main65		;!!!Ошибка выделения памяти
-	_mov	ecx,brk_err
-	_mov	edx,len_brk_err
-	jmp	error_exit
-.main65:
-
-	
-
 ; Теперь надо прочитать строчку за строчкой
 
 ;0. Считываем первую строку в r_buf
 Read:
-
-	
-	pop edx		;длинна ф
-	pop ebx		;дескриптор
-
-	push edx
-	push ebx
-	xor ecx, ecx
-	xor edx, edx
-	sys_lseek
-	pop ebx
-	pop edx
-	
-	sys_read EMPTY,[r_buf]
+	mov esi,r_buf		;!!!!?
+	sys_read eax,esi,0x4000
+	mov ecx,eax		;Счетчик длинны строки
+	cld
 	test	eax,eax		;проверка на ошибку
-	jns	.main70
+	jns	FindSpace
 		;Ошибка: неверный дескриптор
 	_mov	ecx,read_err
 	_mov	edx,len_read_err
 	jmp	error_exit
+%endif
 
-.main70:
-
-	mov ecx, eax		;Счетчик длинны строки
-	cld			
-
-	mov esi, dword [r_buf]		;!!!!?
-	jmp short FindSpace
-	
 ;1. Ищем новую строку
 FindString:
 	cld
@@ -444,14 +418,9 @@ Space:
 
 UDATASEG	
 
-r_buf		resd 1
-testline	resb 10
-length		resb 1
-dev		resb 30
-m_point		resb 30
-flags		resb 1
-
 sfs I_STRUC statfs		;структура для системного вызовы statfs
+
+%ifdef	__LINUX__
 .f_type		LONG	1	;тип файловой системы
 .f_bsize	LONG	1	;оптимальный размер блока для передачи
 .f_blocks	LONG	1	;общее количество блоков данных на фс
@@ -462,6 +431,31 @@ sfs I_STRUC statfs		;структура для системного вызовы statfs
 .f_fsid		LONG	1	;идентефикатор фс
 .f_namelen	LONG	1	;максимальная длинна имени файла
 .f_reserv	LONG  	6	;зарезервированно 
+%elifdef __FREEBSD__
+.f_spare2	LONG	1	;placeholder
+.f_bsize	LONG	1	;fundamental file system block size
+.f_iosize	LONG	1	;optimal trasfer block size
+.f_blocks	LONG	1	;total data blocks in file system
+.f_bfree	LONG	1	;free blocks in fs
+.f_bavail	LONG	1	;free blocks avail to non-superuser
+.f_files	LONG	1	;total file nodes in file system
+.f_ffree	LONG	1	;free file nodes in fs
+.f_fsid		LONG	1	;file system id
+.f_owner	LONG	1	;user that mounted the filesystem
+.f_type		INT	1	;type of filesystem
+.f_flags	INT	1	;copy of mount flags
+.f_spare	LONG	2	;spare for later
+.f_fstypename	CHAR	MFSNAMELEN	;fs type name
+.f_mntonname	CHAR	MNAMELEN	;mount point
+.f_mntfromname	CHAR	MNAMELEN	;mounted filesystem
+%endif
 I_END
+
+testline	resb 10
+length		resb 1
+dev		resb 30
+m_point		resb 30
+flags		resb 1
+r_buf		resd 0x4000
 
 END

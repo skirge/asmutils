@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: strings.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: strings.asm,v 1.3 2000/04/07 18:36:01 konst Exp $
 ;
 ;hackers' strings
 ;
@@ -91,10 +91,7 @@ not_an_ascii:
 		dec	ecx
 		sys_write STDOUT
 		
-		mov	ecx,cr
-		xor	edx,edx
-		inc	dl
-		sys_write STDOUT
+		sys_write STDOUT, cr, 1
 		
 		pop	ecx			; restore counter
 reset_flags:

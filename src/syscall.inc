@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.4 2000/03/02 08:52:01 konst Exp $
+; $Id: syscall.inc,v 1.5 2000/04/07 18:36:01 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 28-Feb-2000
-; version	: 0.08
+; modified	: 04-Apr-2000
+; version	: 0.09
 ; assembler	: nasm 0.98
 ; description	: system call macros
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -50,12 +50,12 @@
 	_mov	ebx,%4
 %endif
 %endif
+%ifndef	__LIBC__
+	_mov	eax,SYS_%{1}
+%endif
 
 %ifdef __LINUX__
-
-	_mov	eax,SYS_%{1}
 	int	0x80
-
 %else
 
 %if %0>2
@@ -92,18 +92,22 @@ extern %{1}
 
 %elifdef __FREEBSD__
 
-	_mov	eax,SYS_%{1}
-	push	eax
-	call	7:0
-	_add	esp, (%{2} + 1) * 4
+	call	__syscall_gate	;CODESEG macro in system.inc
+	_add	esp, (%{2}) * 4
+
+;	push	eax		;we are not using a.out
+;	call	7:0		;
+;	_add	esp, (%{2} + 1) * 4
 
 %elifdef __BEOS__
 
-	push	dword %%ret
-	_mov	eax,SYS_%{1}
-	int	0x25
-%%ret:
-	_add	esp, (%{2} + 1) * 4
+	call	__syscall_gate	;CODESEG macro in system.inc
+	_add	esp, (%{2}) * 4
+
+;	push	dword %%ret
+;	int	0x25
+;%%ret:
+;	_add	esp, (%{2} + 1) * 4
 
 %endif
 

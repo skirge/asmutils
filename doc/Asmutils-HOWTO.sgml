@@ -1,0 +1,401 @@
+<!doctype linuxdoc system>
+
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.1 2000/04/07 18:36:01 konst Exp $ -->
+
+<article>
+
+<title>Asmutils HOWTO
+
+<author>
+<url url="mailto:konst@linuxassembly.org" name="Konstantin Boldyshev">
+
+<date>v0.2 07-Apr-2000
+
+<abstract>
+This is the Asmutils HOWTO.
+
+This document is to accompany asmutils, explain asmutils internals,
+describe how to write asmutils program and how to contribute to the project.
+
+It targets asmutils developers and advanced users
+striving for the secret lore of the assembly entity.
+</abstract>
+
+<toc>
+
+<sect>Introduction
+<p>
+
+<sect1>Legal blurb
+<p>
+Copyright &copy; 1999-2000 Konstantin Boldyshev.
+Permission is granted to copy, distribute and/or modify
+this document under the terms of the GNU
+<url url="http://www.gnu.org/copyleft/fdl.html"
+name="Free Documentation License">,
+Version 1.1 or any later version published by the Free Software Foundation.
+
+<sect1>Before you begin
+<p>
+
+I assume you are familiar with Unix and assembly language to such an extent
+when you are able to understand what is written here.
+If you are not understanding most of what is written here,
+probably this HOWTO is not for you.
+
+I expect that you will dig in and examine source code of asmutils.
+This document is not intended to replace the source, its goal is only
+to accompany asmutils source and explain some unclear moments.
+Again, examine ALL source code. Look how command line parsing is done,
+how conditional assembly for different kernel versions is done and so on --
+I am not going to explain all and everything here.
+
+Mostly this HOWTO describes a set of macros I've developed to write fast
+and readable; they are hiding from you unneeded details,
+and also take care of optimization.
+
+You may also want to read other documentation represented on the
+<url url="http://linuxassembly.org" name="Linux Assembly">
+to get better general (not asmutils specific) understanding
+of asmutils source code.
+
+<sect1>Compilation
+<p>
+Asmutils are build with usual GNU suite and <tt/nasm/. Except <tt/nasm/,
+you will need <tt/make/, <tt/ld/, <tt/strip/, <tt/sh/, <tt/ln/, <tt/rm/,
+possibly something else.
+If you want to compile libc version, you will also need gcc and libc headers.
+
+All compile-time configuration is in Makefile in src directory.
+There are enough comments in Makefile to figure out what you can do.
+<em/Note: several utils (currently kill and eject)
+have their own additional configuration in the source code./
+
+<sect>Program structure
+<p>
+There are three macros that make section definition as simple as possible:
+<tt/CODESEG/, <tt/DATASEG/ and <tt/UDATASEG/
+(similar to <tt/tasm/ ideal mode syntax).
+<tt/END/ macro marks end of file.
+
+Program must have at least <tt/CODESEG/ (.text) section, other sections are optional.
+<tt/CODESEG/ is read-only, <tt/DATASEG/ and <tt/UDATASEG/ are read-write;
+i.e. you can place data in <tt/CODESEG/ as long as you will not change it.
+You can also define your own sections if you want, but there's very rare need
+of doing so. Each section (even if it is empty) will enlarge your file.
+
+<tt/START/ macro tells linker the entry point, and MUST be present.
+
+So, program skeleton will look like:
+
+<code>
+%include "system.inc"
+
+CODESEG
+
+START:			;entry point
+
+    your_code_here
+
+DATASEG
+
+    your_data_here
+
+UDATASEG
+
+    your_bss_here
+
+END
+</code>
+
+<sect>Include files description
+
+<sect1>system.inc
+<p>
+
+This file is vital and MUST be included into program code to do anything else;
+without this file you'll have to write in usual boring way.
+
+<tt/CODESEG/, <tt/DATASEG/, <tt/UDATASEG/, <tt/END/, <tt/I_STRUC/, <tt/I_END/
+macros are here, some other will be added.
+
+Also it contains optimizing macros <tt/_mov/ (former <tt/__setreg32/),
+<tt/_add/, <tt/_sub/, that perform register assignment, addition and subtraction.
+You can use these macros instead of mov, add, sub instructions;
+if you take care of size, this will produce quite good results
+(do not try to understand how they work :).
+
+This file includes two others:
+<ref id="inc-includes" name="includes.inc"> and
+<ref id="inc-syscall" name="syscall.inc">,
+you do need to include them manually.
+
+<sect1>includes.inc<label id="inc-includes">
+<p>
+
+This file stores generic constant definitions and structures
+(from libc headers), that are OS independent.
+If you add some defined constant,
+please do not forget to mention header file it was taken from.
+
+<sect1>syscall.inc<label id="inc-syscall">
+<p>
+File holds system call macros, here are general things to know them:
+(<bf>warning: from asmutils 0.11 syscall macros will change seriously!</bf>)
+
+<itemize>
+<item>there can be up to 5 parameters (depends on syscall)
+<item>parameters are always optional
+<item>registers corresponding to parameters are: ebx (1), ecx (2), edx (3), esi (4), edi (5)
+<item>eax is used as syscall (function) number and is always destroyed; after call it contains return value
+<item>ecx and edx also can be destroyed by several system calls
+<item>if there are no parameters, macro thinks that all registers (except eax) are already set before syscall
+<item>number of registers used is equal to parameters passed + 1 (eax)
+<item>parameter can be register, memory address, reference, constant or reserved word
+<item>reserved words are (currently only one): EMPTY
+(indicates that register is already set before macro and must be skipped).
+It is useful when you need to pass only  say third parameter
+and not touch others; f.e. <tt/sys_write EMPTY,EMPTY,1/ will expand to:
+
+<tscreen><code>
+	_mov edx,1
+	__syscall write...
+</code></tscreen>
+
+<item>
+registers are set in this order: edi, esi, edx, ecx, ebx, eax;
+i.e. it is possible to write <tt/sys_write eax, ebx, ecx/;
+it will expand to:
+
+<tscreen><code>
+	mov	edx,ecx
+	mov	ecx,ebx
+	mov	ebx,eax
+	__syscall write...
+</code></tscreen>
+<item>generated code can be optimized for size (default) or speed
+<item>registers are not touched, except eax, which holds return code
+<item>flags can be touched
+</itemize>
+
+<bf/WARNING:/ *never* use <tt/__syscall/ macro in your program directly
+(of course the same applies to int 0x80 !!).
+This is a VERY BAD thing to do.
+This will MAKE YOUR CODE UNPORTABLE!
+So please use only <tt/sys_xxx/ macros!
+
+If some system call is missing, you can add it to this file;
+it's simple, just look how others are done there;
+use sys_syscallname as macro name.
+
+
+<sect1>elf.inc
+<p>
+
+<bf/This file applies only to Linux./ ELF macros are defined here.
+These macros can be (and are, by default) used to reduce final size of executable.
+Brian Raiter wrote README.elf and comments in elf.inc containing
+all you need to know about what they do and how they work.
+But here are another good news: almost all of them (except ELF_BSTRUC and ELF_AT)
+are integrated into existing program structure.
+To enable them you just need to have <tt>ELF_MACROS = y</tt> line in Makefile (enabled by default),
+this turns on automatic usage of these macros (and you do not have to include elf.inc).
+And if you will follow simple rules when writing a program,
+then you will not have to carry out two different definitions for sections and structures;
+so, you can compile the same source with and without usage of these macros,
+getting correct code in both cases.
+This is experimental thing, however it seems to work well.
+Rules are simple: use following section order: CODESEG, DATASEG, UDATASEG, END,
+and use I_STRUC and I_END to define structures in UDATASEG
+instead of <tt>istruc</tt> and <tt>iend</tt> (take any asmutils source as an example).
+Alternatively, you can use macros from elf.inc directly if you want,
+but then you can't compile your source using usual nasm/ld procedure.
+If you want to go this way, take the time and read REAME.elf carefully
+(also do read it if you want to understand how they work).
+Personally I think that first way is simpler.
+</p>
+
+<sect>Contribution guidelines
+<p>
+Asmutils would never become what they are without submissions
+from various hackers. As any open project, it relies much
+on contributions. Hence, if you've got an intention/inspiration
+to contribute something, you're more than welcome!
+
+So, if you are the person who follows the challenge of UNIX
+assembly programming and wants your code to be included
+into asmutils, do examine this section carefully.
+It contains extremely important information, your contribution
+may not be accepted if you ignore suggestions below.
+
+Although I think most of what is said in this section is evident
+to experienced developers of distributed free software, there might be
+brand new developers from proprietary software world, unaware of common
+contribution practice; if you are the one, read with double attention.
+
+<sect1>First step
+<p>
+<bf/Before you begin/ make sure you are using <bf/the latest/
+version of asmutils, I can reject contributions based on old versions.
+
+So, get the latest version of asmutils and look what is already done.
+Even if the program you want to contribute is not there, look at
+<url url="http://linuxassembly.org/asmutils.html" name="ChangeLog">, or
+CVS <tt>cvs.linuxassembly.org:/pub/asm/asmutils</tt> (using ssh and pserver),
+or contact maintainer first, may be somebody is already doing (or has done)
+what you're only going to do (ditto if you want to improve existing utils).
+This is very important! Asmutils are growing rapidly,
+do not duplicate effort of other hackers.
+
+<sect1>Source code requirements
+<p>
+Here are few obvious requirements for the source code:
+
+<itemize>
+<item>you must use NASM, not GAS
+<item>you must not use libc or any other external library
+<item>you must use supplied macro set
+</itemize>
+
+<em>
+Note: I can accept utilities written in GAS, but this will just give me more
+boring work of converting them to NASM syntax and asmutils macro set.
+This is to be avoided when possible. I mean, do it on your own :)
+</em>
+
+While writing your program take care of portability!
+Basically, this means:
+
+<itemize>
+<item>no int 0x80 (or similar) calls directly, only sys_xxx macros
+<item>no ELF or kernel specific bizarre hacks, such as self-modifying code, writable CODESEG, etc.
+<item>no 0 instead of STDIN, 9 instead of SIGKILL, and so on
+</itemize>
+
+I think you've got an idea. Just try to imagine your program on other OS,
+and ask yourself: what one will need to do make it run?
+what should I do to make compile on as many OSes as possible?
+Even your program is OS specific (f.e. lsmod),
+at least try to make it readable.
+
+<bf/I reject submissions eliminating these simple rules./
+
+And of course, your code must do something useful, not just be written
+according to the above requirements :). Usual UNIX utils are preferred,
+but you can also contribute your very own program.
+Keep in mind that asmutils are not just fun. They are used
+in (and targeted on) small distributions and embedded systems.
+Thus, they should be as small as possible, use very few memory,
+and be fast as kernel. Neither more, nor less :)
+
+<sect1>Last step
+<p>
+When, finally, you think your program is ready,
+here again comes administrativia.
+
+First, try to test your program. If it still works, rest a day, then look
+at it again.. I mean, I know you're very excited that your program works,
+but just try to look what now you can improve; do not send maintainer a new
+version every day, this will save him (and you) from the mess of versions.
+
+New programs should be sent to project maintainer, while improvements
+of existing -- to particular util maintainer first.
+
+Since asmutils programs are usually quite small, please send
+full source of program instead of patches when possible.
+
+Sometimes maintainer (or I) will modify your code a bit.
+Please use that modified code for next program version.
+
+Simple, huh? :)
+
+With any additional questions refer to the asmutils webpage
+or contact asmutils maintainer.
+
+<sect>Optimization, tips and tricks
+<p>
+
+In fact optimization must be done by assembler.. but..
+optimizing assembler is just a sweet dream yet. So, I've took care of it.
+By default code is optimized for size, and you can get up to 20% smaller executable;
+speed optimization in fact is a fake, it's just an absence of size optimization :),
+though theoretically you can gain something on pentium processors..
+To enable speed optimization set OPTIMIZE to SPEED in Makefile.
+Optimization touches register assignment, addition and subtraction
+(<bf/_mov/, <bf/_add/, <bf/_sub/ macros),
+and section alignment (<bf/CODESEG/, <bf/DATASEG/ macros).
+Optimization is a work in progress, so results may be better in future versions.
+
+If you've gone crazy on binary size,
+you may want to use some of things described below.
+
+First of all, try to keep your program in one <bf/CODESEG/ (.text) section.
+Remember, every new section (even if it is empty) increases size of executable file.
+Unless you have any <em/read-write/ data, do not create <bf/DATASEG/ (.data section), keep your data in <bf/CODESEG/.
+Even if you've got one/two variables with assigned initial values, first think of keeping them dynamically on the stack instead of creating <bf/DATASEG/.
+And if your initial value is zero, place such variable in <bf/UDATASEG/ (.bss) section, it will be zeroed out by kernel.
+
+Use <bf/_mov/ macro instead of <tt/mov/ instruction
+(if you do not assign one register to another),
+this will track several special cases and produce smaller code.
+
+Avoid using 16bit registers (ax, bx, cx, etc) unless you know exactly what you're doing.
+Every 16bit instruction will take one more byte (0x66 prefix).
+For instance, <tt/inc ax/ will produce greater code than <tt/inc eax/.
+
+Here are some assembly examples you can use instead of
+<tt/cmp/ instruction to produce smaller code:
+
+<tscreen><code>
+;if eax < 0 (signed compare)
+
+	test	eax,eax
+	js	is_less
+
+;if eax == 0
+
+	test	eax,eax
+	jz	is_zero
+
+;if eax == 0
+
+	or	eax,eax
+	jz	is_zero
+
+;if eax == 1		(and you no more care of its value)
+
+	dec	eax
+	jz	is_one
+
+;if eax == 2		(and you no more care of its value)
+
+	dec	eax
+	dec	eax
+	jz	is_one
+
+
+;if eax == -1		(and you no more care of its value)
+
+	inc	eax
+	jz	is_minus_one
+
+;if eax == -2		(and you no more care of its value)
+
+	inc	eax
+	inc	eax
+	jz	is_minus_one
+
+
+;if -255 < value < 255, you can use
+
+	cmp	eax,byte value ;or -value
+
+;instead of
+	cmp	eax,value
+</code></tscreen>
+
+Seek, and you may find more..
+
+<tt>$Id: Asmutils-HOWTO.sgml,v 1.1 2000/04/07 18:36:01 konst Exp $</tt>
+
+</article>

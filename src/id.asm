@@ -1,10 +1,11 @@
 ;Copyright (C) 1999 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: id.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: id.asm,v 1.4 2000/04/07 18:36:01 konst Exp $
 ;
 ;hackers' id
 ;
 ;0.01: 25-Oct-1999	initial release
+;0.02: 07-Apr-2000	squeezed few bytes (KB)
 ;
 ;syntax: id
 ;        No options so far.
@@ -26,11 +27,7 @@ START:
 		
 		mov	cl,10			; print "\n"
 		push	ecx
-		mov	ecx,esp
-		xor	edx,edx
-		inc	dl
-		sys_write STDOUT
-		pop	ecx
+		sys_write STDOUT,esp,1
 		
 		sys_exit_true
 

@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.2 2000/03/02 08:52:01 konst Exp $
+; $Id: os_linux.inc,v 1.3 2000/04/07 18:36:01 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 29-Feb-2000
-; version       : 0.08
+; modified      : 01-Apr-2000
+; version       : 0.09
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -89,6 +89,7 @@
 %assign CDROMRESET		0x5312	;hard-reset the drive
 %assign CDROMVOLREAD		0x5313	;Get the drive's volume setting (struct cdrom_volctrl)
 %assign CDROMREADRAW		0x5314	;read data in raw mode (2352 Bytes)
+%assign CDROMCLOSETRAY	0x5319
 
 ;
 ;linux/vt.h

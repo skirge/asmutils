@@ -1,26 +1,40 @@
+07-Apr-2000:	asmutils 0.08
+
+	- ccd, cpuinfo, cpuspeed, extname (PR)
+	- dirname (AG)
+	- tty (KB)
+	- httpd: various fixes, now works on FreeBSD! (KB)
+	- dmesg: added "-n", "-c" bugfix, empty kernel buffer fix (CL);
+		 buffer-at-one output and other fixes (KB)
+	- ls: ls -l is handled properly (no . is required) (AG)
+	- df: preliminary FreeBSD support (KB)
+	- Asmutils-HOWTO instead of old docs, README updated (KB)
+	- various minor bugfixes (KB)
+
+
 02-Mar-2000:	asmutils 0.08
 
 	- sln (KB)
 	- env (EP)
 	- network syscalls rewritten (KB)
-	- assembly libc: fastcall support (KB)
+	- libc: fastcall support (KB)
 	- portability fixes: kill, tee, httpd (KB)
 	- project ported to libc :) (KB)
 	- initial BeOS support (KB)
 	- size improvements (KB)
 	- window.asm and leaves.asm improved (KB)
 	- system macros bugfixes (KB)
-	- bugfixes in df (AG)
-	- bugfix in id (KB)
+	- df: bugfixes (AG)
+	- id: bugdfix (KB)
 
 
 10-Feb-2000:	asmutils 0.07
 
 	- project ported to FreeBSD (partially) (KB)
 	- serious include files changes (KB)
-	- symlink listing bugfix in ls (FL)
+	- ls: symlink listing bugfix (FL)
+	- echo: added \e escape (KB)
 	- few portability fixes (KB)
-	- added \e escape to echo (KB)
 	- documenation updates (KB)
 	- configuration options moved to Makefile from system.inc (KB)
 
@@ -30,10 +44,10 @@
 	- ls, strings, wc, id, ps (DB)
 	- lzss, rmdsum, rc6crypt, nc (CS)
 	- chmod, chroot, grep (KB)
-	- added "-e" & "-E" switches to echo (GNU compliance) (KB)
-	- added "-m" (mode) and "-p" (parent) switches to mkdir (KB)
+	- echo: added "-e" & "-E" switches (GNU compliance) (KB)
+	- mkdir: added "-m" (mode) and "-p" (parent) switches (KB)
 	- added lib/rmd.asm (RIPEMD-160 algo) (CS)
-	- fixed bug in ln (DW)
+	- ln: bugfix (DW)
 	- working alpha of libc (KB & CS)
 	- _mov (former __setreg32), _add, _sub macros in system.inc (KB)
 	- types.inc merged kernel.inc, config.inc merged system.inc (KB)
@@ -60,7 +74,7 @@
 	- eject (BH)
 	- factor (JW)
 	- chvt/deallocvt (IM)
-	- df, really huge util :) (AG)
+	- df (AG)
 	- ln, more (KB)
 	- minor size improvements (KB)
 	- package structure slightly rearranged (KB)
@@ -77,7 +91,7 @@
 
 	- mount/umount, softdog, swapon/swapoff,
 	  reboot/halt/poweroff, tee, arch (KB)
-	- pwd for 2.0 kernel (YI)
+	- pwd: Linux 2.0 support (YI)
 	- kill (BH)
 	- removed bdflush (obsolete) (KB)
 	- all found bugs with 2.0 kernel are fixed (KB)
@@ -91,10 +105,8 @@
 
 	- basename, dmesg, httpd, lsmod, true/false, rmmod, yes (IM)
 	- echo, uname, sleep (KB)
-	- fixed bug with 2.0 kernel in cat (KB)
-	- current pwd will work only on 2.2 kernel :(
-	  (should be fixed) (KB)
-	- added period parameter to update (KB)
+	- cat: fixed bug with 2.0 kernel (KB)
+	- update: added period parameter (KB)
 	- lot of size improvements (KB)
 	- system.inc completely rewritten, new macros added (KB)
 	- basename, sleep, uname and yes are GNU compliant

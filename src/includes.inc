@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.2 2000/03/02 08:52:01 konst Exp $
+; $Id: includes.inc,v 1.3 2000/04/07 18:36:01 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 29-Feb-2000
-; version       : 0.08
+; modified      : 01-Apr-2000
+; version       : 0.09
 ; assembler     : nasm 0.98
 ; description   : general constants and structures from header files (libc)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -128,6 +128,13 @@
 
 %assign WNOHANG		1
 %assign WUNTRACED	2
+
+;
+;sys/mount.h
+;
+
+%define MS_RDONLY	1
+%define MS_MGC_VAL	0xc0ed0000
 
 ;
 ;sys/socket.h

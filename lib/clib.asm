@@ -1,7 +1,7 @@
 ;---------- First Strike of an optimized CLIB       (c) CECCHINEL Stephan 1999
 ;contact:  interzone@pacwan.fr
 ;
-;$Id: clib.asm,v 1.3 2000/02/10 15:07:04 konst Exp $
+;$Id: clib.asm,v 1.4 2000/04/07 18:36:01 konst Exp $
 ;
 ;see doc/clib.html for details
 
@@ -100,7 +100,7 @@ itoa:
 ; printf is defined as a macro
 ; you can also use fprintf(STDOUT,string,args,args....)  it is the same than printf
 ;
-%macro printf 1+
+%macro printf 1-*
 %assign _params %0
 %assign _params _params-1
 %if %0 > 10
@@ -136,7 +136,7 @@ itoa:
 	push dword %1
 	_mov eax,STDOUT
 	push eax
-	call f_printf
+	call fprintf
 %assign _params _params*4
 	add esp,_params
 %endmacro

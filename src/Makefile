@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils
 #
-# $Id: Makefile,v 1.4 2000/03/02 08:52:01 konst Exp $
+# $Id: Makefile,v 1.5 2000/04/07 18:36:01 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -49,7 +49,7 @@ ASFLAGS = -D__$(OS)__ -D__OPTIMIZE__=__O_$(OPTIMIZE)__
 
 FILES = basename cat echo mkdir kill pwd sleep sync tee true uname yes\
 	factor ln more md5sum lzss rmdsum strings id wc httpd\
-	chmod chroot grep rc6crypt sln env\
+	chmod chroot grep rc6crypt sln env dirname extname cpuinfo cpuspeed\
 #	dumpcore regs execve
 
 LINKS = false rmdir
@@ -60,10 +60,10 @@ ifdef LINUX
 
 FILES += dmesg df ls lsmod eject hostname mount\
 	 rmmod chvt reboot softdog swapon ps update\
-	 nc\
+	 nc tty\
 	 window leaves
 
-LINKS += arch deallocvt domainname halt poweroff swapoff umount
+LINKS += arch ccd deallocvt domainname halt poweroff swapoff umount
 
 else
 
@@ -89,7 +89,7 @@ ifdef KERNEL
 ASFLAGS += -D__KERNEL__=$(KERNEL) 
 endif
 ifdef STAMP
-ASFLAGS += -DSTAMP_VERSION="'asmutils 0.08'" -DSTAMP_DATE="'$(shell date "+%d-%b-%Y %H:%M")'"
+ASFLAGS += -DSTAMP_VERSION="'asmutils 0.09'" -DSTAMP_DATE="'$(shell date "+%d-%b-%Y %H:%M")'"
 endif
 
 ifdef ELF_MACROS
@@ -131,6 +131,7 @@ links:
 	mkln swapon swapoff;\
 	mkln true false;\
 	mkln uname arch;\
+	mkln eject ccd;\
 	)
 
 install:

@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: httpd.asm,v 1.4 2000/04/07 18:36:01 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -35,6 +35,7 @@
 ;0.04: 09-Feb-2000	portability fixes (KB)
 ;0.05: 25-Feb-2000	heavy rewrite of network code, size improvements,
 ;			portability fixes (KB)
+;0.06: 05-Apr-2000	finally works on FreeBSD! (KB)
 
 %include "system.inc"
 
@@ -46,7 +47,7 @@ setsockoptvals	dd	1
 START:
 	pop	esi
 	cmp	esi,byte 3		;3 arguments must be there
-	jnz	.exit
+	jnz	false_exit
 
 	pop	esi ; our own name
 
@@ -71,20 +72,22 @@ START:
 ;	adc edx,0
 .nextsym:
 	inc	esi
-	jmp short .next
+	jmps	.next
 .done:
 	push	eax
 	sys_socket PF_INET,SOCK_STREAM,IPPROTO_TCP
 	mov	ebp,eax		;socket descriptor
 	test	eax,eax
-	js	.exit
+	js	false_exit
+
 	sys_setsockopt ebp,SOL_SOCKET,SO_REUSEADDR,setsockoptvals,4
 	or	eax,eax
-	jz	.continue1
-.exit:
-	sys_exit_false
+	jz	bind
 
-.continue1:
+false_exit:
+	sys_exit 1
+
+bind:
 	pop	eax
 	mov	ebx,esp
 	mov	dword [bindsockstruct],AF_INET
@@ -92,27 +95,30 @@ START:
 	mov	byte [bindsockstruct + 3],al
 	sys_bind ebp,bindsockstruct,16	;bind ( s, struct sockaddr *bindsockstruct, 16 );
 	or	eax,eax
-	jnz	.exit
+	jnz	false_exit
 
 ;listen ( s, 0xff )
 
 	sys_listen ebp,0xff
 	or	eax,eax
-	jnz	.exit
+	jnz	false_exit
 
 	sys_fork	;fork after everything is done and exit main process
 	or	eax,eax
-	jz	.continue5
-.true_exit:
-	sys_exit_true
+	jz	acceptloop
 
-.continue5:
-.acceptloop:
+true_exit:
+	sys_exit 0
+
+
+acceptloop:
 
 ;accept ( s, struct sockaddr *arg1, int *arg2 )
 
 	mov	dword [arg2],16		;sizeof (struct sockaddr_in)
 	sys_accept ebp,arg1,arg2
+	test	eax,eax
+	js	acceptloop
 	mov	edi,eax ; our descriptor
 
 ;wait4 ( pid, status, options, rusage )
@@ -126,7 +132,7 @@ START:
 	or	eax,eax
 	jz	.forward
 	sys_close edi
-	jmp	.acceptloop
+	jmp	acceptloop
 .forward:
 	sys_read edi,filebuf,0xfff
 	cmp	eax,byte 7		;in request there must be at least 7 symbols
@@ -180,7 +186,7 @@ START:
 	mov	dword [ebx],'inde'
 	mov	dword [ebx+4],'x.ht'
 	mov	dword [ebx+8],0x6e006c6d	;'ml'
-	jmp	short .index
+	jmps	.index
 .noindex:
 	mov	byte [ebx],0;
 .index:
@@ -208,11 +214,10 @@ START:
 	sys_write edi,nl,1
 
 .endrequest:
-	sys_shutdown ebp,1	;shutdown ( sock, how )
-
-	sys_read ebp,EMPTY,0xff
-	sys_close ebp
-	jmp	.true_exit
+;	sys_read ebp,filebuf,0xff
+;	sys_shutdown ebp,1	;shutdown ( sock, how )
+;	sys_close ebp
+	jmp	true_exit
 
 UDATASEG
 

@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: echo.asm,v 1.3 2000/02/10 15:07:04 konst Exp $
+;$Id: echo.asm,v 1.4 2000/04/07 18:36:01 konst Exp $
 ;
 ;hackers' echo		[GNU replacement]
 ;
@@ -229,7 +229,7 @@ START:
 	or	al,al
 	jnz	.store
 	inc	ebx
-	jmp	short .store
+	jmps	.store
 
 UDATASEG
 

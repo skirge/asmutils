@@ -1,11 +1,11 @@
 ; Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_beos.inc,v 1.1 2000/03/02 08:52:01 konst Exp $
+; $Id: os_beos.inc,v 1.2 2000/04/07 18:36:01 konst Exp $
 ;
 ; file          : os_beos.inc
 ; created       : 21-Feb-2000
-; modified      : 02-Mar-2000
-; version       : 0.08
+; modified      : 22-Mar-2000
+; version       : 0.09
 ; assembler     : nasm 0.98
 ; description   : beos kernel constants (R4.5.2)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -13,7 +13,8 @@
 ;
 ;IMPORTANT NOTES:
 ;
-;BeOS port doesnot work yet (mostly because of weird BeOS kernel bugs).
+;BeOS port doesnot work yet (mostly because of weird BeOS
+;kernel bugs, I hope that upcoming R5.0 will fix them).
 ;
 ;Be kernel developers do not want to share any information on syscalls,
 ;so I had to figure out these constants and system call convention
@@ -142,6 +143,6 @@
 %assign SYS_fstat	SYS_exit
 %assign SYS_getgroups	SYS_exit
 
-;BeOS has dprintf system call - 0x68. Wow, I am impressed :)
+;BeOS has dprintf system call -- 0x68? Wow, I am impressed :)
 
 %endif
