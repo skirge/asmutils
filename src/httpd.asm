@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.9 2002/01/04 17:25:21 konst Exp $
+;$Id: httpd.asm,v 1.10 2002/01/05 09:21:14 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -11,18 +11,19 @@
 ;
 ;		httpd /htdocs/ 8888 /htdocs/httpd.log /htdocs/404.html
 ;
-; when / is the last symbol in request, appends index.html
-; in case of error just closes connection
-; takes 16kb + 16kb for every request in memory, forks on every request,
-; good enough to serve basic documentation.
-; I tried to make it as secure as possible, there should be no buffer overflows
-; I at least tried not to make any. It ignores requests with '..' in.
-; please, pelase send me e-mail and tell what you think
-; this is my fifth assembler program (on x86 & nasm), the first I wrote
-; yesterday
+; - when / is the last symbol in request, appends index.html
+; - in case of error just closes connection
+; - takes 16kb + 16kb for every request in memory, forks on every request,
+; - good enough to serve basic documentation.
 ;
-; Here I did a bit testing and it served about 214.8688524590 pages
-; a second ;) maybe I'm wrong though, but this was the statistics
+;I tried to make it as secure as possible, there should be no buffer overflows.
+;I at least tried not to make any. It ignores requests with included '..'.
+;Here I did a bit testing and it served about 214.8688524590 pages per second.
+;Perhaps I am wrong though, but this was the statistics :)
+;
+;Note that starting from version 0.02 IM no longer maintains httpd.
+;Actually it was heavily rewritten since 0.04 and is now maintained by KB;
+;however you can still find original IM code and notes throughout the source.
 ;
 ;0.01: 17-Jun-1999	initial release (IM)
 ;0.02: 04-Jul-1999	fixed bug with 2.0 kernel, minor changes (KB)
@@ -38,7 +39,7 @@
 ;0.09: 16-Jan-2001	added support for "Content-Type: text/plain"
 ;			for .text, .txt, .log and no-extension files,
 ;			enabled by %define SENDHEADER (KB)
-;0.10  04-Jan-2002      added logging (IP||HEADER),
+;0.10  05-Jan-2002      added logging (IP||HEADER),
 ;			added err404file command line argument,
 ;			more content types (RM),
 ;			added extension-content type table (KB)
@@ -134,17 +135,15 @@ bind:
 	mov	dword [bindsockstruct],AF_INET
 	mov	byte [bindsockstruct + 2],ah
 	mov	byte [bindsockstruct + 3],al
-	sys_bind ebp,bindsockstruct,16	;bind ( s, struct sockaddr *bindsockstruct, 16 );
+	sys_bind ebp,bindsockstruct,16	;bind(s, struct sockaddr *bindsockstruct, 16)
 	or	eax,eax
 	jnz	false_exit
 
-;listen ( s, 0xff )
-
-	sys_listen ebp,0xff
+	sys_listen ebp,0xff		;listen(s, 0xff)
 	or	eax,eax
 	jnz	false_exit
 
-	sys_fork	;fork after everything is done and exit main process
+	sys_fork			;fork after everything is done and exit main process
 	or	eax,eax
 	jz	acceptloop
 
@@ -153,24 +152,21 @@ true_exit:
 	jmps	real_exit
 
 acceptloop:
-
-;accept ( s, struct sockaddr *arg1, int *arg2 )
-
-	mov	dword [arg2],16		;sizeof (struct sockaddr_in)
-	sys_accept ebp,arg1,arg2
+	mov	dword [arg2],16		;sizeof(struct sockaddr_in)
+	sys_accept ebp,arg1,arg2	;accept(s, struct sockaddr *arg1, int *arg2)
 	test	eax,eax
 	js	acceptloop
-	mov	edi,eax ; our descriptor
+	mov	edi,eax			;our descriptor
 
-;wait4 ( pid, status, options, rusage )
+;wait4(pid, status, options, rusage)
 ;there must be 2 wait4 calls! Without them zombies can stay on the system
 
 	sys_wait4	0xffffffff,NULL,WNOHANG,NULL
 	sys_wait4
 
 %ifdef LOG
-;	mov edx,arg3
-;        mov byte [edx],0x10
+;	mov	edx,arg3
+;        mov	byte [edx],0x10
 ;	sys_getpeername edi,filebuf,arg3
 	mov	eax,[arg1+4]
 	push	edi
@@ -184,17 +180,17 @@ acceptloop:
 	inc	edi
 	mov	ebx,eax
 	sys_write [logfd],edi,esi
-	pop edi
+	pop	edi
 %endif
 
-	sys_fork	;we now fork, child goes his own way, daddy goes back to accept
+	sys_fork		;we now fork, child goes his own way, daddy goes back to accept
 	or	eax,eax
 	jz	.forward
 	sys_close edi
 	jmp	acceptloop
 .forward:
 	sys_read edi,filebuf,0xfff
-	cmp	eax,byte 7		;in request there must be at least 7 symbols
+	cmp	eax,byte 7	;there must be at least 7 symbols in request 
 	jb	near endrequest
 .endrequestnot3:
 	push	eax
@@ -204,7 +200,7 @@ acceptloop:
 	mov	ebx,finalpath
 	mov	ecx,[root]
 .back:
-;at first copy the document root
+;first, copy the document root
 	mov	al,[ecx]
 	mov	byte [ebx],al
 	inc	ebx
@@ -250,7 +246,7 @@ acceptloop:
 	mov	dword [ebx+8],0x6e006c6d	;'ml'
 	jmps	index
 noindex:
-	mov	byte [ebx],0;
+	mov	byte [ebx],0
 index:
 	sys_open finalpath,O_RDONLY
 	test	eax,eax
@@ -286,7 +282,7 @@ index:
 
 endrequest:
 ;	sys_read ebp,filebuf,0xff
-;	sys_shutdown ebp,1	;shutdown ( sock, how )
+;	sys_shutdown ebp,1		;shutdown(sock, how)
 ;	sys_close ebp
 	jmp	true_exit
 
@@ -310,10 +306,6 @@ error404:
 %ifdef	LOG
 i2ip:
 	std
-	;xchg ebx,eax
-	;mov al,__n
-	;stosb
-	;xchg ebx,eax 
 	mov	byte [edi],__n
 	dec	edi
 .next:	
@@ -359,14 +351,14 @@ c_gif	db	"image/gif",EOL
 ending	db	__n,__n
 
 extension_tab:
-	dd	"text", c_plain
-	dd	"txt", c_plain
-	dd	"log", c_plain
-	dd	"html", c_html
-	dd	"htm", c_html
-	dd	"jpeg", c_jpeg
-	dd	"jpg", c_jpeg
-	dd	"png", c_png
+	dd	"text",	c_plain
+	dd	"txt",	c_plain
+	dd	"log",	c_plain
+	dd	"html",	c_html
+	dd	"htm",	c_html
+	dd	"jpeg",	c_jpeg
+	dd	"jpg",	c_jpeg
+	dd	"png",	c_png
 	dd	0
 
 sendheader:
@@ -397,7 +389,7 @@ sendheader:
 .write_content:
 
 	push	edx
-	sys_write edi,h1,lenh1
+	sys_write edi,h1,lenh1	;header
 	pop	edx
 
 	mov	ecx,[edx + 4]
