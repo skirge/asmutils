@@ -2,7 +2,7 @@
 ;			 Konstantin Boldyshev <konst@linuxassembly.org>
 ;			 Rudolf Marek <marekr2@fel.cvut.cz>
 ;
-;$Id: httpd.asm,v 1.21 2002/10/01 15:53:11 konst Exp $
+;$Id: httpd.asm,v 1.22 2002/10/01 17:19:04 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -500,9 +500,10 @@ sendheader:
 .cc2:
 	dec	esi
 	cmp	esi,ebx
-	jz	.return
+	jz	.return0
 	cmp	byte [esi],'.'
 	jnz	.cc2
+.return0:
 	mov	eax,[esi + 1]
 	mov	edx,extension_tab - 8
 .cc3:
