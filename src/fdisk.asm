@@ -1,6 +1,6 @@
 ;Copyright (C) Rudolf Marek <marekr2@fel.cvut.cz>, <ruik@atlas.cz>
 ;			    
-;$Id: fdisk.asm,v 1.1 2002/01/04 08:25:17 konst Exp $
+;$Id: fdisk.asm,v 1.2 2002/01/10 08:43:44 konst Exp $
 ;
 ;hackers' fdisk 
 ;
@@ -17,7 +17,6 @@
 ;All your base are belong to us
 
 %include   "system.inc"
-%assign    HDIO_GETGEO  0x0301  ;/* get device geometry */
 	   
 %assign p_boot 	  0
 %assign p_s_head  1
@@ -29,7 +28,6 @@
 %assign p_e_track 7
 %assign p_start   8
 %assign p_len     012
-
 
 CODESEG
 newline db __n

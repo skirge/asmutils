@@ -1,10 +1,10 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.11 2002/01/05 11:07:07 konst Exp $
+;$Id: httpd.asm,v 1.12 2002/01/10 08:43:44 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
-;syntax: httpd document-root port [logfile [err404file]]
+;syntax: httpd document-root port [logfile [err404file] | err404file]
 ;
 ;example:	httpd /htdocs/ 8888
 ;		lynx http://localhost:8888/
@@ -39,11 +39,12 @@
 ;0.09: 16-Jan-2001	added support for "Content-Type: text/plain"
 ;			for .text, .txt, .log and no-extension files,
 ;			enabled by %define SENDHEADER (KB)
-;0.10  05-Jan-2002      added logging (IP||HEADER),
+;0.10  10-Jan-2002      added logging (IP||HEADER),
 ;			added err404file command line argument,
 ;			more content types (RM),
-;			added extension-content type table.
-;			fixed endless loop if err404file is missing (KB)
+;			added extension-content type table,
+;			fixed infinite loop if err404file is missing,
+;			size improvements (KB)
 
 %include "system.inc"
 
@@ -54,7 +55,8 @@
 ;	logfile is 3rd command-line argument and err404file is 4th
 ;when only one of {LOG,ERR404} is enabled:
 ;	corresponding filename is 3rd command-line argument
-;so, you must know compile-time configuration; weird, but better than nothing.
+;So, you must know compile-time configuration, but eventually
+;this will be rewritten in a more suitable manner.
 
 ;%define	SENDHEADER
 ;%define	LOG
@@ -65,6 +67,8 @@
 %endif
 
 CODESEG
+
+index_file	db	"index.html"	;must not exceed 10 bytes!
 
 setsockoptvals	dd	1
 
@@ -81,65 +85,68 @@ START:
 	pop	dword [root]	;document root
 	pop	esi		;port number
 
+	xor	eax,eax
+	xor	ebx,ebx
+.n1:
+	lodsb
+	sub	al,'0'
+	jb	.n2
+	cmp	al,9
+	ja	.n2
+	imul	ebx,byte 10
+	add	ebx,eax
+	jmps	.n1
+.n2:
+	xchg	bh,bl		;now save port number into bindsock struct
+	shl	ebx,16
+	mov	bl,AF_INET	;if (AF_INET > 0xff) mov bx,AF_INET
+	mov	[bindsockstruct],ebx
+	
 %ifdef LOG
 	sub	ebp,byte 3
-	jz	.n1
+	jz	.begin
 %elifdef ERR404
 	sub	ebp,byte 3
-	jz	.n1
+	jz	.begin
 %endif
 
 %ifdef LOG
 	pop	eax
 	sys_open eax,O_WRONLY|O_APPEND|O_CREAT,S_IRUSR|S_IWUSR
 	test	eax,eax
-	js	.n0
+	js	.l0
 	mov	[logfd],eax
-.n0:
+.l0:
 %ifdef ERR404
 	dec	ebp
-	jz	.n1
+	jz	.l1
 %endif
 %endif
 
 %ifdef ERR404
-	pop	eax
-	or	eax,eax
-	jz	.n4
-	mov	[err404],eax
-	xor	ecx,ecx
-.n2:
-	cmp	byte [eax],0
-	jz	.n3
-	inc	eax
-	inc	ecx
-	jmps	.n2
-.n3:
-	or	ecx,ecx
-	jz	.n4
-	inc	ecx
-	mov	[err404len],ecx
-.n4:
+	pop	esi
+	or	esi,esi
+	jz	.l4
+	mov	[err404],esi
+	mov	ecx,esi
+.l2:
+	lodsb
+	or	al,al
+	jnz	.l2
+	sub	esi,ecx
+	dec	esi
+	jz	.l4
+	inc	esi
+	mov	[err404len],esi
+.l4:
 %endif
 
-.n1:
-	xor	eax,eax
-	xor	ebx,ebx
-.next_digit:
-	lodsb
-	sub	al,'0'
-	jb	.done
-	cmp	al,9
-	ja	.done
-	imul	ebx,byte 10
-	add	ebx,eax
-	jmps	.next_digit
-.done:
-	push	ebx
+.begin:
 	sys_socket PF_INET,SOCK_STREAM,IPPROTO_TCP
-	mov	ebp,eax		;socket descriptor
 	test	eax,eax
 	js	false_exit
+
+	mov	ebp,eax		;socket descriptor
 
 	sys_setsockopt ebp,SOL_SOCKET,SO_REUSEADDR,setsockoptvals,4
 	or	eax,eax
@@ -151,15 +158,11 @@ real_exit:
 	sys_exit
 
 bind:
-	pop	eax
-	mov	dword [bindsockstruct],AF_INET
-	mov	byte [bindsockstruct + 2],ah
-	mov	byte [bindsockstruct + 3],al
 	sys_bind ebp,bindsockstruct,16	;bind(s, struct sockaddr *bindsockstruct, 16)
 	or	eax,eax
 	jnz	false_exit
 
-	sys_listen ebp,0xff		;listen(s, 0xff)
+	sys_listen ebp,5		;listen(s, 5)
 	or	eax,eax
 	jnz	false_exit
 
@@ -172,7 +175,7 @@ true_exit:
 	jmps	real_exit
 
 acceptloop:
-	mov	dword [arg2],16		;sizeof(struct sockaddr_in)
+	mov	[arg2],byte 16		;sizeof(struct sockaddr_in)
 	sys_accept ebp,arg1,arg2	;accept(s, struct sockaddr *arg1, int *arg2)
 	test	eax,eax
 	js	acceptloop
@@ -207,7 +210,7 @@ acceptloop:
 	or	eax,eax
 	jz	.forward
 	sys_close edi
-	jmp	acceptloop
+	_jmp	acceptloop
 .forward:
 	sys_read edi,filebuf,0xfff
 	cmp	eax,byte 7	;there must be at least 7 symbols in request 
@@ -219,6 +222,7 @@ acceptloop:
 %endif
 	mov	ebx,finalpath
 	mov	ecx,[root]
+	mov	edx,ecx
 .back:
 ;first, copy the document root
 	mov	al,[ecx]
@@ -228,7 +232,7 @@ acceptloop:
 	cmp	byte [ecx],0
 	jne	.back
 
-	sub	ecx,[root]
+	sub	ecx,edx
 	pop	eax
 	add	ecx,eax
 	cmp	ecx,0xfff
@@ -241,7 +245,7 @@ acceptloop:
 	mov	ecx,filebuf+4
 .loopme:
 	mov	al,[ecx]
-	mov	byte [ebx],al
+	mov	[ebx],al
 	cmp	word [ecx],".."
 	jz	near endrequest	;security error, can't have '..' in request
 .endrequestnot:
@@ -259,14 +263,15 @@ acceptloop:
 	cmp	dl,0xa
 	jnz	.loopme
 .loopout:
-	cmp	byte [ebx-1],'/'		;append index.html :)
-	jne	noindex
-	mov	dword [ebx],'inde'
-	mov	dword [ebx+4],'x.ht'
-	mov	dword [ebx+8],0x6e006c6d	;'ml'
-	jmps	index
-noindex:
 	mov	byte [ebx],0
+	cmp	byte [ebx-1],'/'
+	jne	index
+	mov	eax,index_file		;move 10 bytes through FPU stack
+	fld	tword [eax]
+	fstp	tword [ebx]
+;	mov	dword [ebx],"inde"	;append index.html :)
+;	mov	dword [ebx+4],"x.ht"
+;	mov	word [ebx+8],"ml"
 index:
 	sys_open finalpath,O_RDONLY
 	test	eax,eax
@@ -397,6 +402,7 @@ extension_tab:
 	dd	"jpeg",	c_jpeg
 	dd	"jpg",	c_jpeg
 	dd	"png",	c_png
+	dd	"gif",	c_gif
 	dd	0
 
 sendheader:
@@ -409,9 +415,9 @@ sendheader:
 	or	al,al
 	jnz	.cc1
 .cc2:
+	dec	esi
 	cmp	esi,ebx
 	jz	.return
-	dec	esi
 	cmp	byte [esi],'.'
 	jnz	.cc2
 	mov	eax,[esi + 1]
