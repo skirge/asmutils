@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.14 2002/03/03 11:08:20 konst Exp $
+;$Id: httpd.asm,v 1.15 2002/03/05 16:35:29 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -45,7 +45,7 @@
 ;			added extension-content type table,
 ;			fixed infinite loop if err404file is missing,
 ;			size improvements (KB)
-;0.11  03-Mar-2002      added initial cgi support (Scott Lanning <slanning@theworld.com>)
+;0.11  03-Mar-2002      added initial cgi support (SL)
 
 %include "system.inc"
 
@@ -134,7 +134,7 @@ START:
 .l0:
 %ifdef ERR404
 	dec	ebp
-	jz	.l1
+	jz	.l4
 %endif
 %endif
 

@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.15 2002/03/02 20:23:14 konst Exp $
+; $Id: includes.inc,v 1.16 2002/03/05 16:38:41 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 01-Mar-2002
+; modified      : 05-Mar-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : generic constants and structures from (libc) header files
@@ -359,6 +359,18 @@ endstruc
 struc timeval
 .tv_sec		ULONG	1
 .tv_usec	ULONG	1
+endstruc
+
+struc tm
+.sec		ULONG 1
+.min		ULONG 1
+.hour		ULONG 1
+.mday		ULONG 1
+.mon		ULONG 1
+.year		ULONG 1
+.wday		ULONG 1
+.yday		ULONG 1
+.isdst		ULONG 1
 endstruc
 
 ;
