@@ -14,7 +14,7 @@
 ; SuSV2-Compliant   :       not in SUSV2
 ; GNU-compatible    :       no GNU pendant
 ;
-; $Id: truss.asm,v 1.1 2002/06/11 08:41:06 konst Exp $
+; $Id: truss.asm,v 1.2 2002/08/18 14:58:37 konst Exp $
 ;
 ; TODO:
 ;     trace pid's (PTRACE_ATTACH)
@@ -102,453 +102,453 @@ endstruc
 
 CODESEG
 
-exit  db  "exit", EOL
-fork  db  "fork", EOL
-read  db  "read", EOL
-write  db  "write", EOL
-open  db  "open", EOL
-close  db  "close", EOL
-waitpid  db  "waitpid", EOL
-creat  db  "creat", EOL
-link  db  "link", EOL
-unlink  db  "unlink", EOL
-execve  db  "execve", EOL
-chdir  db  "chdir", EOL
-time  db  "time", EOL
-mknod  db  "mknod", EOL
-chmod  db  "chmod", EOL
-lchown  db  "lchown", EOL
-break  db  "break", EOL
-oldstat  db  "oldstat", EOL
-lseek  db  "lseek", EOL
-getpid  db  "getpid", EOL
-mount  db  "mount", EOL
-umount  db  "umount", EOL
-setuid  db  "setuid", EOL
-getuid  db  "getuid", EOL
-stime  db  "stime", EOL
-ptrace  db  "ptrace", EOL
-alarm  db  "alarm", EOL
-oldfstat  db  "oldfstat", EOL
-pause  db  "pause", EOL
-utime  db  "utime", EOL
-stty  db  "stty", EOL
-gtty  db  "gtty", EOL
-access  db  "access", EOL
-nice  db  "nice", EOL
-ftime  db  "ftime", EOL
-sync  db  "sync", EOL
-kill  db  "kill", EOL
-rename  db  "rename", EOL
-mkdir  db  "mkdir", EOL
-rmdir  db  "rmdir", EOL
-dup  db  "dup", EOL
-pipe  db  "pipe", EOL
+_exit  db  "exit", EOL
+_fork  db  "fork", EOL
+_read  db  "read", EOL
+_write  db  "write", EOL
+_open  db  "open", EOL
+_close  db  "close", EOL
+_waitpid  db  "waitpid", EOL
+_creat  db  "creat", EOL
+_link  db  "link", EOL
+_unlink  db  "unlink", EOL
+_execve  db  "execve", EOL
+_chdir  db  "chdir", EOL
+_time  db  "time", EOL
+_mknod  db  "mknod", EOL
+_chmod  db  "chmod", EOL
+_lchown  db  "lchown", EOL
+_break  db  "break", EOL
+_oldstat  db  "oldstat", EOL
+_lseek  db  "lseek", EOL
+_getpid  db  "getpid", EOL
+_mount  db  "mount", EOL
+_umount  db  "umount", EOL
+_setuid  db  "setuid", EOL
+_getuid  db  "getuid", EOL
+_stime  db  "stime", EOL
+_ptrace  db  "ptrace", EOL
+_alarm  db  "alarm", EOL
+_oldfstat  db  "oldfstat", EOL
+_pause  db  "pause", EOL
+_utime  db  "utime", EOL
+_stty  db  "stty", EOL
+_gtty  db  "gtty", EOL
+_access  db  "access", EOL
+_nice  db  "nice", EOL
+_ftime  db  "ftime", EOL
+_sync  db  "sync", EOL
+_kill  db  "kill", EOL
+_rename  db  "rename", EOL
+_mkdir  db  "mkdir", EOL
+_rmdir  db  "rmdir", EOL
+_dup  db  "dup", EOL
+_pipe  db  "pipe", EOL
 _times  db  "times", EOL
-prof  db  "prof", EOL
-brk  db  "brk", EOL
-setgid  db  "setgid", EOL
-getgid  db  "getgid", EOL
-signal  db  "signal", EOL
-geteuid  db  "geteuid", EOL
-getegid  db  "getegid", EOL
-acct  db  "acct", EOL
-umount2  db  "umount2", EOL
+_prof  db  "prof", EOL
+_brk  db  "brk", EOL
+_setgid  db  "setgid", EOL
+_getgid  db  "getgid", EOL
+_signal  db  "signal", EOL
+_geteuid  db  "geteuid", EOL
+_getegid  db  "getegid", EOL
+_acct  db  "acct", EOL
+_umount2  db  "umount2", EOL
 _lock  db  "lock", EOL
-ioctl  db  "ioctl", EOL
-fcntl  db  "fcntl", EOL
-mpx  db  "mpx", EOL
-setpgid  db  "setpgid", EOL
-ulimit  db  "ulimit", EOL
-oldolduname  db  "oldolduname", EOL
-umask  db  "umask", EOL
-chroot  db  "chroot", EOL
-ustat  db  "ustat", EOL
-dup2  db  "dup2", EOL
-getppid  db  "getppid", EOL
-getpgrp  db  "getpgrp", EOL
-setsid  db  "setsid", EOL
-sigaction  db  "sigaction", EOL
-sgetmask  db  "sgetmask", EOL
-ssetmask  db  "ssetmask", EOL
-setreuid  db  "setreuid", EOL
-setregid  db  "setregid", EOL
-sigsuspend  db  "sigsuspend", EOL
-sigpending  db  "sigpending", EOL
-sethostname  db  "sethostname", EOL
-setrlimit  db  "setrlimit", EOL
-getrlimit  db  "getrlimit", EOL
-getrusage  db  "getrusage", EOL
-gettimeofday  db  "gettimeofday", EOL
-settimeofday  db  "settimeofday", EOL
-getgroups  db  "getgroups", EOL
-setgroups  db  "setgroups", EOL
-select  db  "select", EOL
-symlink  db  "symlink", EOL
-oldlstat  db  "oldlstat", EOL
-readlink  db  "readlink", EOL
-uselib  db  "uselib", EOL
-swapon  db  "swapon", EOL
-reboot  db  "reboot", EOL
-readdir  db  "readdir", EOL
-mmap  db  "mmap", EOL
-munmap  db  "munmap", EOL
-truncate  db  "truncate", EOL
-ftruncate  db  "ftruncate", EOL
-fchmod  db  "fchmod", EOL
-fchown  db  "fchown", EOL
-getpriority  db  "getpriority", EOL
-setpriority  db  "setpriority", EOL
-profil  db  "profil", EOL
-statfs  db  "statfs", EOL
-fstatfs  db  "fstatfs", EOL
-ioperm  db  "ioperm", EOL
-socketcall  db  "socketcall", EOL
-syslog  db  "syslog", EOL
-setitimer  db  "setitimer", EOL
-getitimer  db  "getitimer", EOL
-stat  db  "stat", EOL
-lstat  db  "lstat", EOL
-fstat  db  "fstat", EOL
-olduname  db  "olduname", EOL
-iopl  db  "iopl", EOL
-vhangup  db  "vhangup", EOL
-idle  db  "idle", EOL
-vm86old  db  "vm86old", EOL
-wait4  db  "wait4", EOL
-swapoff  db  "swapoff", EOL
+_ioctl  db  "ioctl", EOL
+_fcntl  db  "fcntl", EOL
+_mpx  db  "mpx", EOL
+_setpgid  db  "setpgid", EOL
+_ulimit  db  "ulimit", EOL
+_oldolduname  db  "oldolduname", EOL
+_umask  db  "umask", EOL
+_chroot  db  "chroot", EOL
+_ustat  db  "ustat", EOL
+_dup2  db  "dup2", EOL
+_getppid  db  "getppid", EOL
+_getpgrp  db  "getpgrp", EOL
+_setsid  db  "setsid", EOL
+_sigaction  db  "sigaction", EOL
+_sgetmask  db  "sgetmask", EOL
+_ssetmask  db  "ssetmask", EOL
+_setreuid  db  "setreuid", EOL
+_setregid  db  "setregid", EOL
+_sigsuspend  db  "sigsuspend", EOL
+_sigpending  db  "sigpending", EOL
+_sethostname  db  "sethostname", EOL
+_setrlimit  db  "setrlimit", EOL
+_getrlimit  db  "getrlimit", EOL
+_getrusage  db  "getrusage", EOL
+_gettimeofday  db  "gettimeofday", EOL
+_settimeofday  db  "settimeofday", EOL
+_getgroups  db  "getgroups", EOL
+_setgroups  db  "setgroups", EOL
+_select  db  "select", EOL
+_symlink  db  "symlink", EOL
+_oldlstat  db  "oldlstat", EOL
+_readlink  db  "readlink", EOL
+_uselib  db  "uselib", EOL
+_swapon  db  "swapon", EOL
+_reboot  db  "reboot", EOL
+_readdir  db  "readdir", EOL
+_mmap  db  "mmap", EOL
+_munmap  db  "munmap", EOL
+_truncate  db  "truncate", EOL
+_ftruncate  db  "ftruncate", EOL
+_fchmod  db  "fchmod", EOL
+_fchown  db  "fchown", EOL
+_getpriority  db  "getpriority", EOL
+_setpriority  db  "setpriority", EOL
+_profil  db  "profil", EOL
+_statfs  db  "statfs", EOL
+_fstatfs  db  "fstatfs", EOL
+_ioperm  db  "ioperm", EOL
+_socketcall  db  "socketcall", EOL
+_syslog  db  "syslog", EOL
+_setitimer  db  "setitimer", EOL
+_getitimer  db  "getitimer", EOL
+_stat  db  "stat", EOL
+_lstat  db  "lstat", EOL
+_fstat  db  "fstat", EOL
+_olduname  db  "olduname", EOL
+_iopl  db  "iopl", EOL
+_vhangup  db  "vhangup", EOL
+_idle  db  "idle", EOL
+_vm86old  db  "vm86old", EOL
+_wait4  db  "wait4", EOL
+_swapoff  db  "swapoff", EOL
 _sysinfo  db  "sysinfo", EOL
-ipc  db  "ipc", EOL
-fsync  db  "fsync", EOL
-sigreturn  db  "sigreturn", EOL
-clone  db  "clone", EOL
-setdomainname  db  "setdomainname", EOL
-uname  db  "uname", EOL
-modify_ldt  db  "modify_ldt", EOL
-adjtimex  db  "adjtimex", EOL
-mprotect  db  "mprotect", EOL
-sigprocmask  db  "sigprocmask", EOL
-create_module  db  "create_module", EOL
-init_module  db  "init_module", EOL
-delete_module  db  "delete_module", EOL
-get_kernel_syms  db  "get_kernel_syms", EOL
-quotactl  db  "quotactl", EOL
-getpgid  db  "getpgid", EOL
-fchdir  db  "fchdir", EOL
-bdflush  db  "bdflush", EOL
-sysfs  db  "sysfs", EOL
-personality  db  "personality", EOL
-afs_syscall  db  "afs_syscall", EOL
-setfsuid  db  "setfsuid", EOL
-setfsgid  db  "setfsgid", EOL
+_ipc  db  "ipc", EOL
+_fsync  db  "fsync", EOL
+_sigreturn  db  "sigreturn", EOL
+_clone  db  "clone", EOL
+_setdomainname  db  "setdomainname", EOL
+_uname  db  "uname", EOL
+_modify_ldt  db  "modify_ldt", EOL
+_adjtimex  db  "adjtimex", EOL
+_mprotect  db  "mprotect", EOL
+_sigprocmask  db  "sigprocmask", EOL
+_create_module  db  "create_module", EOL
+_init_module  db  "init_module", EOL
+_delete_module  db  "delete_module", EOL
+_get_kernel_syms  db  "get_kernel_syms", EOL
+_quotactl  db  "quotactl", EOL
+_getpgid  db  "getpgid", EOL
+_fchdir  db  "fchdir", EOL
+_bdflush  db  "bdflush", EOL
+_sysfs  db  "sysfs", EOL
+_personality  db  "personality", EOL
+_afs_syscall  db  "afs_syscall", EOL
+_setfsuid  db  "setfsuid", EOL
+_setfsgid  db  "setfsgid", EOL
 _llseek  db  "_llseek", EOL
-getdents  db  "getdents", EOL
+_getdents  db  "getdents", EOL
 _newselect  db  "_newselect", EOL
-flock  db  "flock", EOL
-msync  db  "msync", EOL
-readv  db  "readv", EOL
-writev  db  "writev", EOL
-getsid  db  "getsid", EOL
-fdatasync  db  "fdatasync", EOL
+_flock  db  "flock", EOL
+_msync  db  "msync", EOL
+_readv  db  "readv", EOL
+_writev  db  "writev", EOL
+_getsid  db  "getsid", EOL
+_fdatasync  db  "fdatasync", EOL
 _sysctl  db  "_sysctl", EOL
-mlock  db  "mlock", EOL
-munlock  db  "munlock", EOL
-mlockall  db  "mlockall", EOL
-munlockall  db  "munlockall", EOL
-sched_setparam  db  "sched_setparam", EOL
-sched_getparam  db  "sched_getparam", EOL
-sched_setscheduler  db  "sched_setscheduler", EOL
-sched_getscheduler  db  "sched_getscheduler", EOL
-sched_yield  db  "sched_yield", EOL
-sched_get_priority_max  db  "sched_get_priority_max", EOL
-sched_get_priority_min  db  "sched_get_priority_min", EOL
-sched_rr_get_interval  db  "sched_rr_get_interval", EOL
-nanosleep  db  "nanosleep", EOL
-mremap  db  "mremap", EOL
-setresuid  db  "setresuid", EOL
-getresuid  db  "getresuid", EOL
-vm86  db  "vm86", EOL
-query_module  db  "query_module", EOL
-poll  db  "poll", EOL
-nfsservctl  db  "nfsservctl", EOL
-setresgid  db  "setresgid", EOL
-getresgid  db  "getresgid", EOL
-prctl  db  "prctl", EOL
-rt_sigreturn  db  "rt_sigreturn", EOL
-rt_sigaction  db  "rt_sigaction", EOL
-rt_sigprocmask  db  "rt_sigprocmask", EOL
-rt_sigpending  db  "rt_sigpending", EOL
-rt_sigtimedwait  db  "rt_sigtimedwait", EOL
-rt_sigqueueinfo  db  "rt_sigqueueinfo", EOL
-rt_sigsuspend  db  "rt_sigsuspend", EOL
-pread  db  "pread", EOL
-pwrite  db  "pwrite", EOL
-chown  db  "chown", EOL
-getcwd  db  "getcwd", EOL
-capget  db  "capget", EOL
-capset  db  "capset", EOL
-sigaltstack  db  "sigaltstack", EOL
-sendfile  db  "sendfile", EOL
-getpmsg  db  "getpmsg", EOL
-putpmsg  db  "putpmsg", EOL
-vfork  db  "vfork", EOL
-ugetrlimit  db  "ugetrlimit", EOL
-mmap2  db  "mmap2", EOL
-truncate64  db  "truncate64", EOL
-ftruncate64  db  "ftruncate64", EOL
-stat64  db  "stat64", EOL
-lstat64  db  "lstat64", EOL
-fstat64  db  "fstat64", EOL
-lchown32  db  "lchown32", EOL
-getuid32  db  "getuid32", EOL
-getgid32  db  "getgid32", EOL
-geteuid32  db  "geteuid32", EOL
-getegid32  db  "getegid32", EOL
-setreuid32  db  "setreuid32", EOL
-setregid32  db  "setregid32", EOL
-getgroups32  db  "getgroups32", EOL
-setgroups32  db  "setgroups32", EOL
-fchown32  db  "fchown32", EOL
-setresuid32  db  "setresuid32", EOL
-getresuid32  db  "getresuid32", EOL
-setresgid32  db  "setresgid32", EOL
-getresgid32  db  "getresgid32", EOL
-chown32  db  "chown32", EOL
-setuid32  db  "setuid32", EOL
-setgid32  db  "setgid32", EOL
-setfsuid32  db  "setfsuid32", EOL
-setfsgid32  db  "setfsgid32", EOL
-pivot_root  db  "pivot_root", EOL
-mincore  db  "mincore", EOL
-madvise  db  "madvise", EOL
-madvise1  db  "madvise1", EOL
-getdents64  db  "getdents64", EOL
-fcntl64  db  "fcntl64", EOL
+_mlock  db  "mlock", EOL
+_munlock  db  "munlock", EOL
+_mlockall  db  "mlockall", EOL
+_munlockall  db  "munlockall", EOL
+_sched_setparam  db  "sched_setparam", EOL
+_sched_getparam  db  "sched_getparam", EOL
+_sched_setscheduler  db  "sched_setscheduler", EOL
+_sched_getscheduler  db  "sched_getscheduler", EOL
+_sched_yield  db  "sched_yield", EOL
+_sched_get_priority_max  db  "sched_get_priority_max", EOL
+_sched_get_priority_min  db  "sched_get_priority_min", EOL
+_sched_rr_get_interval  db  "sched_rr_get_interval", EOL
+_nanosleep  db  "nanosleep", EOL
+_mremap  db  "mremap", EOL
+_setresuid  db  "setresuid", EOL
+_getresuid  db  "getresuid", EOL
+_vm86  db  "vm86", EOL
+_query_module  db  "query_module", EOL
+_poll  db  "poll", EOL
+_nfsservctl  db  "nfsservctl", EOL
+_setresgid  db  "setresgid", EOL
+_getresgid  db  "getresgid", EOL
+_prctl  db  "prctl", EOL
+_rt_sigreturn  db  "rt_sigreturn", EOL
+_rt_sigaction  db  "rt_sigaction", EOL
+_rt_sigprocmask  db  "rt_sigprocmask", EOL
+_rt_sigpending  db  "rt_sigpending", EOL
+_rt_sigtimedwait  db  "rt_sigtimedwait", EOL
+_rt_sigqueueinfo  db  "rt_sigqueueinfo", EOL
+_rt_sigsuspend  db  "rt_sigsuspend", EOL
+_pread  db  "pread", EOL
+_pwrite  db  "pwrite", EOL
+_chown  db  "chown", EOL
+_getcwd  db  "getcwd", EOL
+_capget  db  "capget", EOL
+_capset  db  "capset", EOL
+_sigaltstack  db  "sigaltstack", EOL
+_sendfile  db  "sendfile", EOL
+_getpmsg  db  "getpmsg", EOL
+_putpmsg  db  "putpmsg", EOL
+_vfork  db  "vfork", EOL
+_ugetrlimit  db  "ugetrlimit", EOL
+_mmap2  db  "mmap2", EOL
+_truncate64  db  "truncate64", EOL
+_ftruncate64  db  "ftruncate64", EOL
+_stat64  db  "stat64", EOL
+_lstat64  db  "lstat64", EOL
+_fstat64  db  "fstat64", EOL
+_lchown32  db  "lchown32", EOL
+_getuid32  db  "getuid32", EOL
+_getgid32  db  "getgid32", EOL
+_geteuid32  db  "geteuid32", EOL
+_getegid32  db  "getegid32", EOL
+_setreuid32  db  "setreuid32", EOL
+_setregid32  db  "setregid32", EOL
+_getgroups32  db  "getgroups32", EOL
+_setgroups32  db  "setgroups32", EOL
+_fchown32  db  "fchown32", EOL
+_setresuid32  db  "setresuid32", EOL
+_getresuid32  db  "getresuid32", EOL
+_setresgid32  db  "setresgid32", EOL
+_getresgid32  db  "getresgid32", EOL
+_chown32  db  "chown32", EOL
+_setuid32  db  "setuid32", EOL
+_setgid32  db  "setgid32", EOL
+_setfsuid32  db  "setfsuid32", EOL
+_setfsgid32  db  "setfsgid32", EOL
+_pivot_root  db  "pivot_root", EOL
+_mincore  db  "mincore", EOL
+_madvise  db  "madvise", EOL
+_madvise1  db  "madvise1", EOL
+_getdents64  db  "getdents64", EOL
+_fcntl64  db  "fcntl64", EOL
 
 %ifdef __LINUX__
 syscall_table:
-  dd  exit
-  dd  fork
-  dd  read
-  dd  write
-  dd  open
-  dd  close
-  dd  waitpid
-  dd  creat
-  dd  link
-  dd  unlink
-  dd  execve
-  dd  chdir
-  dd  time
-  dd  mknod
-  dd  chmod
-  dd  lchown
-  dd  break
-  dd  oldstat
-  dd  lseek
-  dd  getpid
-  dd  mount
-  dd  umount
-  dd  setuid
-  dd  getuid
-  dd  stime
-  dd  ptrace
-  dd  alarm
-  dd  oldfstat
-  dd  pause
-  dd  utime
-  dd  stty
-  dd  gtty
-  dd  access
-  dd  nice
-  dd  ftime
-  dd  sync
-  dd  kill
-  dd  rename
-  dd  mkdir
-  dd  rmdir
-  dd  dup
-  dd  pipe
+  dd  _exit
+  dd  _fork
+  dd  _read
+  dd  _write
+  dd  _open
+  dd  _close
+  dd  _waitpid
+  dd  _creat
+  dd  _link
+  dd  _unlink
+  dd  _execve
+  dd  _chdir
+  dd  _time
+  dd  _mknod
+  dd  _chmod
+  dd  _lchown
+  dd  _break
+  dd  _oldstat
+  dd  _lseek
+  dd  _getpid
+  dd  _mount
+  dd  _umount
+  dd  _setuid
+  dd  _getuid
+  dd  _stime
+  dd  _ptrace
+  dd  _alarm
+  dd  _oldfstat
+  dd  _pause
+  dd  _utime
+  dd  _stty
+  dd  _gtty
+  dd  _access
+  dd  _nice
+  dd  _ftime
+  dd  _sync
+  dd  _kill
+  dd  _rename
+  dd  _mkdir
+  dd  _rmdir
+  dd  _dup
+  dd  _pipe
   dd  _times
-  dd  prof
-  dd  brk
-  dd  setgid
-  dd  getgid
-  dd  signal
-  dd  geteuid
-  dd  getegid
-  dd  acct
-  dd  umount2
+  dd  _prof
+  dd  _brk
+  dd  _setgid
+  dd  _getgid
+  dd  _signal
+  dd  _geteuid
+  dd  _getegid
+  dd  _acct
+  dd  _umount2
   dd  _lock
-  dd  ioctl
-  dd  fcntl
-  dd  mpx
-  dd  setpgid
-  dd  ulimit
-  dd  oldolduname
-  dd  umask
-  dd  chroot
-  dd  ustat
-  dd  dup2
-  dd  getppid
-  dd  getpgrp
-  dd  setsid
-  dd  sigaction
-  dd  sgetmask
-  dd  ssetmask
-  dd  setreuid
-  dd  setregid
-  dd  sigsuspend
-  dd  sigpending
-  dd  sethostname
-  dd  setrlimit
-  dd  getrlimit
-  dd  getrusage
-  dd  gettimeofday
-  dd  settimeofday
-  dd  getgroups
-  dd  setgroups
-  dd  select
-  dd  symlink
-  dd  oldlstat
-  dd  readlink
-  dd  uselib
-  dd  swapon
-  dd  reboot
-  dd  readdir
-  dd  mmap
-  dd  munmap
-  dd  truncate
-  dd  ftruncate
-  dd  fchmod
-  dd  fchown
-  dd  getpriority
-  dd  setpriority
-  dd  profil
-  dd  statfs
-  dd  fstatfs
-  dd  ioperm
-  dd  socketcall
-  dd  syslog
-  dd  setitimer
-  dd  getitimer
-  dd  stat
-  dd  lstat
-  dd  fstat
-  dd  olduname
-  dd  iopl
-  dd  vhangup
-  dd  idle
-  dd  vm86old
-  dd  wait4
-  dd  swapoff
+  dd  _ioctl
+  dd  _fcntl
+  dd  _mpx
+  dd  _setpgid
+  dd  _ulimit
+  dd  _oldolduname
+  dd  _umask
+  dd  _chroot
+  dd  _ustat
+  dd  _dup2
+  dd  _getppid
+  dd  _getpgrp
+  dd  _setsid
+  dd  _sigaction
+  dd  _sgetmask
+  dd  _ssetmask
+  dd  _setreuid
+  dd  _setregid
+  dd  _sigsuspend
+  dd  _sigpending
+  dd  _sethostname
+  dd  _setrlimit
+  dd  _getrlimit
+  dd  _getrusage
+  dd  _gettimeofday
+  dd  _settimeofday
+  dd  _getgroups
+  dd  _setgroups
+  dd  _select
+  dd  _symlink
+  dd  _oldlstat
+  dd  _readlink
+  dd  _uselib
+  dd  _swapon
+  dd  _reboot
+  dd  _readdir
+  dd  _mmap
+  dd  _munmap
+  dd  _truncate
+  dd  _ftruncate
+  dd  _fchmod
+  dd  _fchown
+  dd  _getpriority
+  dd  _setpriority
+  dd  _profil
+  dd  _statfs
+  dd  _fstatfs
+  dd  _ioperm
+  dd  _socketcall
+  dd  _syslog
+  dd  _setitimer
+  dd  _getitimer
+  dd  _stat
+  dd  _lstat
+  dd  _fstat
+  dd  _olduname
+  dd  _iopl
+  dd  _vhangup
+  dd  _idle
+  dd  _vm86old
+  dd  _wait4
+  dd  _swapoff
   dd  _sysinfo
-  dd  ipc
-  dd  fsync
-  dd  sigreturn
-  dd  clone
-  dd  setdomainname
-  dd  uname
-  dd  modify_ldt
-  dd  adjtimex
-  dd  mprotect
-  dd  sigprocmask
-  dd  create_module
-  dd  init_module
-  dd  delete_module
-  dd  get_kernel_syms
-  dd  quotactl
-  dd  getpgid
-  dd  fchdir
-  dd  bdflush
-  dd  sysfs
-  dd  personality
-  dd  afs_syscall
-  dd  setfsuid
-  dd  setfsgid
+  dd  _ipc
+  dd  _fsync
+  dd  _sigreturn
+  dd  _clone
+  dd  _setdomainname
+  dd  _uname
+  dd  _modify_ldt
+  dd  _adjtimex
+  dd  _mprotect
+  dd  _sigprocmask
+  dd  _create_module
+  dd  _init_module
+  dd  _delete_module
+  dd  _get_kernel_syms
+  dd  _quotactl
+  dd  _getpgid
+  dd  _fchdir
+  dd  _bdflush
+  dd  _sysfs
+  dd  _personality
+  dd  _afs_syscall
+  dd  _setfsuid
+  dd  _setfsgid
   dd  _llseek
-  dd  getdents
+  dd  _getdents
   dd  _newselect
-  dd  flock
-  dd  msync
-  dd  readv
-  dd  writev
-  dd  getsid
-  dd  fdatasync
+  dd  _flock
+  dd  _msync
+  dd  _readv
+  dd  _writev
+  dd  _getsid
+  dd  _fdatasync
   dd  _sysctl
-  dd  mlock
-  dd  munlock
-  dd  mlockall
-  dd  munlockall
-  dd  sched_setparam
-  dd  sched_getparam
-  dd  sched_setscheduler
-  dd  sched_getscheduler
-  dd  sched_yield
-  dd  sched_get_priority_max
-  dd  sched_get_priority_min
-  dd  sched_rr_get_interval
-  dd  nanosleep
-  dd  mremap
-  dd  setresuid
-  dd  getresuid
-  dd  vm86
-  dd  query_module
-  dd  poll
-  dd  nfsservctl
-  dd  setresgid
-  dd  getresgid
-  dd  prctl
-  dd  rt_sigreturn
-  dd  rt_sigaction
-  dd  rt_sigprocmask
-  dd  rt_sigpending
-  dd  rt_sigtimedwait
-  dd  rt_sigqueueinfo
-  dd  rt_sigsuspend
-  dd  pread
-  dd  pwrite
-  dd  chown
-  dd  getcwd
-  dd  capget
-  dd  capset
-  dd  sigaltstack
-  dd  sendfile
-  dd  getpmsg
-  dd  putpmsg
-  dd  vfork
-  dd  ugetrlimit
-  dd  mmap2
-  dd  truncate64
-  dd  ftruncate64
-  dd  stat64
-  dd  lstat64
-  dd  fstat64
-  dd  lchown32
-  dd  getuid32
-  dd  getgid32
-  dd  geteuid32
-  dd  getegid32
-  dd  setreuid32
-  dd  setregid32
-  dd  getgroups32
-  dd  setgroups32
-  dd  fchown32
-  dd  setresuid32
-  dd  getresuid32
-  dd  setresgid32
-  dd  getresgid32
-  dd  chown32
-  dd  setuid32
-  dd  setgid32
-  dd  setfsuid32
-  dd  setfsgid32
-  dd  pivot_root
-  dd  mincore
-  dd  madvise
-  dd  madvise1
-  dd  getdents64
-  dd  fcntl64
+  dd  _mlock
+  dd  _munlock
+  dd  _mlockall
+  dd  _munlockall
+  dd  _sched_setparam
+  dd  _sched_getparam
+  dd  _sched_setscheduler
+  dd  _sched_getscheduler
+  dd  _sched_yield
+  dd  _sched_get_priority_max
+  dd  _sched_get_priority_min
+  dd  _sched_rr_get_interval
+  dd  _nanosleep
+  dd  _mremap
+  dd  _setresuid
+  dd  _getresuid
+  dd  _vm86
+  dd  _query_module
+  dd  _poll
+  dd  _nfsservctl
+  dd  _setresgid
+  dd  _getresgid
+  dd  _prctl
+  dd  _rt_sigreturn
+  dd  _rt_sigaction
+  dd  _rt_sigprocmask
+  dd  _rt_sigpending
+  dd  _rt_sigtimedwait
+  dd  _rt_sigqueueinfo
+  dd  _rt_sigsuspend
+  dd  _pread
+  dd  _pwrite
+  dd  _chown
+  dd  _getcwd
+  dd  _capget
+  dd  _capset
+  dd  _sigaltstack
+  dd  _sendfile
+  dd  _getpmsg
+  dd  _putpmsg
+  dd  _vfork
+  dd  _ugetrlimit
+  dd  _mmap2
+  dd  _truncate64
+  dd  _ftruncate64
+  dd  _stat64
+  dd  _lstat64
+  dd  _fstat64
+  dd  _lchown32
+  dd  _getuid32
+  dd  _getgid32
+  dd  _geteuid32
+  dd  _getegid32
+  dd  _setreuid32
+  dd  _setregid32
+  dd  _getgroups32
+  dd  _setgroups32
+  dd  _fchown32
+  dd  _setresuid32
+  dd  _getresuid32
+  dd  _setresgid32
+  dd  _getresgid32
+  dd  _chown32
+  dd  _setuid32
+  dd  _setgid32
+  dd  _setfsuid32
+  dd  _setfsgid32
+  dd  _pivot_root
+  dd  _mincore
+  dd  _madvise
+  dd  _madvise1
+  dd  _getdents64
+  dd  _fcntl64
 %endif
 
 hextostr:
