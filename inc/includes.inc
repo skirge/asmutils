@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: includes.inc,v 1.1 2000/09/03 16:13:53 konst Exp $
+; $Id: includes.inc,v 1.2 2000/12/10 08:20:36 konst Exp $
 ;
 ; file          : includes.inc
 ; created       : 04-Jul-1999
-; modified      : 03-Sep-2000
-; version       : 0.10
+; modified      : 15-Nov-2000
+; version       : 0.11
 ; assembler     : nasm 0.98
 ; description   : generic constants and structures from header files (libc)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -58,6 +58,10 @@
 %define		U16		resw
 %define		U32		resd
 
+%define		TIME_T		LONG
+%define		MODE_T		UINT
+%define		OFF_T		ULONG
+
 %define		_INT		dd
 %define		_UINT		dd
 %define		_LONG		dd
@@ -72,6 +76,10 @@
 %define		_U8		db
 %define		_U16		dw
 %define		_U32		dd
+
+%define		_TIME_T		_LONG
+%define		_MODE_T		_UINT
+%define		_OFF_T		_ULONG
 
 
 ;
@@ -131,41 +139,48 @@
 %assign SIG_IGN		1
 %assign SIG_ERR		-1
 
-%assign	SIGHUP		1	; Hangup (POSIX)
-%assign	SIGINT		2	; Interrupt (ANSI)
-%assign	SIGQUIT		3	; Quit (POSIX)
-%assign	SIGILL		4	; Illegal instruction (ANSI)
-%assign	SIGTRAP		5	; Trace trap (POSIX)
-%assign	SIGABRT		6	; Abort (ANSI)
-%assign	SIGIOT		6	; IOT trap (4.2 BSD)
-%assign	SIGBUS		7	; BUS error (4.2 BSD)
-%assign	SIGFPE		8	; Floating-point exception (ANSI)
-%assign	SIGKILL		9	; Kill, unblockable (POSIX)
-%assign	SIGUSR1		10	; User-defined signal 1 (POSIX)
-%assign	SIGSEGV		11	; Segmentation violation (ANSI)
-%assign	SIGUSR2		12	; User-defined signal 2 (POSIX)
-%assign	SIGPIPE		13	; Broken pipe (POSIX)
-%assign	SIGALRM		14	; Alarm clock (POSIX)
-%assign	SIGTERM		15	; Termination (ANSI)
-%assign	SIGSTKFLT	16	; Stack fault
-%assign	SIGCHLD		17	; Child status has changed (POSIX)
-%assign	SIGCLD		SIGCHLD	; Same as SIGCHLD (System V)
-%assign	SIGCONT		18	; Continue (POSIX)
-%assign	SIGSTOP		19	; Stop, unblockable (POSIX)
-%assign	SIGTSTP		20	; Keyboard stop (POSIX)
-%assign	SIGTTIN		21	; Background read from tty (POSIX)
-%assign	SIGTTOU		22	; Background write to tty (POSIX)
-%assign	SIGURG		23	; Urgent condition on socket (4.2 BSD)
-%assign	SIGXCPU		24	; CPU limit exceeded (4.2 BSD)
-%assign	SIGXFSZ		25	; File size limit exceeded (4.2 BSD)
-%assign	SIGVTALRM	26	; Virtual alarm clock (4.2 BSD)
-%assign	SIGPROF		27	; Profiling alarm clock (4.2 BSD)
-%assign	SIGWINCH	28	; Window size change (4.3 BSD, Sun)
-%assign	SIGIO		29	; I/O now possible (4.2 BSD)
-%assign	SIGPOLL		SIGIO	; Pollable event occurred (System V)
-%assign	SIGPWR		30	; Power failure restart (System V)
+%assign	SIGHUP		1	;Hangup (POSIX)
+%assign	SIGINT		2	;Interrupt (ANSI)
+%assign	SIGQUIT		3	;Quit (POSIX)
+%assign	SIGILL		4	;Illegal instruction (ANSI)
+%assign	SIGTRAP		5	;Trace trap (POSIX)
+%assign	SIGABRT		6	;Abort (ANSI)
+%assign	SIGIOT		6	;IOT trap (4.2 BSD)
+%assign	SIGBUS		7	;BUS error (4.2 BSD)
+%assign	SIGFPE		8	;Floating-point exception (ANSI)
+%assign	SIGKILL		9	;Kill, unblockable (POSIX)
+%assign	SIGUSR1		10	;User-defined signal 1 (POSIX)
+%assign	SIGSEGV		11	;Segmentation violation (ANSI)
+%assign	SIGUSR2		12	;User-defined signal 2 (POSIX)
+%assign	SIGPIPE		13	;Broken pipe (POSIX)
+%assign	SIGALRM		14	;Alarm clock (POSIX)
+%assign	SIGTERM		15	;Termination (ANSI)
+%assign	SIGSTKFLT	16	;Stack fault
+%assign	SIGCHLD		17	;Child status has changed (POSIX)
+%assign	SIGCLD		SIGCHLD	;Same as SIGCHLD (System V)
+%assign	SIGCONT		18	;Continue (POSIX)
+%assign	SIGSTOP		19	;Stop, unblockable (POSIX)
+%assign	SIGTSTP		20	;Keyboard stop (POSIX)
+%assign	SIGTTIN		21	;Background read from tty (POSIX)
+%assign	SIGTTOU		22	;Background write to tty (POSIX)
+%assign	SIGURG		23	;Urgent condition on socket (4.2 BSD)
+%assign	SIGXCPU		24	;CPU limit exceeded (4.2 BSD)
+%assign	SIGXFSZ		25	;File size limit exceeded (4.2 BSD)
+%assign	SIGVTALRM	26	;Virtual alarm clock (4.2 BSD)
+%assign	SIGPROF		27	;Profiling alarm clock (4.2 BSD)
+%assign	SIGWINCH	28	;Window size change (4.3 BSD, Sun)
+%assign	SIGIO		29	;I/O now possible (4.2 BSD)
+%assign	SIGPOLL		SIGIO	;Pollable event occurred (System V)
+%assign	SIGPWR		30	;Power failure restart (System V)
 %assign SIGUNUSED	31
-%assign	_NSIG		64	; Biggest signal number + 1
+%assign	_NSIG		64	;Biggest signal number + 1
+
+;
+;limits.h
+;
+
+%assign	NAME_MAX	255
+%assign	PATH_MAX	4095
 
 ;
 ;wait.h
@@ -337,6 +352,97 @@ struc utsname
 .version	CHAR	SYS_NMLN
 .machine	CHAR	SYS_NMLN
 .domainname	CHAR	SYS_NMLN
+endstruc
+
+;
+;sys/stat.h
+;
+
+%assign	S_ISUID	0004000q	;set user id on execution
+%assign	S_ISGID	0002000q	;set group id on execution
+%assign	S_ISTXT	0001000q	;sticky bit
+
+%assign	S_IRWXU	0000700q	;RWX mask for owner
+%assign	S_IRUSR	0000400q	;R for owner
+%assign	S_IWUSR	0000200q	;W for owner
+%assign	S_IXUSR	0000100q	;X for owner
+
+%assign	S_IREAD		S_IRUSR
+%assign	S_IWRITE	S_IWUSR
+%assign	S_IEXEC		S_IXUSR
+
+%assign	S_IRWXG	0000070q	;RWX mask for group
+%assign	S_IRGRP	0000040q	;R for group
+%assign	S_IWGRP	0000020q	;W for group
+%assign	S_IXGRP	0000010q	;X for group
+
+%assign	S_IRWXO	0000007q	;RWX mask for other
+%assign	S_IROTH	0000004q	;R for other
+%assign	S_IWOTH	0000002q	;W for other
+%assign	S_IXOTH	0000001q	;X for other
+
+%assign	S_IFMT	 0170000q	;type of file mask
+%assign	S_IFIFO	 0010000q	;named pipe (fifo)
+%assign	S_IFCHR	 0020000q	;character special
+%assign	S_IFDIR	 0040000q	;directory
+%assign	S_IFBLK	 0060000q	;block special
+%assign	S_IFREG	 0100000q	;regular
+%assign	S_IFLNK	 0120000q	;symbolic link
+%assign	S_IFSOCK 0140000q	;socket
+%assign	S_IFWHT  0160000q	;whiteout
+%assign	S_ISVTX	 0001000q	;save swapped text even after use
+
+struc stat
+.st_dev		USHORT	1
+.__pad1		USHORT	1
+.st_ino		ULONG	1
+.st_mode	USHORT	1
+.st_nlink	USHORT	1
+.st_uid		USHORT	1
+.st_gid		USHORT	1
+.st_rdev	USHORT	1
+.__pad2		USHORT	1
+%ifdef __BSD__
+.st_atime	ULONG	1
+.st_atimensec	ULONG	1
+.st_mtime	ULONG	1
+.st_mtimensec	ULONG	1
+.st_ctime	ULONG	1
+.st_ctimensec	ULONG	1
+.st_size	ULONG	1
+.st_blocks	ULONG	1
+.__pad3		ULONG	1
+.st_blksize	ULONG	1
+.st_flags	ULONG	1
+.st_gen		ULONG	1
+.st_lspare	ULONG	3
+%else
+.st_size	ULONG	1
+.st_blksize	ULONG	1
+.st_blocks	ULONG	1
+.st_atime	ULONG	1
+.__unused1	ULONG	1
+.st_mtime	ULONG	1
+.__unused2	ULONG	1
+.st_ctime	ULONG	1
+.__unused3	ULONG	1
+%endif
+.__unused4	ULONG	1
+.__unused5	ULONG	1
+endstruc
+
+struc __old_kernel_stat
+.st_dev		USHORT	1
+.st_ino		USHORT	1
+.st_mode	USHORT	1
+.st_nlink	USHORT	1
+.st_uid		USHORT	1
+.st_gid		USHORT	1
+.st_rdev	USHORT	1
+.st_size	ULONG	1
+.st_atime	ULONG	1
+.st_mtime	ULONG	1
+.st_ctime	ULONG	1
 endstruc
 
 ;

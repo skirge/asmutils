@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.1 2000/09/03 16:13:53 konst Exp $
+; $Id: os_linux.inc,v 1.2 2000/12/10 08:20:36 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 02-Sep-2000
-; version       : 0.10
+; modified      : 09-Sep-2000
+; version       : 0.11
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -773,33 +773,6 @@ endstruc
 %assign SYS_GETSOCKOPT	15	; sys_getsockopt
 %assign SYS_SENDMSG	16	; sys_sendmsg
 %assign SYS_RECVMSG	17	; sys_recvmsg
-
-;
-;asm/stat.h
-;
-
-struc stat
-.st_dev		USHORT	1
-.__pad1		USHORT	1
-.st_ino		ULONG	1
-.st_mode	USHORT	1
-.st_nlink	USHORT	1
-.st_uid		USHORT	1
-.st_gid		USHORT	1
-.st_rdev	USHORT	1
-.__pad2		USHORT	1
-.st_size	ULONG	1
-.st_blksize	ULONG	1
-.st_blocks	ULONG	1
-.st_atime	ULONG	1
-.__unused1	ULONG	1
-.st_mtime	ULONG	1
-.__unused2	ULONG	1
-.st_ctime	ULONG	1
-.__unused3	ULONG	1
-.__unused4	ULONG	1
-.__unused5	ULONG	1
-endstruc
 
 ;
 ;system calls

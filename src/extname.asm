@@ -1,21 +1,8 @@
-;Copyright (C) H-Peter Recktenwald <phpr@snafu.de>
+;Copyright (C) 2000 H-Peter Recktenwald <phpr@snafu.de>
 ;
-;$Id: extname.asm,v 1.2 2000/09/03 16:13:54 konst Exp $
+;$Id: extname.asm,v 1.3 2000/12/10 08:20:36 konst Exp $
 ;
 ;hackers' extname (return extension or postfix of a given filename)
-;
-;0.01: 25-mar-2000	initial release
-;0.02: 02-apr-2000	scan basename part only
-;0.03: 14-apr-2000	modified to
-;	accept filename from stdin/pipe and to complement `basename`:
-;	default and arg single (1st) char as dlm returns the names
-;		extension with leading delimiter inclusive,
-;	if arg leading 2 chars are same, returnstring is extension
-;		only, not including the delimiter char.
-;	compile option WITH_DLM can be used to force default and
-;		single delimiter chars mode, only.
-;
-; ------------------------------------------------------------------- ;
 ;
 ;syntax: extname { filename | - } [delimiter]
 ;	 "-" instead of filename for input from stdin
@@ -40,13 +27,21 @@
 ;
 ; ------------------------------------------------------------------- ;
 ;
-
+;0.01: 25-mar-2000	initial release
+;0.02: 02-apr-2000	scan basename part only
+;0.03: 14-apr-2000	modified to
+;	accept filename from stdin/pipe and to complement `basename`:
+;	default and arg single (1st) char as dlm returns the names
+;		extension with leading delimiter inclusive,
+;	if arg leading 2 chars are same, returnstring is extension
+;		only, not including the delimiter char.
+;	compile option WITH_DLM can be used to force default and
+;		single delimiter chars mode, only.
+;
+; ------------------------------------------------------------------- ;
 
 %include "system.inc"
 
-;check against /usr/include/linux/limits.h:
-%define PATH_MAX 4096
-;
 ;override compile options from Makefile:
 ;
 ;define to saving a few bytes if you'd know for certain that
@@ -60,7 +55,6 @@
 ;	to force returning xtn with leading delmiter, only.
 ;%define WITH_DLM
 ;%undef  WITH_DLM
-
 
 ddir: equ '/'		; filename delimiter (directory marker)
 dext: equ '.'		; default extension delimiter

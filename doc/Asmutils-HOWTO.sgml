@@ -1,121 +1,205 @@
-<!doctype linuxdoc system>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.3 2000/09/03 16:25:07 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.4 2000/12/10 08:20:36 konst Exp $ -->
 
-<article>
+<article id="Asmutils-HOWTO">
+<?html-filename Asmutils-HOWTO.html>
 
-<title>Asmutils HOWTO
+<artheader>
+<title>Asmutils HOWTO</title>
 
 <author>
-<url url="mailto:konst@linuxassembly.org" name="Konstantin Boldyshev">
+    <firstname>Konstantin</firstname>
+    <surname>Boldyshev</surname>
+    <affiliation>
+	<orgname>
+	    <ulink url="http://linuxassembly.org/">
+	    Linux Assembly<anchor id="konst"></ulink>
+	</orgname>
+	<address>
+	    <email>konst@linuxassembly.org</email>
+	</address>
+    </affiliation>
+</author>
 
-<date>v0.3, August 23, 2000
+<releaseinfo>Version 0.4</releaseinfo>
+<pubdate role="cvs">$Date: 2000/12/10 08:20:36 $</pubdate>
+
+<copyright>
+<year>1999-2000</year><holder>Konstantin Boldyshev</holder>
+</copyright>
+
+<legalnotice><para>
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1;
+with no Invariant Sections, with no Front-Cover Texts, and no Back-Cover texts.
+</para></legalnotice>
 
 <abstract>
+<para>
 This is the Asmutils HOWTO.
+</para>
 
-This document is to accompany asmutils, explain asmutils internals,
-describe how to write asmutils program and how to contribute to the project.
+<para>
+This document is to accompany <application>asmutils</application>,
+explain <application>asmutils</application> internals,
+describe how to write <application>asmutils</application> program
+and how to contribute to the project.
+</para>
 
-It targets asmutils developers and advanced users
-striving for the secret lore of the assembly entity.
+<para>
+It targets <application>asmutils</application> developers
+and advanced users striving for the secret lore of the assembly entity.
+</para>
 </abstract>
 
-<toc>
+</artheader>
 
-<sect>Introduction
-<p>
+<!--
+	start
+-->
 
-<sect1>Legal blurb
-<p>
-Copyright &copy; 1999-2000 Konstantin Boldyshev.
+<section id="s-intro">
+<title>Introduction</title>
+
+<section id="s-legal"><title>Legal blurb</title>
+<para>
 Permission is granted to copy, distribute and/or modify this document
-under the terms of the GNU <url url="http://www.gnu.org/copyleft/fdl.html"
-name="Free Documentation License">, Version 1.1
-or any later version published by the Free Software Foundation.
+under the terms of the GNU
+<ulink url="http://www.gnu.org/copyleft/fdl.html">
+Free Documentation License</ulink> Version 1.1;
+with no Invariant Sections, with no Front-Cover Texts, and no Back-Cover texts.
+</para>
+</section>
 
-<sect1>Credits
-<p>
+<section><title>Before you begin</title>
 
-I would like to thank following persons for contributing to this document:
-
-<itemize>
-<item>Brian Raiter (elf.inc description)
-<item>Dmitry Bakhvalov (using gdb)
-</itemize>
-
-<sect1>Before you begin
-<p>
-
+<para>
 I assume you are familiar with Unix and assembly language to an extent
 when you are able to understand what is written here.
-If you are not understanding most of what is written here,
-probably this HOWTO is not for you.
+If you are unable to comprehend most of what is written here,
+probably this manuscript is not for you, sorry.
+</para>
 
-I expect that you will dig in and examine source code of asmutils.
+<para>
+I expect that you will dig in and examine
+source code of <application>asmutils</application>.
 This document is not intended to replace the source, its goal is only
-to accompany asmutils source and explain some unclear moments.
+to accompany <application>asmutils</application> source
+and explain several unclear moments.
 Again, examine ALL source code. Look how command line parsing is done,
 how conditional assembly for different kernel versions is done and so on --
 I am not going to explain all and everything here.
+</para>
 
-This HOWTO deals with compiling, developing, debugging, contributing issues,
+<para>
+This document deals with compiling, developing, debugging, contributing issues,
 it shows some tricks you can use;
-also it describes a set of macros I've developed to write fast and readable;
+also it describes a set of macros I've developed to write fast and readable:
 they are hiding from you unneeded details,
 and take care of optimization.
+</para>
 
+<para>
 You may also want to read other documentation represented at the
-<url url="http://linuxassembly.org" name="Linux Assembly"> site
-to get better general (not asmutils specific) understanding
-of asmutils source code.
+<ulink url="http://linuxassembly.org">Linux Assembly</ulink> site
+to get better general (not <application>asmutils</application> specific)
+understanding of <application>asmutils</application> source code.
+</para>
 
-<sect1>Compiling asmutils
-<p>
+</section>
 
-Asmutils are build with the usual compile suite and <tt/nasm/.
-Except <tt/nasm/ you will need
-<tt/make/, <tt/ld/, <tt/sh/, <tt/ln/, <tt/rm/,
-possibly <tt/strip/ and something else, depending on your OS.
+<section><title>Compiling <application>asmutils</application></title>
 
+<para>
+Asmutils are build with the usual compile suite and <command>nasm</command>.
+Except <command>nasm</command> you will need
+<command>make</command>,
+<command>ld</command>,
+<command>sh</command>,
+<command>ln</command>,
+<command>rm</command>,
+possibly <command>strip</command>
+and possibly something else, depending on your OS.
+</para>
+
+<para>
 Preferred program versions are:
 
-<itemize>
-<item>nasm 0.98
-<item>ld from GNU binutils 2.9 (on Linux)
-<item>GNU make 3.77
-</itemize>
+<itemizedlist>
+<listitem><para>
+nasm 0.98
+</para></listitem>
+<listitem><para>
+ld from GNU binutils 2.9 (on Linux)
+</para></listitem>
+<listitem><para>
+GNU make 3.77
+</para></listitem>
+</itemizedlist>
+</para>
 
-Older/other versions may work too.
-GNU <tt/make/ is required, on BSD systems it is usually called <tt/gmake/.
+<para>
+Older/newer/other versions may work too.
+GNU <command>make</command> is required,
+on BSD systems it is usually called <command>gmake</command>,
+and can be found in ports collection.
+</para>
 
-All compile-time configuration is in the <tt/MCONFIG/ file,
+<para>
+All compile-time configuration is in the <filename>MCONFIG</filename> file,
 which has enough comments to figure out what you can do.
-You can try to fallback to libc functions instead of using direct
-system calls by defining OS=LIBC in <tt/MCONFIG/ if your really want to do so;
-then you will also need <tt/gcc/ and libc headers.
+You can try to fallback to libc functions
+instead of using direct system calls by defining
+<literal>OS=LIBC</literal> in <filename>MCONFIG</filename>
+if your really want to do so; then you will also need
+<command>gcc</command> and libc headers.
+</para>
 
-<em/Note: several utils (cpuinfo, eject, httpd, kill, etc)
-have their own additional configuration in the source code./
+<note><para>
+several utils (<command>cpuinfo</command>, <command>eject</command>,
+<command>httpd</command>, <command>kill</command>, etc)
+have their own additional configuration in the source code.
+</para></note>
 
-<sect>Program structure
-<p>
+</section>
+
+</section>
+
+<section id="s-layout">
+
+<title>Program layout</title>
+
+<para>
 There are three macros that make section definition as simple as possible:
-<tt/CODESEG/, <tt/DATASEG/ and <tt/UDATASEG/
-(similar to <tt/tasm/ ideal mode syntax).
-<tt/END/ macro marks end of file.
+<function>CODESEG</function>,
+<function>DATASEG</function> and
+<function>UDATASEG</function>
+(similar to <command>tasm</command> ideal mode syntax).
+<function>END</function> macro marks end of file.
+</para>
 
-Program must have at least <tt/CODESEG/ (.text) section, other sections are optional.
-<tt/CODESEG/ is read-only, <tt/DATASEG/ and <tt/UDATASEG/ are read-write;
-i.e. you can place data in <tt/CODESEG/ as long as you will not change it.
+<para>
+Program must have at least <function>CODESEG</function> (.text) section,
+other sections are optional.
+<function>CODESEG</function> is read-only,
+<function>DATASEG</function> and <function>UDATASEG</function> are read-write;
+i.e. you can place data in <function>CODESEG</function>
+as long as you will not change it.
 You can also define your own sections if you want, but there's very rare need
 of doing so. Each section (even if it is empty) will enlarge your file.
+</para>
 
-<tt/START/ macro tells linker the entry point, and MUST be present.
+<para>
+<function>START</function> macro tells linker the entry point,
+and MUST be present.
+</para>
 
-So, program skeleton will look like:
+<para>
+So, program skeleton should look like:
+</para>
 
-<code>
+<para><programlisting>
 %include "system.inc"
 
 CODESEG
@@ -133,121 +217,222 @@ UDATASEG
     your_bss_here
 
 END
-</code>
+</programlisting></para>
 
-<sect>Include files description
+</section>
 
-<sect1>system.inc
-<p>
 
+<section id="s-include">
+<title>Include files description</title>
+
+<section id="inc-system" xreflabel="system.inc">
+<title>system.inc</title>
+
+<para>
 This file is vital and MUST be included into program code to do anything else;
 without this file you'll have to write in usual boring way.
+</para>
 
-<tt/CODESEG/, <tt/DATASEG/, <tt/UDATASEG/, <tt/END/, <tt/I_STRUC/, <tt/I_END/
+<para>
+<function>CODESEG</function>,
+<function>DATASEG</function>,
+<function>UDATASEG</function>,
+<function>END</function>,
+<function>I_STRUC</function>,
+<function>I_END</function>
 macros are here, some other will be added.
+</para>
 
-Also it contains optimizing macros <tt/_mov/, <tt/_add/, <tt/_sub/,
+<para>
+Also it contains optimizing macros
+<function>_mov</function>,
+<function>_add</function>,
+<function>_sub</function>,
 that perform register assignment, addition and subtraction.
 You can use these macros instead of mov, add, sub instructions --
 if you take care of size, this will produce quite good results
 (do not try to understand how they work :).
-<em>
-Note: when passing negative number in -0x80..0x00 range to <tt/_mov/,
-pass it as hex, i.e. 0xffffffff instead of -1, if you want size optimization.
-This is a "feature" of <tt/nasm/, not <tt/_mov/ bug.
-</em>
+</para>
 
+<note><para>
+when passing negative number in -0x80..0x00 range to
+<function>_mov</function>, pass it as hex, i.e. 0xffffffff instead of -1,
+if you want size optimization. This is a "feature" of <command>nasm</command>,
+not <function>_mov</function> bug.
+</para></note>
+
+<para>
 This file includes two others:
-<ref id="inc-includes" name="includes.inc"> and
-<ref id="inc-syscall" name="syscall.inc">,
+<xref linkend="inc-includes"> and
+<xref linkend="inc-syscall">,
 you do need to include them manually.
+</para>
 
-<sect1>includes.inc<label id="inc-includes">
-<p>
+</section>
 
+<section id="inc-includes" xreflabel="includes.inc">
+<title>includes.inc</title>
+
+<para>
 This file stores generic constant definitions and structures
 (from libc headers), that are OS independent.
 If you add some defined constant,
 please do not forget to mention header file it was taken from.
+</para>
 
-<sect1>syscall.inc<label id="inc-syscall">
-<p>
+</section>
+
+<section id="inc-syscall" xreflabel="syscall.inc">
+<title>syscall.inc</title>
+
+<para>
 File holds system call macros, here are general things to know them:
-(<bf>warning: from asmutils 0.11 syscall macros will change seriously!</bf>)
 
-<itemize>
-<item>there can be up to 5 parameters (depends on syscall)
-<item>all parameters are always optional
-<item>registers corresponding to parameters are: ebx (1), ecx (2), edx (3), esi (4), edi (5)
-<item>registers are not touched, except eax, which holds return code
-<item>eax is used as syscall (function) number and is always destroyed; after call it contains return value
-<item>ecx and edx also can be destroyed by several system calls (at least on Linux)
-<item>flags can be touched, you should not assume that flags are the same after call
-<item>if there are no parameters, macro assumes that all registers (except eax) are already set before syscall
-<item>number of used registers is equal to number of passed parameters + 1 (eax)
-<item>parameter can be register, memory address, reference, constant or reserved word
-<item>reserved words are (currently only one): EMPTY
+<itemizedlist>
+<listitem><para>
+all parameters are always optional
+</para></listitem>
+<listitem>
+<para>
+there can be up to <link linkend="six-arg">6</link> parameters
+(depends on syscall) on Linux, more on *BSD
+</para>
+
+<note id="six-arg"><para>
+Passing sixth parameter in <literal>ebp</literal>
+is valid only for Linux 2.4, previous Linux versions understand
+only 5 parameters in registers.
+This means that sixth parameter will be passed in <literal>ebp</literal>
+only if you have <literal>KERNEL=24</literal> (or higher)
+in <filename>MCONFIG</filename>.
+This applies to Linux only.
+</para></note>
+
+</listitem>
+<listitem><para>
+registers corresponding to parameters are:
+<literal>ebx</literal> (1),
+<literal>ecx</literal> (2),
+<literal>edx</literal> (3),
+<literal>esi</literal> (4),
+<literal>edi</literal> (5),
+<link linkend="six-arg"><literal>ebp</literal></link> (6).
+</para></listitem>
+
+<listitem><para>
+<literal>eax</literal> register is used as syscall (function)
+number and is always destroyed; after call it contains return value.
+Other registers are not touched.
+</para></listitem>
+<!--
+<listitem><para>
+ecx and edx also can be destroyed by several system calls (at least on Linux)
+</para></listitem>
+-->
+<listitem><para>
+flags can be touched, you should not assume that flags are the same after call
+</para></listitem>
+<listitem><para>
+if there are no parameters, macro assumes that all registers
+(except <literal>eax</literal>) are already set before syscall
+</para></listitem>
+<listitem><para>
+number of used registers is equal to number of passed parameters + 1
+(<literal>eax</literal>)
+</para></listitem>
+<listitem><para>
+parameter can be register, memory address, reference,
+constant or reserved word
+</para></listitem>
+<listitem><para>
+reserved words are (currently only one): <literal>EMPTY</literal>
 (indicates that register is already set before macro and must be skipped).
-It is useful when you need to pass only  say third parameter
-and not touch others; f.e. <tt/sys_write EMPTY,EMPTY,1/ will expand to:
+It is useful when you need to pass only say third parameter
+and not touch others;
+e.g. <function>sys_write EMPTY,EMPTY,1</function> will expand to:
 
-<tscreen><code>
-	_mov edx,1
+<programlisting>
+	_mov	edx,1
 	__syscall write...
-</code></tscreen>
-
-<item>
-registers are set in this order: edi, esi, edx, ecx, ebx, eax;
-i.e. it is possible to write <tt/sys_write eax, ebx, ecx/;
+</programlisting>
+</para></listitem>
+<listitem><para>
+registers are set in this order:
+<link linkend="six-arg"><literal>ebp</literal></link>,
+<literal>edi</literal>,
+<literal>esi</literal>,
+<literal>edx</literal>,
+<literal>ecx</literal>,
+<literal>ebx</literal>,
+<literal>eax</literal>;
+therefore it is possible to write <function>sys_write eax, ebx, ecx</function>;
 it will expand to:
 
-<tscreen><code>
+<programlisting>
 	mov	edx,ecx
 	mov	ecx,ebx
 	mov	ebx,eax
 	__syscall write...
-</code></tscreen>
-<item>generated code can be optimized for size (default) or speed
-</itemize>
+</programlisting>
+</para></listitem>
+<listitem><para>
+generated code can be optimized for size (default) or speed
+</para></listitem>
+</itemizedlist>
+</para>
 
-<bf/WARNING:/ *never* use <tt/__syscall/ macro in your program directly
-(of course the same applies to int 0x80 !!).
+<warning><para>
+NEVER use <function>__syscall</function> macro in your program directly
+(of course the same applies to <function>int 0x80</function> !!).
 This is a VERY BAD thing to do.
 This will MAKE YOUR CODE UNPORTABLE!
-So please use only <tt/sys_xxx/ macros!
+Therefore please use only <function>sys_xxx</function> macros!
+</para></warning>
 
+<para>
 If some system call is missing, you can add it to this file;
 it's simple, just look how others are done there;
 use sys_syscallname as macro name.
+</para>
 
+</section>
 
-<sect1>elf.inc<label id="inc-elf">
-<p>
+<section id="inc-elf"><title>elf.inc</title>
 
-<bf/This file applies only to Linux./ ELF macros are defined here.
-These macros can be (and are, by default) used to reduce final size of executable.
-Almost all of them (except ELF_BSTRUC and ELF_AT)
+<para>
+<emphasis>Currently this file applies only to Linux.</emphasis>
+ELF macros are defined here.
+These macros can be (and are, by default) used
+to reduce final size of executable. Almost all of them
+(except <function>ELF_BSTRUC</function> and <function>ELF_AT</function>)
 are integrated into existing program structure.
-To enable them you just need to have <tt/ELF_MACROS = y/ line in <tt/MCONFIG/ (enabled by default),
-this turns on automatic usage of these macros (and you do not have to include elf.inc).
+To enable them you just need to have <literal>ELF_MACROS = y</literal>
+line in <filename>MCONFIG</filename> (enabled by default),
+this turns on automatic usage of these macros
+(and you do not have to include <filename>elf.inc</filename>).
 And if you will follow simple rules when writing a program,
-then you will not have to carry out two different definitions for sections and structures;
-so, you can compile the same source with and without usage of these macros,
-getting correct code in both cases.
+then you will not have to carry out two different definitions
+for sections and structures; so, you can compile the same source
+with and without usage of these macros, getting correct code in both cases.
 This is experimental thing, however it seems to work well.
-Rules are simple: use following section order: CODESEG, DATASEG, UDATASEG, END,
-and use I_STRUC and I_END to define structures in UDATASEG
-instead of <tt>istruc</tt> and <tt>iend</tt> (take any asmutils source as an example).
+Rules are simple: use following section order:
+<function>CODESEG</function>,
+<function>DATASEG</function>,
+<function>UDATASEG</function>,
+<function>END</function>,
+and use <function>I_STRUC</function> and <function>I_END</function>
+to define structures in <function>UDATASEG</function>
+instead of <literal>istruc</literal> and <literal>iend</literal>
+(take any <application>asmutils</application> source as an example).
 Alternatively, you can use macros from elf.inc directly if you want,
 but then you can't compile your source using usual nasm/ld procedure.
-If you want to go this way, take the time and read REAME.elf carefully
+If you want to go this way, take the time and read carefully
+description by Brian Raiter below and comments in <filename>elf.inc</filename>
 (also do read it if you want to understand how they work).
 Personally I think that first way is simpler.
+</para>
 
-Brian Raiter wrote the description below and comments in elf.inc 
-containing all you need to know about what they do and how they work.
-
-<tscreen><code>
+<para><screen>
 	elf.inc macros description (by Brian Raiter)
 	--------------------------------------------
 
@@ -262,7 +447,7 @@ As a result, these tools create executables with unnecessary overhead.
 Some of this overhead can be removed afterwards using strip and/or
 sstrip, but not all of it.
 
-Therefore, as of version 0.05, the asmutils programs avoid using
+Therefore, as of version 0.05, the <application>asmutils</application> programs avoid using
 object files entirely, and instead define the ELF executable file
 images directly, byte for byte, using Nasm's "bin" output file format
 and the macros defined in elf.inc. These macros are defined here.
@@ -350,33 +535,50 @@ ELF_IEND
 These macros correspond directly to the builtin macros ISTRUCT, AT,
 and IEND; they differ only in that they declare "uninitialized"
 memory, and thus can be used within an ELF_DATA section.
-</code></tscreen>
+</screen></para>
 
-</p>
+</section>
 
-<sect>Debugging your code
-<p>
+</section>
 
-<sect1>gdb
-<p>
+<section id="s-debug">
+<title>Debugging your code</title>
 
-Although <tt/gdb/ is source-level debugger, it can be used to debug
-pure assembly code (the simplest way is to place <tt/int 3/ instructions
-as breakpoints over your code).
-And with some trickery you can force <tt/gdb/ to do what you want:
+<section><title>ald</title>
 
-<tscreen><verb>
+<para>
+There's an early version of the
+<ulink url="http://www.ellipse.magenet.com/ald.html">Assembly Language Debugger</ulink>,
+which is designed to work with assembly code,
+and is portable enough to run on Linux and *BSD.
+It is already functional and should be the right choice, check it out!
+</para>
+
+</section>
+
+<section><title>gdb</title>
+
+<para>
+Although <command>gdb</command> is source-level debugger,
+it can be used to debug pure assembly code
+(the simplest way is to place <function>int 3</function>
+instructions as breakpoints over your code).
+And with some trickery you can force
+<command>gdb</command> to do what you need:
+</para>
+
+<para><screen>
 Using GDB with asmutils (by Dmitry Bakhvalov)
 --------------------------------------------
 
 Personally, I use gdb for debugging asmutils. Try this:
  
 1) Use the following stuff to compile:
-   $nasm -f elf -g smth.asm
-   $ld -o smth smth.o
+   $ nasm -f elf -g smth.asm
+   $ ld -o smth smth.o
 
 2) Fire up gdb:
-   $gdb smth
+   $ gdb smth
 
 3) In gdb:
    (gdb) disassemble _start
@@ -394,9 +596,9 @@ Personally, I use gdb for debugging asmutils. Try this:
    Then start the program with r command and debug with n.
 
    Hope this helps.
-</verb></tscreen>
+</screen></para>
 
-<tscreen><verb>
+<para><screen>
 An additional note from ???
 ---------------------------
 
@@ -405,157 +607,273 @@ An additional note from ???
     which guarantee a fixed number of disassembled instructions. Then,
     with a well chosen size for my xterm, gdb output looks like it is
     refreshed, and not scrolling.
-</verb></tscreen>
+</screen></para>
 
-<sect1>strace
-<p>
-Definitely <tt/strace/ can help you a lot (<tt/ktrace/ and <tt/kdump/ on FreeBSD),
+</section>
+
+<section><title>strace</title>
+
+<para>
+Definitely <command>strace</command> can help a lot
+(<command>ktrace</command> and <command>kdump</command>
+on FreeBSD),
 it is used to trace system calls and signals.
-Read its manual page (<tt/man strace/) and <tt/strace --help/ output for details.
+Read its manual page (<command>man strace</command>) and
+<command>strace --help</command> output for details.
+</para>
 
+</section>
 
-<sect>Contribution guidelines
-<p>
+</section>
+
+<section id="s-contrib">
+<title>Contribution guidelines</title>
+
+<para>
 Asmutils would never become what they are without submissions
 from various hackers. As any open project, it relies much
 on contributions. Hence, if you've got an intention/inspiration
 to contribute something, you're more than welcome!
+</para>
 
+<para>
 So, if you are the person who follows the challenge of UNIX
 assembly programming and wants your code to be included
-into asmutils, do examine this section carefully.
+into <application>asmutils</application>, do examine this section carefully.
 It contains extremely important information, your contribution
 may not be accepted if you ignore suggestions below.
+</para>
 
+<para>
 Although I think most of what is said in this section is evident
 to experienced developers of distributed free software, there might be
 brand new developers from the proprietary software world, unaware of common
 contribution practice; if you are the one, read with double attention.
+</para>
 
-<sect1>First step
-<p>
-<bf/Before you begin/ make sure you are using <bf/the latest/
-version of asmutils, I can reject contributions based on old versions.
+<section><title>First step</title>
 
-So, get the latest version of asmutils and look what is already done.
-Even if the program you want to contribute is not there, look at
-<url url="http://linuxassembly.org/asmutils.html" name="ChangeLog">, or
-CVS <tt>cvs.linuxassembly.org:/cvsroot/asm</tt> (using ssh and pserver,
-module name is &quot;asmutils&quot;), or contact maintainer first,
-may be somebody is already doing (or has done)
+<para>
+<emphasis>Before you begin</emphasis> make sure you are using
+<emphasis>the latest</emphasis> version of <application>asmutils</application>,
+I can reject contributions based on old versions.
+</para>
+
+<para>
+So, get the latest version of <application>asmutils</application>
+and look what is already done.
+Even if the program you want to contribute is not there, look at the
+<ulink url="http://linuxassembly.org/asmutils.html">ChangeLog</ulink>,
+or CVS <filename>cvs.linuxassembly.org:/cvsroot/asm</filename>
+using ssh and pserver, module name is "asmutils":
+<screen>
+$ export CVS_RSH=ssh
+$ cvs -d:pserver:anonymous@cvs.linuxassembly.org:/cvsroot/asm login
+
+(when prompted for password, just press [Enter].
+
+$ cvs -d:pserver:anonymous@cvs.linuxassembly.org:/cvsroot/asm co asmutils
+</screen>
+
+or contact maintainer first, may be somebody is already doing (or has done)
 what you're only going to do (ditto if you want to improve existing utils).
 This is very important! Asmutils are growing rapidly,
 do not duplicate effort of other hackers.
+</para>
 
-<sect1>Source code requirements
-<p>
+</section>
+
+<section><title>Source code requirements</title>
+
+<para>
 Here are few obvious requirements for the source code:
 
-<itemize>
-<item>you must use <tt/nasm/ assembler
-<item>you must use supplied macro set
-<item>you must not use libc or any other external library
-</itemize>
+<itemizedlist>
+<listitem><para>
+you must use <command>nasm</command> assembler
+</para></listitem>
+<listitem><para>
+you must use supplied macro set
+</para></listitem>
+<listitem><para>
+you must not use libc or any other external library
+</para></listitem>
+</itemizedlist>
+</para>
 
-<em>
-Note: I can accept utilities written in <tt/gas/, but this will give me just more
-boring work of converting them to <tt/nasm/ syntax and asmutils macro set.
-This is to be avoided when possible. I mean, do it on your own :)
-</em>
+<note><para>
+I can accept utilities written in <command>gas</command>,
+but this will give me just more boring work of converting them to
+<command>nasm</command> syntax and <application>asmutils</application>
+macro set. This is to be avoided when possible. I mean, do it on your own :)
+</para></note>
 
+<para>
 While writing your program take care of portability!
 Basically, this means:
 
-<itemize>
-<item>no int 0x80 (or similar) calls directly, only sys_xxx macros
-<item>no ELF or kernel specific bizarre hacks, such as self-modifying code, writable CODESEG, etc.
-<item>no 0 instead of STDIN, 9 instead of SIGKILL, and so on
-</itemize>
+<itemizedlist>
+<listitem><para>
+no <function>int 0x80</function> (or similar) calls directly,
+only <function>sys_xxx</function> macros
+</para></listitem>
+<listitem><para>
+no ELF or kernel specific bizarre hacks,
+such as self-modifying code,
+writable <function>CODESEG</function>, etc.
+</para></listitem>
+<listitem><para>
+no 0 instead of <literal>STDIN</literal>,
+9 instead of <literal>SIGKILL</literal>,
+and so on
+</para></listitem>
+</itemizedlist>
+</para>
 
+<para>
 I think you've got an idea. Just try to imagine your program on other OS,
 and ask yourself: what one will need to do make it run?
 what should I do to make compile on as many OSes as possible?
-Even your program is OS specific (f.e. lsmod),
+Even your program is OS specific (e.g. <command>lsmod</command>),
 at least try to make it readable.
+</para>
 
-<bf/I reject submissions eliminating these simple rules./
+<warning><para>
+I reject submissions eliminating these simple rules.
+</para></warning>
 
+<para>
 And of course, your code must do something useful, not just be written
 according to the above requirements :). Usual UNIX utils are preferred,
 but you can also contribute your very own program.
-Keep in mind that asmutils are not just fun. They are used
-in (and targeted on) small distributions and embedded systems.
+Keep in mind that <application>asmutils</application> are not just fun.
+They are used in (and targeted on) small distributions and embedded systems.
 Thus, they should be as small as possible, use very few memory,
 and be fast as kernel. Neither more, nor less :)
+</para>
 
-<sect1>Last step
-<p>
+</section>
+
+<section><title>Last step</title>
+
+<para>
 When, finally, you think your program is ready,
 here again comes administrativia.
+</para>
 
+<para>
 First, try to test your program. If it still works, rest a day, then look
 at it again.. I mean, I know you're very excited that your program works,
 but just try to look what now you can improve; do not send maintainer a new
 version every day, this will save him (and you) from the mess of versions.
+</para>
 
+<para>
 New programs should be sent to project maintainer, while improvements
 of existing -- to particular util maintainer first.
+</para>
 
-Since asmutils programs are usually quite small, please send
-full source of program instead of patches when possible.
+<para>
+Since <application>asmutils</application> programs are usually quite small,
+please send full source of program instead of patches when possible.
+</para>
 
+<para>
 Sometimes maintainer (or I) will modify your code a bit.
 Please use that modified code for next program version.
+</para>
 
+<para>
 Simple, huh? :)
+</para>
 
-With any additional questions refer to the asmutils webpage
-or contact asmutils maintainer.
+<para>
+With any additional questions refer to the <application>asmutils</application>
+webpage or contact <application>asmutils</application> maintainer.
+</para>
 
-<sect1>Porting
-<p>
-asmutils are quite portable to any i386 (POSIX/UNIX) OS;
-if you are interested in asmutils running on your OS, I am willing to help.
+</section>
+
+<section><title>Porting</title>
+
+<para>
+<application>asmutils</application> are quite portable
+to any i386 (POSIX/UNIX) OS; if you are interested in
+<application>asmutils</application> running on your OS, I am willing to help.
 However of course I will need that OS, so you will have to donate me CD's
 (do not ask me to download gigs from the net!).
 Drop me a mail if you are interested.
+</para>
 
+</section>
 
-<sect>Optimization, tips and tricks
-<p>
+</section>
 
+<section id="s-optimize">
+<title>Optimization, tips and tricks</title>
+
+<para>
 In fact optimization must be done by assembler.. but..
 optimizing assembler is just a sweet dream yet. So, I've took care of it.
-By default code is optimized for size, and you can get up to 20% smaller executable;
-speed optimization in fact is a fake, it's just an absence of size optimization :),
+By default code is optimized for size,
+and you can get up to 20% smaller executable;
+speed optimization in fact is a fake,
+it's just an absence of size optimization :),
 though theoretically you can gain something on pentium processors..
-To enable speed optimization set OPTIMIZE to SPEED in <tt/MCONFIG/.
+To enable speed optimization set <literal>OPTIMIZE</literal>
+to <literal>SPEED</literal> in <filename>MCONFIG</filename>.
 Optimization touches register assignment, addition and subtraction
-(<bf/_mov/, <bf/_add/, <bf/_sub/ macros),
-and section alignment (<bf/CODESEG/, <bf/DATASEG/ macros).
+(<function>_mov</function>, <function>_add</function>,
+<function>_sub</function> macros),
+and section alignment
+(<function>CODESEG</function>, <function>DATASEG</function> macros).
 Optimization is a work in progress, so results may be better in future versions.
+</para>
 
+<para>
 If you've gone crazy on binary size,
 you may want to use some of things described below.
+</para>
 
-First of all, try to keep your program in one <bf/CODESEG/ (.text) section.
-Remember, every new section (even if it is empty) increases size of executable file.
-Unless you have any <em/read-write/ data, do not create <bf/DATASEG/ (.data section), keep your data in <bf/CODESEG/.
-Even if you've got one/two variables with assigned initial values, first think of keeping them dynamically on the stack instead of creating <bf/DATASEG/.
-And if your initial value is zero, place such variable in <bf/UDATASEG/ (.bss) section, it will be zeroed out by kernel.
+<para>
+First of all, try to keep your program in one
+<function>CODESEG</function> (.text) section.
+Remember, every new section (even if it is empty)
+increases size of executable file.
+Unless you have any <emphasis>read-write</emphasis> data,
+do not create <function>DATASEG</function> (.data section),
+keep your data in <function>CODESEG</function>.
+Even if you've got one/two variables with assigned initial values,
+first think of keeping them dynamically on the stack instead of creating
+<function>DATASEG</function>.
+And if your initial value is zero,
+place such variable in <function>UDATASEG</function> (.bss) section,
+it will be zeroed out by kernel.
+</para>
 
-Use <bf/_mov/ macro instead of <tt/mov/ instruction
+<para>
+Use <function>_mov</function> macro instead of
+<literal>mov</literal> instruction
 (if you do not assign one register to another),
 this will track several special cases and produce smaller code.
+</para>
 
-Avoid using 16bit registers (ax, bx, cx, etc) unless you know exactly what you're doing.
-Every 16bit instruction will take one more byte (0x66 prefix).
-For instance, <tt/inc ax/ will produce greater code than <tt/inc eax/.
+<para>
+Avoid using 16-bit registers
+(<literal>ax</literal>,
+<literal>bx</literal>,
+<literal>cx</literal>, etc)
+unless you know exactly what you're doing.
+Every 16-bit instruction will take one more byte (0x66 prefix).
+For instance, <function>inc ax</function>
+will produce greater code than <function>inc eax</function>.
+</para>
 
+<para>
 Here are some assembly examples you can use instead of
-<tt/cmp/ instruction to produce smaller code:
+<literal>cmp</literal> instruction to produce smaller code:
 
-<tscreen><code>
+<screen>
 ;if eax < 0 (signed compare)
 
 	test	eax,eax
@@ -601,10 +919,78 @@ Here are some assembly examples you can use instead of
 
 ;instead of
 	cmp	eax,value
-</code></tscreen>
+</screen>
 
 Seek, and you may find more..
+</para>
 
-$Id: Asmutils-HOWTO.sgml,v 1.3 2000/09/03 16:25:07 konst Exp $
+</section>
+
+<!--
+	end
+-->
+
+<appendix id="history">
+<title>History</title>
+
+<para><revhistory>
+
+<revision>
+<revnumber>0.4</revnumber><date>08 Dec 2000</date><authorinitials>konst</authorinitials>
+<revremark>rewritten using DocBook DTD, minor corrections</revremark>
+</revision>
+
+<revision>
+<revnumber>0.3</revnumber><date>03 Sep 2000</date><authorinitials>konst</authorinitials>
+<revremark></revremark>
+</revision>
+
+<revision>
+<revnumber>0.2</revnumber><date>11 Jul 2000</date><authorinitials>konst</authorinitials>
+<revremark></revremark>
+</revision>
+
+<revision>
+<revnumber>0.1</revnumber><date>01 Jun 2000</date><authorinitials>konst</authorinitials>
+<revremark></revremark>
+</revision>
+
+</revhistory></para>
+</appendix>
+
+<appendix id="acknowledgements">
+<title>Acknowledgements</title>
+
+<para>
+I would like to thank following persons for contributing to this document:
+
+<itemizedlist>
+<listitem><para>
+Brian Raiter (elf.inc description)
+</para></listitem>
+<listitem><para>
+Dmitry Bakhvalov (using gdb)
+</para></listitem>
+</itemizedlist>
+</para>
+
+</appendix>
+
+<appendix id="endorsements">
+<title>Endorsements</title>
+<para>
+This version of the document is endorsed by 
+<link linkend="konst">Konstantin Boldyshev</link>.
+</para>
+
+<para>
+Modifications (including translations) must remove this appendix
+according to the <link linkend="s-legal">license agreement</link>.
+</para>
+
+<para><literal>
+$Id: Asmutils-HOWTO.sgml,v 1.4 2000/12/10 08:20:36 konst Exp $
+</literal></para>
+</appendix>
 
 </article>

@@ -1,12 +1,13 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: execve.asm,v 1.2 2000/02/10 15:07:04 konst Exp $
+;$Id: execve.asm,v 1.3 2000/12/10 08:20:36 konst Exp $
 ;
-;execute a given program
+;execve/regs
 ;
-;use with regs
+;execute a given program / show startup registers info
 ;
-;example: ./execve ./regs
+;example: regs
+;	  execve regs
 
 %include "system.inc"
 
@@ -26,6 +27,10 @@ struc regs
 .fs	resd	1
 .gs	resd	1
 .ss	resd	1
+.argc	resd	1
+.argv0	resd	1
+.argv1	resd	1
+.envp0	resd	1
 endstruc
 
 CODESEG
@@ -48,7 +53,7 @@ StrLen:
 ;>EAX
 ;<EDI
 LongToStr:
-	pushad
+	pusha
 	sub	esp,4
 	mov	ebp,esp
 	mov	[edi],word "0x"
@@ -95,37 +100,14 @@ LongToStr:
 	loop    .l2
 .l3:
 	add	esp,4
-	popad
+	popa
 	ret
 
+
 PrintRegs:
-	pushad
-	mov	[r.eax],eax
-	mov	eax,r
-	pushfd
-	pop	dword [eax+r.eflags-r]
-	mov	[eax+r.ebx-r],ebx
-	mov	[eax+r.ecx-r],ecx
-	mov	[eax+r.edx-r],edx
-	mov	[eax+r.esi-r],esi
-	mov	[eax+r.edi-r],edi
-	mov	[eax+r.ebp-r],ebp
-	mov	[eax+r.esp-r],esp
-	add	dword [eax+r.esp-r],4
-	mov	[eax+r.cs-r],cs
-	mov	[eax+r.ds-r],ds
-	mov	[eax+r.es-r],es
-	mov	[eax+r.fs-r],fs
-	mov	[eax+r.gs-r],gs
-	mov	[eax+r.ss-r],ss
-	
-	mov	esi,eax
+
+	mov	esi,r
 	mov	ebp,rstring
-
-	sys_write STDOUT,before,s_before
-	sys_write EMPTY,line,s_line
-
-	_mov	ecx,15
 
 .mainloop:
 	push	ecx
@@ -146,11 +128,6 @@ PrintRegs:
 	sys_write EMPTY,lf,1
 	pop	ecx
 	loop	.mainloop
-
-	sys_write STDOUT,inside,s_inside
-	sys_write EMPTY,line,s_line
-
-	popad
 	ret
 
 rstring:
@@ -170,23 +147,73 @@ db	"ES	:	",EOL
 db	"FS	:	",EOL
 db	"GS	:	",EOL
 db	"SS	:	",EOL
+db	"argc	:	",EOL
+db	"&argv[0]	:	",EOL
+db	"&argv[1]	:	",EOL
+db	"&envp[0]	:	",EOL
 
-line	db	0x0A,"--------------------------"
-lf	db	0x0A
-s_line	equ	$-line
+lf:
+line	db	__n,"--------------------------",__n
+s_line		equ	$-line
 
 before	db	"Before sys_execve:"
 s_before	equ	$-before
 
-inside	db	0x0A,"Inside called program:"
+inside	db	__n,"Inside called program:"
 s_inside	equ	$-inside
 
 
 START:
+	pushfd
+	pop	dword [r.eflags]
+	mov	[r.eax],eax
+	mov	eax,r
+	mov	[eax+r.ebx-r],ebx
+	mov	[eax+r.ecx-r],ecx
+	mov	[eax+r.edx-r],edx
+	mov	[eax+r.esi-r],esi
+	mov	[eax+r.edi-r],edi
+	mov	[eax+r.ebp-r],ebp
+	mov	[eax+r.esp-r],esp
+	mov	[eax+r.cs-r],cs
+	mov	[eax+r.ds-r],ds
+	mov	[eax+r.es-r],es
+	mov	[eax+r.fs-r],fs
+	mov	[eax+r.gs-r],gs
+	mov	[eax+r.ss-r],ss
+
+	pop	ebp
+	mov	[eax+r.argc-r],ebp
+	pop	esi
+	mov	[eax+r.argv0-r],esi
+	pop	edi
+	mov	[eax+r.argv1-r],edi
+	mov	edx,[esp+ebp*4]
+	mov	[eax+r.envp0-r],edx
+	
+	push	edi			;restore argv/argc back
+	push	esi
+	push	ebp
+
+;
+;how we are called?
+;
+
+.a1:	lodsb
+	or	al,al
+	jnz	.a1
+	cmp	dword [esi-5],"regs"
+	jnz	do_execve
+
+	_mov	ecx,19
+	call	PrintRegs
+quit:
+	sys_exit_true
+
+do_execve:
 	pop	ebp			;get argc
 	dec	ebp			;exit if no args
-	jnz	.go
-	sys_exit_true
+	jz	quit
 .go:
 	pop	esi			;get our name
 	mov	ebx,[esp]		;ebx -- program name (*)
@@ -200,7 +227,22 @@ START:
 	mov	edi,0x55667788
 	mov	ebp,0x9900AABB
 
+	mov	[r.ebx],ebx
+	mov	[r.ecx],ecx
+	mov	[r.edx],edx
+
+	mov	[r.esi],esi
+	mov	[r.edi],edi
+	mov	[r.ebp],ebp
+
+	pusha
+	sys_write STDOUT,before,s_before
+	sys_write EMPTY,line,s_line
+	_mov	ecx,15
 	call	PrintRegs
+	sys_write STDOUT,inside,s_inside
+	sys_write EMPTY,line,s_line
+	popa
 
 	sys_execve
 
@@ -222,6 +264,10 @@ r I_STRUC regs
 .fs	resd	1
 .gs	resd	1
 .ss	resd	1
+.argc	resd	1
+.argv0	resd	1
+.argv1	resd	1
+.envp0	resd	1
 iend
 
 tmpstr	resd	10

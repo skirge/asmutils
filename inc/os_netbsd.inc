@@ -1,11 +1,11 @@
 ; Copyright (C) 2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_netbsd.inc,v 1.1 2000/09/03 16:13:53 konst Exp $
+; $Id: os_netbsd.inc,v 1.2 2000/12/10 08:20:36 konst Exp $
 ;
 ; file          : os_netbsd.inc
 ; created       : 10-Aug-2000
-; modified      : 03-Sep-2000
-; version       : 0.10
+; modified      : 09-Sep-2000
+; version       : 0.11
 ; assembler     : nasm 0.98
 ; description   : NetBSD kernel (1.4+) defined constants and structures
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -304,6 +304,7 @@
 
 %assign	SYS_sigaction	SYS___sigaction14
 %assign	SYS_uname	SYS_compat_09_ouname
+%assign	SYS_stat	SYS_compat_43_stat43
 %assign	SYS_lstat	SYS_compat_43_lstat43
 %assign	SYS_fstat	SYS_compat_43_fstat43
 %assign	SYS_sethostname	SYS_compat_43_osethostname

@@ -2,7 +2,7 @@
 #
 # Makefile for libc (GNU make is required)
 #
-# $Id: Makefile,v 1.5 2000/09/03 16:13:54 konst Exp $
+# $Id: Makefile,v 1.6 2000/12/10 08:20:36 konst Exp $
 
 BUILD_LIB = y
 
@@ -23,14 +23,6 @@ TESTS = test1 test2
 LIBSO = ./libc.so
 
 all:	libc tests crypto
-	rm -f *.o
-
-%.o:	%.asm
-	$(AS) $(ASFLAGS) $(DEFINES) $<
-
-%:	%.c
-	$(CC) $(CFLAGS) -o $@ $< $(LIBSO)
-	$(CC) $(CFLAGS) -mregparm=3 -D__FASTCALL__ -o $@.fc $< $(LIBSO)
 
 libc:	$(LIBC)
 	$(AR) rcv $@.a $(LIBC)
@@ -43,6 +35,10 @@ crypto:	$(CRYPTO)
 ifdef BUILD_SHARED
 	$(LD) $(LDFLAGS) -shared -soname lib$@.so -o lib$@.so $(CRYPTO)
 endif
+
+#CRYPTOFILES = ../src/md5sum.o
+#cryptofiles: $(CRYPTOFILES)
+#	ld -s -o aaa $(CRYPTOFILES) libcrypto.a
 
 ifdef AOUT
 tests:

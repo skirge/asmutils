@@ -1,13 +1,8 @@
 ;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: echo.asm,v 1.4 2000/04/07 18:36:01 konst Exp $
+;$Id: echo.asm,v 1.5 2000/12/10 08:20:36 konst Exp $
 ;
 ;hackers' echo		[GNU replacement]
-;
-;0.01: 17-Jun-1999	initial release
-;0.02: 04-Jul-1999	small bugfixes
-;0.03: 19-Dec-1999	-eE support and full GNU compliance
-;0.04: 08-Feb-2000	\e added ( but what for? :)
 ;
 ;syntax: echo [OPTION] [STRING ...]
 ;
@@ -27,6 +22,13 @@
 ;-E	explicitly turn off above -e interpretation
 ;
 ;example: echo -e "\tHello, world!\a"
+;
+;0.01: 17-Jun-1999	initial release
+;0.02: 04-Jul-1999	small bugfixes
+;0.03: 19-Dec-1999	-eE support and full GNU compliance
+;0.04: 08-Feb-2000	\e added ( but what for? :)
+;0.05: 17-Sep-2000	removed trailing '\0'
+
 
 %include "system.inc"
 
@@ -59,6 +61,7 @@ START:
 	jnz	.a
 
 .final:
+	dec	edi
 	mov	edx,edi
 	sub	edx,ebp
 	or	edx,edx

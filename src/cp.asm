@@ -1,6 +1,6 @@
 ;Copyright (C) 2000 Dmitry Bakhvalov <dl@gazeta.ru>
 ;
-;$Id: cp.asm,v 1.1 2000/09/03 16:13:54 konst Exp $
+;$Id: cp.asm,v 1.2 2000/12/10 08:20:36 konst Exp $
 ;
 ;hackers' cp
 ;
@@ -17,19 +17,36 @@
 
 		%include "system.inc"
 		CODESEG
+
+usage_msg	db	"Usage: cp [-r] source dest",__n
+_usage_msg_len	equ $-usage_msg
+%assign		usage_msg_len _usage_msg_len
+
+%assign		buf_size	0x1000
+
 START:
 		pop	ecx			; get argc
 		cmp	ecx,byte 3		; must have at least 3 args
-		jl	near invalid_args
+		jae	proceed
 
+invalid_args:
+		sys_write STDOUT,usage_msg,usage_msg_len
+no_more_args:
+		sys_exit eax			; exit
+
+proceed:
 		pop	eax			; skip argv[0]
 		dec	ecx			; dont count argv[0]
 		
 						; let's test for "-r" option
 		pop	ebx
+
+;		cmp	word [ebx],"-R"
+;		jz	set_recursive
 		cmp	word [ebx],"-r"
 		jnz	not_recursive
-		
+
+set_recursive:
 		inc	byte [recursive]	; set recursive flag
 		dec	ecx			; one argument has gone
 		jmp	dont_push
@@ -70,12 +87,6 @@ copy_this_file:
 		call	copy			; copy
 		jmp	file_to_dir_loop	; go on
 		
-error_exit:	
-no_more_args:
-invalid_args:
-		sys_exit 0			; exit
-
-
 ; copy files
 ; esi - source file; edi - dest file/dir; ebp=flags
 ; carry = 1 if error
@@ -105,10 +116,11 @@ copy:
 .just_copy:		
 		sys_open esi,O_RDONLY
 		test	eax,eax
-		js	.error
+		jns	.no_error
+		jmp	.error
+.no_error:
 		mov	esi,eax			; esi - src handle
-		
-		sys_open edi,O_RDWR|O_CREAT,EMPTY
+		sys_open edi,O_WRONLY|O_CREAT|O_TRUNC
 		test	eax,eax
 		js	.error
 		mov	edi,eax			; edi - dst handle
@@ -123,7 +135,11 @@ copy:
 		mov	edx,eax			; edx = num of bytes
 						; ecx already holds buf		
 		sys_write			; write it
-		jmp	.copy_loop
+
+		cmp	edx,buf_size
+		jz	.copy_loop
+
+;		jmp	.copy_loop
 .no_more_data:
 		sys_close esi			; close src
 		sys_close edi			; close dst
@@ -310,7 +326,7 @@ is_dir:
 		js	.error
 		
 		movzx	eax,word [stat_buf.st_mode]
-		mov	ebx,40000q
+		mov	ebx,S_IFDIR
 		and	eax,ebx
 		cmp	eax,ebx
 		clc				; file exists
@@ -325,22 +341,16 @@ is_dir:
 
 ; esi=string
 ; edx=strlen
+
 strlen:
-		push	eax
-		push	esi
-		
-		xor	eax,eax
-		mov	edx,eax
-		dec	edx
+    		mov     edx,esi
+    		dec     edx
 .do_strlen:
-		inc	edx
-		lodsb
-		test	al,al
-		jnz	.do_strlen
-		
-		pop	esi
-		pop	eax
-		ret
+                inc     edx
+                cmp     [edx],byte 0
+                jnz     .do_strlen
+                sub     edx,esi
+                ret
 
 
 ; esi=source  edi=dest
@@ -377,14 +387,13 @@ strcat:
 		ret
 
 
-		DATASEG
-dst		dd	0
-recursive	db	0
-
-		
 		UDATASEG
-buf:		resb	4096
-buf_size	equ 	$-buf
+
+dst		resd	0
+recursive	resb	0
+
+buf		resb	buf_size
+
 
 stat_buf I_STRUC stat
 .st_dev		USHORT	1

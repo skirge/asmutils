@@ -1,31 +1,49 @@
 
-Current release notes (0.09)
+Current release notes (0.10)
   
- Here are the most noticable things that have happened. There's a number of
- new utils (6), I would like to thank H-Peter Recktenwald and Alexandr Gorlov
- for new utils, and Christopher Li for bugfix in dmesg. Now you can learn
- almost everything about your CPU with cpuinfo and cpuspeed, change your CDs
- with ccd, figure out extention, directory, and tty names with extname and
- dirname and tty respectively :)
+ Finally it is here. Fairly stable and fairly innovative.
+ Here are the most noticeable things worth to mention:
      
- Due to internal improvements FreeBSD binaries are smaller, and..
- Yes! httpd now works on FreeBSD, and is less than 1kb !! :)
+ File management utils were contributed by Dmitry Bakhvalov - cp, mv, rm
+ (heh, now you can destroy your data with rm -r /, but do not forget to
+ cp -r it somewhere before).
      
- Documentation was updated, I've created Asmutils-HOWTO instead of old docs,
- which will contain all development- and usage-related information;
- I suggest all developers to read this document.
+ Now we have OpenBSD port, and NetBSD port too (hm.. I start to think
+ about BSDI, AIX, HP-UX..).
      
- I'd like to ask and encourage everyone to stress-test this release
- and report bugs. I am going to make 0.10 release marked as "stable",
- and go for "development" release 0.11, which will break a lot of things.
+ All include files were extended and updated according to the latest
+ kernel versions, source structure was reorganized a bit, top Makefile
+ and MCONFIG were added. Framebuffer stuff was merged, and new intro
+ has appeared - fire256 (by Paul Furber).
      
- Full list of utils in 0.09 release (total of 58):
+ Alpha version of libc finally works with both fastcall and cdecl
+ (a great milestone towards success). Also, all crypto algorithms
+ are now build into one library - libcrypto.
      
-    arch basename cat ccd chmod chroot chvt cpuinfo cpuspeed deallocvt df
+ Asmutils-HOWTO was updated and cleanuped; I suggest all developers
+ to read this document.
+     
+ For full list of changes examine ChangeLog. Hope you'll enjoy this release.
+     
+ I would like to thank all contributors for helping me to carry out
+ this release, and especially:
+
+    * Andrew Gillham for testing NetBSD build and providing NetBSD binaries
+    * Tani Hosokawa for bugfixes, OpenBSD port and providing OpenBSD binaries
+    * Dmitry Bakhvalov for cp, mv, rm
+    * Mooneer Salem for custom httpd 404 error message
+       
+ Full list of utils in 0.10 release (total of 61):
+     
+    arch basename cat ccd chmod chroot chvt cp cpuinfo cpuspeed deallocvt df
     dirname dmesg domainname echo eject env extname factor false grep halt
-    hosname httpd id kill ln ls lsmod lzss md5sum mkdir more mount nc
-    poweroff ps pwd rc6crypt reboot rmdir rmdsum rmmod sleep sln softdog
+    hostname httpd id kill ln ls lsmod lzss md5sum mkdir more mount mv nc
+    poweroff ps pwd rc6crypt reboot rm rmdir rmdsum rmmod sleep sln softdog
     strings swapoff swapon sync tee true tty umount uname update wc yes
+       
+ Special bonus:
+
+    fire256 leaves window
        
  Fully functional utils:
 

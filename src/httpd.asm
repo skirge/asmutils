@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
 ;
-;$Id: httpd.asm,v 1.5 2000/09/03 16:13:54 konst Exp $
+;$Id: httpd.asm,v 1.6 2000/12/10 08:20:36 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -39,7 +39,7 @@
 ;0.07: 30-Jun-2000	Added support for custom 404 error message
 ;			(by default in /etc/httpd/404.html)
 ;			thanks to Mooneer Salem <mooneer@earthlink.net>
-
+;0.08: 10-Sep-2000	squeezed few more bytes (KB)
 
 %include "system.inc"
 
@@ -96,11 +96,12 @@ START:
 	jz	bind
 
 false_exit:
-	sys_exit 1
+	_mov	ebx,1
+real_exit:
+	sys_exit
 
 bind:
 	pop	eax
-	mov	ebx,esp
 	mov	dword [bindsockstruct],AF_INET
 	mov	byte [bindsockstruct + 2],ah
 	mov	byte [bindsockstruct + 3],al
@@ -119,8 +120,8 @@ bind:
 	jz	acceptloop
 
 true_exit:
-	sys_exit 0
-
+	_mov	ebx,0
+	jmps	real_exit
 
 acceptloop:
 
@@ -147,7 +148,7 @@ acceptloop:
 .forward:
 	sys_read edi,filebuf,0xfff
 	cmp	eax,byte 7		;in request there must be at least 7 symbols
-	jb near endrequest
+	jb	near endrequest
 .endrequestnot3:
 	push	eax
 	mov	ebx,finalpath
@@ -165,7 +166,7 @@ acceptloop:
 	pop	eax
 	add	ecx,eax
 	cmp	ecx,0xfff
-	ja near endrequest
+	ja	near endrequest
 
 .endrequestnot2:
 
@@ -175,8 +176,8 @@ acceptloop:
 .loopme:
 	mov	al,[ecx]
 	mov	byte [ebx],al
-	cmp	word [ecx], '..'
-	jz near endrequest	;security error, can't have '..' in request
+	cmp	word [ecx],".."
+	jz	near endrequest	;security error, can't have '..' in request
 .endrequestnot:
 	inc	ebx
 	inc	ecx

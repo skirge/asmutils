@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.1 2000/09/03 16:13:54 konst Exp $
+; $Id: syscall.inc,v 1.2 2000/12/10 08:20:36 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 21-Aug-2000
-; version	: 0.10
+; modified	: 09-Dec-2000
+; version	: 0.11
 ; assembler	: nasm 0.98
 ; description	: system call macros
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -33,7 +33,7 @@
 ; %3	number of registers to prepare
 ; %4...	parameters
 
-%macro	__syscall 2-8
+%macro	__syscall 2-10
 
 %if %0>2
 %if %3>0
@@ -41,6 +41,13 @@
   %if %3>2
    %if %3>3
     %if %3>4
+     %if %3>5
+%ifdef __LINUX__
+%if __KERNEL >= 24
+	_mov	ebp,%8
+%endif
+%endif
+     %endif
 	_mov	edi,%8
     %endif
 	_mov	esi,%7
@@ -58,6 +65,10 @@
 
 %ifdef __LINUX__
 	int	0x80
+%elifdef __ATHEOS__
+	int	0x80
+%elifdef __V2OS__
+	int	0x20
 %else
 
 %if %0>2
@@ -73,6 +84,12 @@
   %if P>2
    %if P>3
     %if P>4
+     %if P>5
+      %if P>6
+	push	dword %10
+      %endif
+	push	dword %9
+     %endif
 	push	edi
     %endif
 	push	esi
@@ -268,6 +285,14 @@ extern %{1}
 	__syscall lseek, 3, %0, %1, %2, %3
 %endmacro
 
+%macro sys_pread 0-4
+	__syscall pread, 4, %0, %1, %2, %3, %4
+%endmacro
+
+%macro sys_pwrite 0-4
+	__syscall pwrite, 4, %0, %1, %2, %3, %4
+%endmacro
+
 ;
 ;fs/open.c
 ;
@@ -306,6 +331,10 @@ extern %{1}
 
 %macro sys_lchown 0-3
 	__syscall lchown, 3, %0, %1, %2, %3
+%endmacro
+
+%macro sys_chdir 0-1
+	__syscall chdir, 1, %0, %1
 %endmacro
 
 ;
@@ -389,6 +418,10 @@ extern %{1}
 	__syscall ioctl, 3, %0, %1, %2, %3
 %endmacro
 
+%macro sys_sysctl 0-6
+	__syscall sysctl, 6, %0, %1, %2, %3, %4, %5, %6
+%endmacro
+
 ;
 ;fs/stat.c
 ;
@@ -423,10 +456,6 @@ extern %{1}
 
 %macro sys_nanosleep 0-2
 	__syscall nanosleep, 2, %0, %1, %2
-%endmacro
-
-%macro sys_gettimeofday 0-2
-	__syscall gettimeofday, 2, %0, %1, %2
 %endmacro
 
 %macro sys_getuid 0
@@ -474,6 +503,17 @@ extern %{1}
 	__syscall getdomainname, 2, %0, %1, %2
 %endmacro
 
+;
+;kernel/time.c
+;
+
+%macro sys_gettimeofday 0-2
+	__syscall gettimeofday, 2, %0, %1, %2
+%endmacro
+
+%macro sys_time 0-1
+	__syscall time, 1, %0, %1
+%endmacro
 
 ;
 ;kernel/mmap.c

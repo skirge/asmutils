@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2000 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.1 2000/09/03 16:13:54 konst Exp $
+; $Id: system.inc,v 1.2 2000/12/10 08:20:36 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 03-Sep-2000
-; version	: 0.10
+; modified	: 02-Nov-2000
+; version	: 0.11
 ; assembler	: nasm 0.98
 ; description	: generic (not OS specific) macros, sections, headers, etc.
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -27,6 +27,8 @@
 ;0.09: 14-Mar-2000	jmps, syscall gates
 ;0.10: 21-Aug-2000	started stub for BeOS, _mov improved,
 ;			NetBSD and OpenBSD stuff
+;0.11: 24-Oct-2000	AtheOS stuff
+
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
@@ -40,6 +42,7 @@
 ;
 
 %ifndef __LINUX__
+%ifndef __ATHEOS__
 %ifndef __BEOS__
 %define __BSD__
 %ifndef __FREEBSD__
@@ -47,6 +50,7 @@
 %ifndef __OPENBSD__
 %define __LIBC__
 %undef	__BSD__
+%endif
 %endif
 %endif
 %endif
@@ -88,6 +92,8 @@
 %include "os_openbsd.inc"
 %elifdef __BEOS__
 %include "os_beos.inc"
+%elifdef __ATHEOS__
+%include "os_atheos.inc"
 %endif
 
 %include "syscall.inc"
@@ -262,7 +268,11 @@ _start:
 %ifdef __ELF_MACROS__
 ELF_DATA
 %else
-section	.bss
+%if __OPTIMIZE__=__O_SPEED__
+    section	.bss	align=32
+%elif __OPTIMIZE__=__O_SIZE__
+    section	.bss
+%endif
 %endif
 %endmacro
 
