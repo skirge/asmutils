@@ -14,7 +14,7 @@
 ;; -b  show non-graphic characters using C-style backslash sequences
 ;; -R  recursively list contents of subdirectories
 ;;
-;; $Id: ls.asm,v 1.9 2002/02/02 08:49:25 konst Exp $
+;; $Id: ls.asm,v 1.10 2002/02/25 20:21:23 konst Exp $
 
 %include "system.inc"
 
@@ -25,6 +25,11 @@
 
 %define	DATAOFF(pos)		byte ebp + ((pos) - newline)
 
+%ifdef __LINUX__
+%if __SYSCALL__=__S_KERNEL__
+%define SMALL_IDS
+%endif
+%endif
 
 CODESEG
 
@@ -302,11 +307,13 @@ lsfile:
 		lea	edx, [byte ecx + 4]
 		push	esi
 		lea	esi, [DATAOFF(sts.st_nlink)]
+.numoutloop:
+%ifdef SMALL_IDS
 		lodsw
-.numoutloop:	call	[esp]
-%ifdef __BSD__
+%else
 		lodsd
 %endif
+		call	[esp]
 		mov	dl, 7
 		dec	ebx
 		jnz	.numoutloop
@@ -946,6 +953,5 @@ direntsbuf:	resb	direntsbufsize
 ;; of all, since it is expanded by calling brk.
 
 dirqueue:	resb	pathbufsize
-
 
 END
