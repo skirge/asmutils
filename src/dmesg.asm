@@ -1,8 +1,17 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek@mare.ee>
 ;
-;$Id: dmesg.asm,v 1.6 2002/03/07 06:16:39 konst Exp $
+;$Id: dmesg.asm,v 1.7 2002/03/14 07:12:12 konst Exp $
 ;
 ;hackers' dmesg
+;
+;syntax: dmesg [-c] [-n level]
+;
+;example: dmesg
+;         dmesg -c
+;	  dmesg -n 1
+;
+;-c	clears the kernel buffer
+;-n	set the console log level
 ;
 ;0.01: 17-Jun-1999	initial release
 ;0.02: 04-Jul-1999	fixed bug with 2.0 kernel, removed leading <n> (KB)
@@ -16,20 +25,13 @@
 ;			clear buffer *after* print,
 ;			fast output (buffer-at-once) (KB)
 ;0.04: 05-Aug-2000	increased buffer size (KB)
-;
-;syntax: dmesg [-c] [-n level]
-;
-;example: dmesg
-;         dmesg -c
-;	  dmesg -n 1
-;
-;-c	clears the kernel buffer
-;-n	set the console log level
-;
+;0.05: 14-Mar-2002	squeezed one byte (KB)
 
 %include "system.inc"
 
 CODESEG
+
+%assign	BUFSIZE	0x8000
 
 START:
 	_mov	ebp,0		;-c flag
@@ -46,7 +48,7 @@ START:
 	pop	ecx		;the log level
 	xor	edx,edx
 	mov	dl, byte [ecx]
-	sub	dl,"0"
+	sub	dl,'0'
 	jna	.forward	;less than 0, skip
 	cmp	dl,8
 	ja	.forward	;more than 8, skip
@@ -57,25 +59,25 @@ START:
 	jnz	.forward
 	inc	ebp
 .forward:
-	mov	edx,BufSize
+	_mov	edx,BUFSIZE
 .syslog:
-	sys_syslog EMPTY, Buf 
+	sys_syslog EMPTY,buf 
 	test	eax,eax
 	js	.quit
 	jz	.quit
-	mov	edi,BufNew
+	mov	edi,buf_new
 	mov	ebx,edi		;save for later use
 	mov	esi,ecx
 	mov	ecx,eax
 .write:
 	lodsb
-	cmp	al, '<'
+	cmp	al,'<'
 	jnz	.store
-	cmp	byte [esi + 1], '>'
+	cmp	byte [esi + 1],'>'
 	jnz	.store
 	lodsw
 	lodsb
-	_sub	ecx,3
+	sub	ecx,byte 3
 .store:
 	stosb
 	loopnz	.write
@@ -93,8 +95,7 @@ START:
 
 UDATASEG
 
-BufSize	equ	0x8000
-Buf	resb	BufSize
-BufNew	resb	BufSize
+buf	resb	BUFSIZE
+buf_new	resb	BUFSIZE
 
 END

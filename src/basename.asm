@@ -1,12 +1,8 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek@mare.ee>
 ;
-;$Id: basename.asm,v 1.4 2002/03/07 06:16:39 konst Exp $
+;$Id: basename.asm,v 1.5 2002/03/14 07:12:12 konst Exp $
 ;
 ;hackers' basename	[GNU replacement]
-;
-;0.01: 17-Jun-1999	initial release
-;0.02: 04-Jul-1999	bugfixes
-;0.03: 29-Jul-1999	size improvements
 ;
 ;syntax: basename path [suffix]
 ;
@@ -15,30 +11,25 @@
 ;
 ; in case of error exits with code 256, 0 otherwise
 ;
-; Changelog:
-;       added printing of '\n';
-;       sufix cant be equal in length to name, must be smaller always
-;       in case of single character print out anyway
-;       in case of name/ print name
-;       fixed error return status
-;       in case of ////////// as path it printed out "basename", fixed that
+;0.01: 17-Jun-1999	initial release
+;0.02: 04-Jul-1999	bugfixes
+;0.03: 29-Jul-1999	size improvements (KB)
+;0.04: 14-Mar-2002	size improvements (KB)
 
 %include "system.inc"
 
 CODESEG
 
-lf	db	0x0A
-
 START:
+	_mov	ebx,1		;error code
+
 	pop	eax
 	mov	edi,eax		;edi holds argument count
         dec	edi
-	jz	.error
-	cmp	edi,byte 2		;must be not more than two arguments
-	jng	.noerror
-.error:
-	sys_exit_false
-.noerror:
+	jz	.exit
+	cmp	edi,byte 2	;must be not more than two arguments
+	jg	.exit
+
 	pop	eax		;skip our name
 	pop	eax		;the path
 	mov	ebx,eax		;mark the beginning of path
@@ -55,7 +46,7 @@ START:
 	cmp	eax,ebx
 	jnl	.empty
 	xor	edx,edx
-	jmp short .printout
+	jmps	.printout
 .empty:
 	cmp	byte [eax],'/'
 	je	.backwego
@@ -67,7 +58,23 @@ START:
 	je	.endlooptwoinceax
 	cmp	eax,ebx
 	je	.endlooptwo
-	jmp short .looptwo
+	jmps	.looptwo
+
+;end of checkinf of suffix
+
+.goaftersuffixpopeax:
+	pop	eax
+.goaftersuffix:
+	pop	edx
+	pop	ecx
+
+.printout:
+	mov	byte [ecx+edx],__n
+	inc	edx
+	sys_write STDOUT
+	xor	ebx,ebx
+.exit:
+	sys_exit
 
 .endlooptwoinceax:
 	inc	eax
@@ -100,6 +107,7 @@ START:
 	push	eax
 
 ;now comes the comparing part
+
 .sloop:
 	dec	eax
 	dec	ecx
@@ -111,27 +119,13 @@ START:
 	cmp	eax,ebx
 	jne	.sloop
 
-;we got here, that means sufix matched
+;we got here, it means suffix matched
 
 	pop	eax
 	sub	eax,ebx		;we have here the all famous length
 	pop	edx
 	pop	ecx
 	sub	edx,eax		;decrement the length by suffix
-	jmp short .printout	;and print it out
-
-;end of checkinf of suffix
-
-.goaftersuffixpopeax:
-	pop	eax
-.goaftersuffix:
-	pop	edx
-	pop	ecx
-
-.printout:
-	sys_write STDOUT
-	sys_write EMPTY,lf,1;
-.exit:
-	sys_exit_true		;exit 0
+	jmps	.printout	;and print it out
 
 END

@@ -1,11 +1,12 @@
 ;Copyright (C) 1999 Indrek Mandre <indrek@mare.ee>
 ;
-;$Id: yes.asm,v 1.4 2002/03/07 06:16:39 konst Exp $
+;$Id: yes.asm,v 1.5 2002/03/14 07:12:12 konst Exp $
 ;
 ;hackers' yes		[GNU replacement]
 ;
 ;0.01: 17-Jun-1999	initial release
-;0.02: 04-Jul-1999	fixed bug with 2.0 kernel
+;0.02: 04-Jul-1999	fixed bug with 2.0 kernel (KB)
+;0.03: 14-Mar-2002	size improvements (KB)
 ;
 ;syntax: yes [string...]
 ;
@@ -19,53 +20,53 @@
 
 CODESEG
 
+%assign	BUFSIZE	0x1000
+
 START:
-	_mov	ebx,1
-	mov	byte [Buf],'y'
-	pop	edi		;edi holds argument count
-	dec	edi
-	jz	.startinfiniteprint;if no args, then print 'y'
+	pop	ebp			;ebp holds argument count
+	pop	eax			;we ignore our own name
 
-;now we have to take arguments and cat them to out Buf
-	dec	ebx
-	pop	eax		;we ignore our own name
+	mov	edi,buf
+	mov	edx,edi
 
-.nextarg:
-	xor	ecx,ecx			;counter in string
-	pop	eax			;pop the string
-.back:
-	cmp	byte [eax+ecx],0	;end of string?
-	jz	.endofstring
-	mov	dl,[eax+ecx]
-	mov	byte [Buf+ebx],dl
-	inc	ecx
-	inc	ebx
-	cmp	ebx,BufSize-3		;end of our dear Buf?
-	jnl	.startinfiniteprint	;in that case just print out what we got
-	jmp short .back
+	dec	ebp
+	jnz	.nextarg		;take arguments and cat them to out buf
+
+	mov	al,'y'
+	stosb
+	inc	ebp
+;	jmps	.startinfiniteprint
 
 .endofstring:
-	dec	edi
-	jz	.startinfiniteprint
-	mov	byte [Buf+ebx],' '
-	inc	ebx
-	cmp	ebx,BufSize-3		;end of our dear Buf?
-	jb	.nextarg		;in that case just print out what we got
+	dec	ebp
+	jz	.startinfiniteprint	;print what we've got so far
+
+	mov	al,' '
+	stosb
+
+.nextarg:
+	pop	esi			;pop the string
+.back:
+	lodsb
+	or	al,al			;end of string?
+	jz	.endofstring
+	stosb
+	cmp	edi,buf + BUFSIZE - 2	;end of our dear buf?
+	jl	.back			;in that case just print out what we got
 
 .startinfiniteprint:
-	mov	word [Buf+ebx],0x000A	;concatenate \n\0
-	mov	edx,ebx			;the length of final string
-	inc	edx
+	mov	al,__n			;concatenate \n
+	stosb
+	sub	edi,edx			;length of final string
 .myloop:
-	sys_write STDOUT,Buf
-	jmp short .myloop
+	sys_write STDOUT,buf,edi
+	jmps	.myloop
 
 ;.exit:
 ;	sys_exit
 
 UDATASEG
 
-BufSize	equ	0xfff
-Buf	resb	BufSize		;our internal buffer size?!
+buf	resb	BUFSIZE			;our internal buffer size
 
 END

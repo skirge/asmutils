@@ -9,7 +9,7 @@
 ;; to be your timezone's offset from UTC/GMT if you're
 ;; picky about "current month".
 
-;; $Id: cal.asm,v 1.3 2002/03/08 19:10:14 konst Exp $
+;; $Id: cal.asm,v 1.4 2002/03/14 07:12:12 konst Exp $
 
 %include "system.inc"
 
@@ -67,7 +67,7 @@ month_buf:
 
 START:
 	pop	esi
-	_cmp	esi, 3
+	cmp	esi, byte 3
 	jne	.do_current_month
 
 	;; I figured out already how to do this given the seconds
@@ -78,15 +78,15 @@ START:
 
 	pop	esi		; a month (1-12)
 	call	StrToLong
-	_mov	ebx, edx
+	mov	ebx, edx
 	dec	ebx		; (we use 0-11)
 
 	pop	esi		; a year
 	call	StrToLong	; returns long in edx
-	_sub	edx, 1970
+	sub	edx, 1970
 	_mov	eax, SECS_PER_YEAR
 	mul	edx
-	_mov	ecx, eax	; save seconds so far
+	mov	ecx, eax	; save seconds so far
 
 	;; Now eax has num secs from 1970 to Jan 1 of the year given
 	;; (except maybe a few leapdays). Next add the number of
@@ -97,99 +97,100 @@ START:
 	;; subtracted, we'll still be within that month, which is
 	;; all that matters.
 
-	_mov	dx, word[mon_yday + 2*ebx]	; num days till that month
-	_add	edx, 20		; 20th of that month
+	mov	dx, word[mon_yday + 2*ebx]	; num days till that month
+	add	edx, byte 20			; 20th of that month
 	_mov	eax, SECS_PER_DAY
 	mul	edx
 	add	eax, ecx
 
 	;; Finally, put it in timeval_struct just like sys_gettimeofday.
-	_mov	[timeval_struct.tv_sec], eax
+	mov	[timeval_struct.tv_sec], eax
 	jmp	.skip_gettimeofday
 
 .do_current_month:
 	sys_gettimeofday timeval_struct
 
 .skip_gettimeofday:
-	_mov	eax, [timeval_struct.tv_sec]
+	mov	eax, [timeval_struct.tv_sec]
 	_add	eax, UTC_OFFSET
-	_mov	edx, NULL
 	_mov	ecx, SECS_PER_DAY
+	xor	edx, edx
 	div	ecx
 	; eax = days = *t / SECS_PER_DAY
 	; edx = rem  = *t % SECS_PER_DAY
 	; skip offset adjustment (assume GMT)
-	_mov	edi, eax	; saved copy
-	_mov	esi, edx	; saved copy
+	mov	edi, eax	; saved copy
+	mov	esi, edx	; saved copy
 
 set_tm_wday:
 	; tm_wday = (4 + days) % 7
 ;	_mov	eax, edi	; %edi was saved copy of 'days'
-	_add	eax, 4		; Jan 1, 1970 was a Thursday (4)
-	_mov	edx, NULL
+	add	eax, byte 4		; Jan 1, 1970 was a Thursday (4)
 	_mov	ecx, DAYS_PER_WEEK
+	xor	edx, edx
 	div	ecx
-	_mov	[tm_struct.tm_wday], edx
+	mov	[tm_struct.tm_wday], edx
 
 set_tm_year:
-	_mov	eax, edi	; days
-	_mov	edx, NULL
+	mov	eax, edi	; days
 	_mov	ecx, 365
+	xor	edx, edx
 	div	ecx
-	_mov	esi, eax
-	_add	esi, 1970
-	_mov	[tm_struct.tm_year], esi
+	mov	esi, eax
+	add	esi, 1970
+	mov	[tm_struct.tm_year], esi
 
-	_mov	ebx, edx
+	mov	ebx, edx
 set_tm_yday:
-	_add	eax, 2
-	_mov	edx, NULL
+	add	eax, byte 2
 	_mov	ecx, 4		; should rightshift by 2
+	xor	edx, edx
 	div	ecx		; eax = num leapdays
 	sub	ebx, eax
 
-	_mov	eax, esi	; year
+	mov	eax, esi	; year
 	_mov	esi, mon_yday	; ip = __mon_yday[0]
 
-	_cmp	edx, 0		; edx = 0 if leapyear
+;	cmp	edx, 0		; edx = 0 if leapyear
+	or	edx,edx
 	jne	.not_leap_year
 	inc	ebx
 	_add	esi, mon_yday_len	; ip = __mon_yday[1]
-	_mov	dword [is_leap_year], 1
+	mov	dword [is_leap_year], 1
 .not_leap_year:
 
 set_tm_mon:
 	_mov	ecx, 12
-	_add	esi, 22		; i = 11; esi = ip[i]
+	add	esi, byte 22	; i = 11; esi = ip[i]
 	std
 .previous_month:
 	lodsw			; %ax = offset of first day of month
-	_cmp	bx, ax		; days < ip[i]
+	cmp	bx, ax		; days < ip[i]
 	jg	.found_mon_yday
 	loop	.previous_month
 
 .found_mon_yday:
 	cld
 	dec	ecx
-	_mov	[tm_struct.tm_mon], ecx
+	mov	[tm_struct.tm_mon], ecx
 
 set_tm_mday:
 	sub	bx, ax
 	inc	ebx
-	_mov	[tm_struct.tm_mday], ebx
+	mov	[tm_struct.tm_mday], ebx
 
 	;; put month in top row
 	_mov	esi, months
-	_mov	ecx, [tm_struct.tm_mon]
+	mov	ecx, [tm_struct.tm_mon]
 	inc	ecx
 	rep	lodsd
 	_mov	edi, month_buf.month_year
-	_add	edi, 6		; center ((20 - 4(month) - 4(year))/2)
+	add	edi, byte 6		; center ((20 - 4(month) - 4(year))/2)
 	stosd
 
 	;; put year in top row
-	_mov	eax, [tm_struct.tm_year]
-	_add	edi, 3		; end of year
+	mov	eax, [tm_struct.tm_year]
+	add	edi, byte 3	; end of year
 	_mov	ebx, 3		; num of digits - 1
 	call	int2str
 
@@ -198,12 +199,12 @@ set_tm_mday:
 	;; so we divide mday by 7 (days per week) and subtract the
 	;; remainder (minus one) from the wday (and make sure it's positive).
 	;; (maybe instead subtract 7 till mday <= 7)
-	_mov	eax, [tm_struct.tm_mday]
-	_mov	edx, NULL
+	mov	eax, [tm_struct.tm_mday]
 	_mov	ecx, DAYS_PER_WEEK
+	xor	edx, edx
 	div	ecx
 	dec	edx
-	_mov	ecx, [tm_struct.tm_wday]
+	mov	ecx, [tm_struct.tm_wday]
 	sub	ecx, edx	; subtract remainder from mday
 	_cmp	ecx, 0		; make sure it isn't negative
 	jge	.wday_nonnegative
@@ -218,7 +219,7 @@ set_tm_mday:
 	dec	edi		; offset of ones digit of 1st day
 	dec	edi
 .next_wday:
-	_add	edi, 3
+	add	edi, byte 3
 	loop	.next_wday
 
 
@@ -226,14 +227,14 @@ set_tm_mday:
 	;; in the month buffer.
 	;; Next we find out how many days are in the month.
 	_mov	esi, mon_yday
-	_mov	eax, [is_leap_year]
+	mov	eax, [is_leap_year]
 	_cmp	eax, 1
 	jnz	.not_leap_year2
 	_add	esi, mon_yday_len
 .not_leap_year2:
-	_mov	ecx, [tm_struct.tm_mon]
-	_xor	eax, eax
-	_xor	edx, edx
+	mov	ecx, [tm_struct.tm_mon]
+	xor	eax, eax
+	xor	edx, edx
 	lodsw			; load the 1st zero
 	xchg	edx, eax	; move to edx
 	inc	ecx		; extra zero at beginning, hrm..
@@ -244,16 +245,16 @@ set_tm_mday:
 
 	sub	edx, eax
 	inc	edx
-	_mov	ecx, edx
+	mov	ecx, edx
 	dec	ecx
 
 	;; Finally, we loop through and fill in the days
 	_mov	ebx, 1		; num of digits - 1
 .next_mday:
-	_mov	eax, edx	; num days in month
+	mov	eax, edx	; num days in month
 	sub	eax, ecx
 	call	int2str
-	_add	edi, 3
+	add	edi, byte 3
 	loop	.next_mday
 
 	sys_write STDOUT, month_buf, month_buf_len
@@ -266,20 +267,20 @@ int2str:
 	pusha
 	std
 
-	_mov	ecx, ebx
+	mov	ecx, ebx
 	_mov	ebx, 10
 .next_digit:
-	_mov	edx, NULL
+	xor	edx,edx
 	div	ebx
 	xchg	eax, edx
-	_add	eax, '0'
+	add	al, '0'
 	stosb			; ones
 	xchg	eax, edx
 	loop	.next_digit
 
-	_cmp	eax, 0
+	test	eax,eax
 	jz	.skip_leading_zero
-	_add	eax, '0'
+	add	al, '0'
 	stosb
 .skip_leading_zero:
 	cld
@@ -288,12 +289,12 @@ int2str:
 
 ;; from nc.asm
 StrToLong:
-	_push	eax
-	_xor	eax,eax
-	_xor	edx,edx
+	push	eax
+	xor	eax,eax
+	xor	edx,edx
 .next:
 	lodsb
-	_sub	al,'0'
+	sub	al,'0'
 	jb	.ret
 	add	edx,edx
 	lea	edx,[edx+edx*4]
@@ -308,7 +309,7 @@ UDATASEG
 timeval_struct B_STRUC timeval, .tv_sec, .tv_usec
 	timeval_struct_len	equ	$ - timeval_struct
 
-tm_struct B_STRUC tm, .tm_mday, .tm_mon, .tm_year,  .tm_wday
+tm_struct B_STRUC tm, .tm_mday, .tm_mon, .tm_year, .tm_wday
 	tm_struct_len	equ	$ - tm_struct
 
 is_leap_year	resd	1
