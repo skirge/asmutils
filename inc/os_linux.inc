@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.15 2001/12/04 15:29:21 konst Exp $
+; $Id: os_linux.inc,v 1.16 2001/12/09 15:12:54 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 03-Dec-2001
+; modified      : 09-Dec-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : linux kernel defined constants (from includes)
@@ -984,6 +984,27 @@ endstruc
 %assign	KERN_CORE_USES_PID	52	;int: use core or core.%pid
 %assign	KERN_TAINTED	53	;int: various kernel tainted flags
 %assign	KERN_CADPID	54	;int: PID of the process to notify on CAD
+
+;
+;linux/mount.h
+;
+
+%assign MS_RDONLY	 1	;Mount read-only
+%assign MS_NOSUID	 2	;Ignore suid and sgid bits
+%assign MS_NODEV	 4	;Disallow access to device special files
+%assign MS_NOEXEC	 8	;Disallow program execution
+%assign MS_SYNCHRONOUS	16	;Writes are synced at once
+%assign MS_REMOUNT	32	;Alter flags of a mounted FS
+%assign MS_MANDLOCK	64	;Allow mandatory locks on an FS
+%assign MS_NOATIME	1024	;Do not update access times
+%assign MS_NODIRATIME	2048	;Do not update directory access times
+%assign MS_BIND		4096
+%assign MS_REC		16384
+%assign MS_VERBOSE	32768
+%assign MS_ACTIVE	(1<<30)
+%assign MS_NOUSER	(1<<31)
+
+%assign	MS_MGC_VAL	0xc0ed0000
 
 ;
 ;utmp.h

@@ -1,105 +1,173 @@
-;Copyright (C) 1999 Konstantin Boldyshev <konst@linuxassembly.org>
+;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: mount.asm,v 1.4 2001/09/24 16:49:19 konst Exp $
+;$Id: mount.asm,v 1.5 2001/12/09 15:12:15 konst Exp $
 ;
 ;hackers' mount/umount
 ;
-;syntax: mount device dir [fstype] [next options....]
-;	 umount device
+;syntax: mount [-o options] [-t type] device mountpoint
+;	 umount mountpoint
 ;
-;example: mount /dev/hda1 /c vfat ro   
-;	  umount /dev/hdb3
-;
-;avaiable options:
-;
-;ro	Mount read-only				(MS_RDONLY	1)
-;ns	Ignore suid and sgid bits		(MS_NOSUID	2)
-;nd	Disallow access to device special files (MS_NODEV	4)
-;ne	Disallow program execution		(MS_NOEXEC	8)
-;sy	Writes are synced at once  		(MS_SYNCHRONOUS	16)
-;re	Alter flags of a mounted FS		(MS_REMOUNT	32)
-;ml	Allow mandatory locks on an FS		(MS_MANDLOCK	64)
-;na	Do not update access times		(MS_NOATIME	1024)
-;ni	Do not update directory access times	(MS_NODIRATIME	2048)
-;bi	Who knows ? 				(MS_BIND	4096)
+;example: mount -o ro,noexec -t vfat /dev/hda1 /c
+;	  umount /mnt
 ;
 ;0.01: 04-Jul-1999	initial release
 ;0.02: 19-Feb-2001      added options support & listing of mounted devices (RM)
+;0.03: 09-Dec-2001	rewritten to resemble usual mount, *BSD port (KB)
+;
+;NOTES:
+;1) mount arguments must be exactly in above written order
+;2) BSD version requires -t argument
+;3) only generic mount options are implemented, you may add your own if needed
 
 %include "system.inc"
 
-%assign	BufSize	0x2000 ;we have 4KB anyway
+%assign	BUFSIZE	0x2000
 
 CODESEG
 
 START:
+	pop	ecx		;argc
+	dec	ecx
+	jz	.list_mounted
+
 	pop	esi
-	pop	esi
-.n1:
+	pop	ebx
+
+.n1:				;find out our name
 	lodsb
 	or 	al,al
 	jnz	.n1
-	pop	ebx
-	or	ebx,ebx
-	jz	.list_mounted
 	cmp	byte [esi-7],'u'
 	jnz	.mount
+
+	xor	ecx,ecx
 	sys_umount
+
 .exit:  
 	sys_exit eax
-.mount:
-	pop	ecx
-	mov 	ebp,ecx		
-	or	ecx,ecx
-	jz	.exit
-	pop	edx
-	xor 	esi,esi
-.next_arg:
-	pop     edi
-	or	edi,edi
-	jz 	.do_mount  	;we don't have any special wishes..
-	movzx 	eax,word [edi]  
-	mov 	edi,options	
-	mov 	ecx,(options_len/2)+1
-	repnz
-	scasw
-	or 	ecx,ecx
-	jz 	.not_found
-	mov 	eax,options_len/2
-	sub 	eax,ecx
-	xchg 	ecx,eax
-	xor 	eax,eax
-	inc 	eax
-	shl 	eax,cl
-	or  	esi,eax		;set flag
-.not_found:			;unknown option
-	mov 	ecx,ebp
-	jmp short .next_arg	
-	
-.do_mount:
-	sys_mount		; for pre 0.97 version of mount  
-	jmp short .exit		; there should be in high word of flags magic MSC_MGC_VAL
-				;dont know which kernel need this 
-	
-.list_mounted:         		;Stolen from lsmod
 
-	sys_open filename,O_RDONLY
-	mov	ebp,eax
+;
+;display /proc/mounts or /etc/mtab
+;
+
+.list_mounted:
+
+	sys_open lname1,O_RDONLY
+	test	eax,eax
+	jns	.l0
+	sys_open lname2
 	test	eax,eax
 	js	.exit
-	sys_read ebp,Buf,BufSize
+.l0:
+	sys_read eax,buf,BUFSIZE
 	sys_write STDOUT,EMPTY,eax
-;	sys_close ebp 			;system will do dirty work :)
-	xor 	eax,	eax   		;good end 
+	xor 	eax,eax   		;good end 
+	jmps	.exit
+
+;
+;
+;
+
+.mount:
+	cmp	cl,2
+	jb	.list_mounted
+
+	cmp	word [ebx],"-o"
+	jnz	.m1
+
+	pop	ebp		;options to parse
+.options:
+	mov	esi,ebp
+.o0:
+	lodsb
+	cmp	al,','
+	jz	.o1
+	or	al,al
+	jnz	.o0
+
+	inc	byte [buf]	;indicate that this is the last option
+
+.o1:
+	mov	ebx,esi
+	sub	ebx,ebp
+	dec	ebx
+
+	mov	ecx,MOUNT_OPTIONS_SIZE		;compare with all options
+	mov	edx,mount_options
+.o2:
+	pusha
+	mov	esi,ebp
+	mov	edi,[edx]
+	mov	ecx,ebx
+	rep	cmpsb
+	popa
+	jnz	.o3
+	mov	eax,[edx + 4]
+	or	[flag],eax
+	jmps	.onext
+.o3:
+	add	edx,byte 8	
+	loop	.o2
+
+.onext:
+	mov	ebp,esi
+	cmp	byte [buf],1
+	jnz	.options
+
+.m0:
+	pop	ebx
+.m1:	
+	cmp	word [ebx],"-t"
+	jnz	.do_mount
+
+	pop	edx		;fstype
+	pop	ebx		;device
+	
+.do_mount:
+	pop	ecx		;mountpoint
+
+%ifdef	__BSD__
+	mov	[buf],ebx	;void *data points to structure, where char* is the first
+	mov	ebx,edx		;fstype
+	mov	esi,buf		;data
+	mov	edx,[flag]	;flags
+%else
+	mov	esi,[flag]
+	xor	edi,edi
+%endif
+
+;for pre 0.97 version of mount there should be in high word of flags
+;magic MSC_MGC_VAL dont know which kernel need this 
+
+	sys_mount
 	jmp	.exit
 
-options	db	'ronsndnesyremlnanibi' ;compressed options the sequence exactly match bits flags
-options_len 	equ $-options
+mount_options:
 
-filename	db	"/proc/mounts",EOL
+dd	.ro,		MS_RDONLY
+dd	.nosuid,	MS_NOSUID
+dd	.nodev,		MS_NODEV
+dd	.noexec,	MS_NOEXEC
+dd	.sync,		MS_SYNCHRONOUS
+dd	.remount,	MS_REMOUNT
+dd	.noatime,	MS_NOATIME
+
+MOUNT_OPTIONS_SIZE equ (($ - mount_options) / 8)
+
+.ro		db	"ro",EOL
+.nosuid		db	"nosuid",EOL
+.nodev		db	"nodev",EOL
+.noexec		db	"noexec",EOL
+.sync		db	"sync",EOL
+.remount	db	"remount",EOL
+.noatime	db	"noatime",EOL
+
+lname1	db	"/proc/mounts",EOL
+lname2	db	"/etc/mtab",EOL
 
 UDATASEG
 
-Buf	resb	BufSize
+flag	resd	1
+buf	resb	BUFSIZE
 
 END

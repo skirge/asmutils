@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.30 2001/12/08 16:26:52 konst Exp $
+# $Id: Makefile,v 1.31 2001/12/09 15:12:15 konst Exp $
 
 #DEBUG = y
 
@@ -17,15 +17,15 @@ FILES = basename cat chmod chroot chown cpuinfo cut date dc dd dirname\
 	uname wc whoami yes\
 	md5sum rmdsum rc6crypt\
 
-FILES += clear cp httpd m_inetd less ls more mv nc readkey rm ping pwd touch\
-	 watch which write
+FILES += clear cp httpd m_inetd less ls more mount mv nc readkey rm ping pwd\
+	 touch watch which write
 
 BONUS =	execve report asmutils
 
 LINKS = arch cpuspeed domainname false mkfifo rmdir regs sln todos
 
 ifdef LINUX
-FILES += chvt dmesg df eject finger ifconfig lsmod mesg mount ps\
+FILES += chvt dmesg df eject finger ifconfig lsmod mesg ps\
 	 reboot softdog swapon tty update
 BONUS += window leaves fire256 snake game
 LINKS += ccd deallocvt halt poweroff swapoff umount rmmod route

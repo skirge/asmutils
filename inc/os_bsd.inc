@@ -1,10 +1,10 @@
 ; Copyright (C) 2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_bsd.inc,v 1.3 2001/12/03 19:20:49 konst Exp $
+; $Id: os_bsd.inc,v 1.4 2001/12/09 15:12:54 konst Exp $
 ;
 ; file          : os_bsd.inc
 ; created       : 12-Nov-2000
-; modified      : 03-Dec-2001
+; modified      : 09-Dec-2001
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : common BSD defines
@@ -255,6 +255,28 @@ endstruc
 %define	TCGETS	TIOCGETA
 %define	TCSETS	TIOCSETA
 %define	TCSETSW	TIOCSETAW
+
+;
+;sys/mount.h
+;
+
+%assign	MS_RDONLY	0x00000001	;read only filesystem
+%assign	MS_SYNCHRONOUS	0x00000002	;file system written synchronously
+%assign	MS_NOEXEC	0x00000004	;can't exec from filesystem
+%assign	MS_NOSUID	0x00000008	;don't honor setuid bits on fs
+%assign	MS_NODEV	0x00000010	;don't interpret special files
+%assign	MS_UNION	0x00000020	;union with underlying filesystem
+%assign	MS_ASYNC	0x00000040	;file system written asynchronously
+%assign	MS_SUIDDIR	0x00100000	;special handling of SUID on dirs
+%assign	MS_SOFTDEP	0x00200000	;soft updates being done
+%assign	MS_NOSYMFOLLOW	0x00400000	;do not follow symlinks
+%assign	MS_NOATIME	0x10000000	;disable update of file access time
+%assign	MS_NOCLUSTERR	0x40000000	;disable cluster read
+%assign	MS_NOCLUSTERW	0x80000000	;disable cluster write
+
+%assign	MNT_UPDATE	0x0001000
+
+%assign	MS_REMOUNT	MNT_UPDATE
 
 ;
 ;utmp.h
