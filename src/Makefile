@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.51 2002/06/11 08:41:06 konst Exp $
+# $Id: Makefile,v 1.52 2002/06/16 08:05:06 konst Exp $
 
 #DEBUG = y
 
@@ -28,7 +28,7 @@ BONUS =	execve report asmutils
 
 ifdef LINUX
 FILES += chvt dmesg df eject fdisk finger free ifconfig killall lsmod\
-	 mesg ps softdog swapon sysctl tty update
+	 mesg mkfs.minix ps softdog swapon sysctl tty update
 LINKS += ccd deallocvt fingerd killall5 pidof rmmod route swapoff mkswap
 BONUS += window leaves fire256 mandelbrot snake game
 endif
