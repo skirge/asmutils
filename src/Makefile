@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.42 2002/03/05 16:35:29 konst Exp $
+# $Id: Makefile,v 1.43 2002/03/07 11:13:32 konst Exp $
 
 #DEBUG = y
 
@@ -20,7 +20,7 @@ FILES = basename cal cat chmod chroot chown cmp cpuinfo cut date dc dd dirname\
 FILES += clear cp host httpd m_inetd less ls more mount mv nc ping pop3 pwd\
 	 readkey rm scan sh test touch watch which write
 
-LINKS = arch cpuspeed domainname false mkfifo rmdir sln todos umount\
+LINKS = arch cpuspeed domainname false mkfifo rmdir sln todos umount usleep\
 	halt poweroff\
 
 BONUS =	execve report asmutils
@@ -62,6 +62,7 @@ links:	$(FILES)
 	mkln kldload kldstat;\
 	mkln killall killall5;\
 	mkln killall pidof;\
+	mkln sleep usleep;\
 	)
 
 install:$(FILES)
