@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.15 2002/02/02 12:33:39 konst Exp $
+; $Id: system.inc,v 1.16 2002/02/15 18:47:09 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 02-Feb-2002
+; modified	: 15-Feb-2002
 ; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: framework and generic stuff (macros, sections, etc)
@@ -33,8 +33,9 @@
 ;0.14: 11-Feb-2001	added B_STRUC macro (aka ELF_BSTRUC from elf.inc) (BR),
 ;			moved __syscall_gate to os_xxx.inc files (KB)
 ;0.15: 24-Sep-2001	fixed LIBC stuff, added __LONG_JUMPS__ (KB)
-;0.16: 02-Feb-2002	added SOLARIS, UNIXWARE, improved BeOS stub,
-;			rewritten libc port, _push with 2 args (KB)
+;0.16: 15-Feb-2002	added SOLARIS, UNIXWARE, improved BeOS stub,
+;			rewritten libc port, _push with 2 args,
+;			added _end label to END macro (KB)
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
@@ -347,6 +348,7 @@ ELF_DATA
 %ifdef __ELF_MACROS__
 END_ELF
 %endif
+_end:		;ld may put this label too
 %endmacro
 
 %macro I_STRUC 1
