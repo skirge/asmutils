@@ -1,7 +1,7 @@
 ;Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-;$Id: libc.asm,v 1.12 2002/01/05 08:41:53 konst Exp $
+;$Id: libc.asm,v 1.13 2002/01/28 08:38:50 konst Exp $
 ;
 ;hackers' libc
 ;
@@ -33,7 +33,7 @@
 ;			to prepare main() arguments (argc, argv, envp),
 ;			PIC fixes (KB)
 ;0.07: 25-Feb-2001	added __VERBOSE__, memcmp(), getenv() (KB)
-;0.08: 05-Jan-2001	strlen() bugfix, various fixes (KB)
+;0.08: 20-Jan-2002	strlen() bugfix, various fixes (KB)
 
 %undef __ELF_MACROS__
 
@@ -208,59 +208,37 @@ __system_call:
 	jnz	.fc
 
 %define _STACK_ADD 8 + 4*8
+%macro _JZ_SSN_ 0
+%ifdef	__VERBOSE__
+	dec	eax
+	jz	.ssn
+%endif
+%endmacro
 
 .cdecl:
 	mov	ebx,[esp + _STACK_ADD]		;1st arg
-%ifdef	__VERBOSE__
-	dec	eax
-	jz	.ssn
-%endif
+	_JZ_SSN_
 	mov	ecx,[esp + _STACK_ADD + 4]	;2nd arg
-%ifdef	__VERBOSE__
-	dec	eax
-	jz	.ssn
-%endif
+	_JZ_SSN_
 	mov	edx,[esp + _STACK_ADD + 8]	;3rd arg
-%ifdef	__VERBOSE__
-	dec	eax
-	jz	.ssn
-%endif
+	_JZ_SSN_
 	mov	esi,[esp + _STACK_ADD + 12]	;4th arg
-%ifdef	__VERBOSE__
-	dec	eax
-	jz	.ssn
-%endif
+	_JZ_SSN_
 	mov	edi,[esp + _STACK_ADD + 16]	;5th arg
-%ifdef	__VERBOSE__
-	dec	eax
-	jz	.ssn
-%endif
+	_JZ_SSN_
 	mov	ebp,[esp + _STACK_ADD + 20]	;6th arg
 	jmps	.ssn
 
 .fc:
 	mov	ebx,[__eax]			;1st arg
-%ifdef	__VERBOSE__
-	dec	eax
-	jz	.ssn
-%endif
+	_JZ_SSN_
 	xchg	ecx,edx				;2nd & 3rd arg
-%ifdef	__VERBOSE__
-	dec	eax
-	jz	.ssn
-	dec	eax
-	jz	.ssn
-%endif
+	_JZ_SSN_
+	_JZ_SSN_
 	mov	esi,[esp + _STACK_ADD]		;4th arg
-%ifdef	__VERBOSE__
-	dec	eax
-	jz	.ssn
-%endif
+	_JZ_SSN_
 	mov	edi,[esp + _STACK_ADD + 4]	;5th arg
-%ifdef	__VERBOSE__
-	dec	eax
-	jz	.ssn
-%endif
+	_JZ_SSN_
 	mov	ebp,[esp + _STACK_ADD + 8]	;6th arg
 
 %undef _STACK_ADD
