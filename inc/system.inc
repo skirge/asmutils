@@ -1,10 +1,10 @@
-; Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.11 2001/12/03 19:20:49 konst Exp $
+; $Id: system.inc,v 1.12 2002/01/28 08:36:44 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 03-Dec-2001
+; modified	: 27-Jan-2002
 ; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: generic (not OS specific) macros, sections, headers, etc.
@@ -33,7 +33,7 @@
 ;0.14: 11-Feb-2001	added B_STRUC macro (aka ELF_BSTRUC from elf.inc) (BR),
 ;			moved __syscall_gate to os_xxx.inc files (KB)
 ;0.15: 24-Sep-2001	fixed LIBC stuff, added __LONG_JUMPS__ (KB)
-;0.16: 24-Nov-2001	added SOLARIS, UNIXWARE, improved BeOS stub,
+;0.16: 27-Jan-2002	added SOLARIS, UNIXWARE, improved BeOS stub,
 ;			_push with 2 args (KB)
 
 %ifndef __SYSTEM_INC
@@ -149,33 +149,21 @@
 
 BEGIN_ELF
 
-%ifdef STAMP_VERSION
-	db	__n
-__ver	db	STAMP_VERSION, EOL
-%endif
-
-%ifdef STAMP_DATE
-	db	__t
-__date	db	STAMP_DATE, EOL, __n
-%endif
-
 %else
 
 %ifdef __AOUT__
-
     section	.text
-
 %else
-
-%if __OPTIMIZE__=__O_SPEED__
-section	.text align=16
-%elif __OPTIMIZE__=__O_SIZE__
-section	.text align=1
-%endif
-
-%endif
+    %if __OPTIMIZE__=__O_SPEED__
+	section	.text align=16
+    %elif __OPTIMIZE__=__O_SIZE__
+	section	.text align=1
+    %endif
+%endif	;__AOUT__
 
 	global	START
+
+%endif	;__ELF_MACROS__
 
 %ifdef STAMP_VERSION
 	db	__n
@@ -308,13 +296,11 @@ _start:
 	xor	ebp,ebp
 
 	jmp	START
-%endif
+%endif	;__BEOS__
 
-%endif
+%endif	;__LIBC__
 
 %endif	;__STARTUP__
-
-%endif
 %endmacro
 
 %macro UDATASEG 0

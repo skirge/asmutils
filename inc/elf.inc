@@ -1,11 +1,11 @@
 ; Copyright (C) 1999 Brian Raiter <breadbox@muppetlabs.com>
 ;
-; $Id: elf.inc,v 1.1 2000/09/03 16:13:53 konst Exp $
+; $Id: elf.inc,v 1.2 2002/01/28 08:36:44 konst Exp $
 ;
 ; file		: elf.inc
 ; created	: 20-Aug-1999
-; modified	: 19-Dec-1999
-; version	: 0.06
+; modified	: 27-Jan-2002
+; version	: 0.16
 ; assembler	: nasm 0.98
 ; description	: macro definitions for defining a simple ELF executable
 ;		  file image. These macros must be used with files
@@ -29,11 +29,47 @@
 %macro BEGIN_ELF 0
 %push elf
 BITS 32
-%define	%$origin	0x08048000
+
+;
+;e_ident[EI_OSABI] values
+;
+
+%assign ELFOSABI_SYSV		0	;UNIX System V ABI
+%assign ELFOSABI_NONE		ELFOSABI_SYSV	;symbol used in old spec
+%assign ELFOSABI_HPUX		1	;HP-UX operating system
+%assign ELFOSABI_NETBSD		2	;NetBSD
+%assign ELFOSABI_LINUX		3	;GNU/Linux
+%assign ELFOSABI_HURD		4	;GNU/Hurd
+%assign ELFOSABI_86OPEN		5	;86Open common IA32 ABI
+%assign ELFOSABI_SOLARIS	6	;Solaris
+%assign ELFOSABI_MONTEREY	7	;Monterey
+%assign ELFOSABI_IRIX		8	;IRIX
+%assign ELFOSABI_FREEBSD	9	;FreeBSD
+%assign ELFOSABI_TRU64		10	;TRU64 UNIX
+%assign ELFOSABI_MODESTO	11	;Novell Modesto
+%assign ELFOSABI_OPENBSD	12	;OpenBSD
+%assign ELFOSABI_ARM		97	;ARM
+%assign ELFOSABI_STANDALONE	255	;Standalone (embedded) application
+
+%ifdef		__LINUX__
+%assign %$osabi	ELFOSABI_LINUX
+%elifdef	__FREEBSD__
+%assign %$osabi	ELFOSABI_FREEBSD
+%elifdef	__OPENBSD__
+%assign %$osabi	ELFOSABI_OPENBSD
+%elifdef	__NETBSD__
+%assign %$osabi	ELFOSABI_NETBSD
+%else
+%assign %$osabi	ELFOSABI_SYSV
+%endif
+
+%assign	%$origin	0x08048000
+
 		org	%$origin
 		db	0x7F, 'ELF'		; e_ident
 		db	1, 1, 1
-	times 9	db	0
+		db	%$osabi			; e_ident[EI_OSABI]
+	times 8	db	0
 		dw	2			; e_type
 		dw	3			; e_machine
 		dd	1			; e_version

@@ -2,7 +2,7 @@
 #
 # MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.14 2002/01/04 08:26:22 konst Exp $
+# $Id: MCONFIG,v 1.15 2002/01/28 08:36:44 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -23,6 +23,11 @@ KERNEL = 24
 
 OPTIMIZE = SIZE
 
+# ELF hack for smaller binaries (when possible).
+# Disable it if you have trouble running resulting executables.
+
+ELF_MACROS = y
+
 # Enable debug build
 
 #DEBUG = y
@@ -36,11 +41,6 @@ OPTIMIZE = SIZE
 # if you can't build with -nostartupfiles.
 # You may also need this with OS=BEOS.
 #STARTUP = y
-
-# LINUX only
-#
-# ELF hack for smaller binaries
-ELF_MACROS = y
 
 #---------------------------------------------------------------#
 
@@ -92,19 +92,21 @@ ifdef BUILD_LIB
 ELF_MACROS =
 endif
 
-ifndef LINUX
-
-ELF_MACROS =
-
 ifdef OPENBSD
 AOUT = y
+ELF_MACROS =
 endif
-#ifdef NETBSD
-#AOUT = y
-#endif
+
+ifdef NETBSD
+ifneq ($(KERNEL),15)
+AOUT = y
+ELF_MACROS =
+endif
+endif
 
 ifdef BEOS
 STARTUP = y
+ELF_MACROS =
 endif
 
 ifdef LIBC
@@ -113,8 +115,6 @@ DEFINES += -D__LIBC__
 ifndef STARTUP
 LDFLAGS = -nostartfiles
 endif
-endif
-
 endif
 
 ifdef STARTUP
