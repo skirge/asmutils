@@ -1,0 +1,39 @@
+Current release notes (0.06)
+  
+ Long awaited release is finally here.
+     
+ A lot of new utils were added, and existing were improved.
+ Main contributors for this release are Dmitry Bakhvalov
+ and Cecchinel Stephan (thanks, guys!).
+     
+ Assembly libc is up, and it's already possible to link a simple
+ program against it. Plenty of functions are missing, but just the
+ fact gives the hope ;) One of the outstanding features of this libc
+ (of course except the size and the speed) is that it will be
+ possible to use both cdecl and fastcall compiled programs WITHOUT
+ libc recompilation, i.e. calling convention will be configured at
+ RUNTIME (!). How can it be done?? Well, remember that everything is
+ possible with assembly language ;)
+     
+ Also soon the project will become portable across x86 platform,
+ and will run under FreeBSD and other *BSD's, and possibly under BeOS
+ (hmm, how about Windows? :). Portability was implemented into the
+ asmutils from the beginning, but somewhy is still not brought to
+ working stage. This will happen a bit later, possibly in 0.07 -- 0.08.
+     
+ Full list of utils in 0.06 release (total of 50):
+
+	arch basename cat chmod chroot chvt deallocvt df dmesg domainname
+	echo eject factor false grep halt hosname httpd id kill ln ls
+	lsmod lzss md5sum mkdir more mount nc poweroff ps pwd rc6crypt
+	reboot rmdir rmdsum rmmod sleep softdog strings swapoff swapon
+	sync tee true umount uname update wc yes
+       
+ GNU compliant utils:
+
+	basename, echo, factor, false, pwd, sleep, tee, true, uname, yes
+       
+ Please note that this compliance mainly affects command line
+ options support; behavior is not well tested, however it SEEMS to
+ be the same. You are especially encouraged to use and test them :)
+ Options --version and --help are not supported.

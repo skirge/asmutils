@@ -1,0 +1,8 @@
+- add new utils
+- improve existing
+- develop libc
+- write a shell
+- port code at least to FreeBSD and BeOS
+- make one multicall binary from all this?
+
+do not tell me I am crazy hacker, I know :-)

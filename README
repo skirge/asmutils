@@ -1,0 +1,127 @@
+
+			       asmutils
+			       ~~~~~~~~
+
+	    collection of different utilities for Linux/i386
+		    written in pure assembly language
+
+			    (version 0.06)
+
+			http://linuxassembly.org
+
+
+; BIG FAT WARNING:
+;
+; THESE UTILITIES WORK WITH LINUX KERNEL DIRECTLY.
+; AUTHORS ARE NOT RESPONSIBLE FOR ANY DAMAGE THEY CAN DO TO YOUR SYSTEM.
+; THEY WORKED ON MY LINUX BOX, BUT THEY CAN CRASH YOURS.
+; NO WARRANTY. THIS IS DEVELOPMENT VERSION, USE SOLELY AT YOUR OWN RISK.
+
+
+
+Copyright information
+~~~~~~~~~~~~~~~~~~~~~
+
+All programs in this package are copyrighted by their authors,
+as shown in source code and in CREDITS file.
+
+These programs are free software; you can redistribute them and/or modify
+them under the terms of the version 2 of the GNU General Public License
+as published by the Free Software Foundation.
+  
+These programs are distributed in the hope that they will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+See the GNU General Public License for more details
+(http://www.gnu.org/copyleft/gpl.html).
+
+
+Do I need this?
+~~~~~~~~~~~~~~~
+
+In general case you don't.
+
+This package is great for small Linux distributions (rescue, embedded,
+etc). It contains extremely small and fast replacements for several unix
+utilities. Usual way for small system is to replace binaries with shell
+scripts; however, scripts require much more memory and are slow.
+This package provides:
+
+    1) binaries
+    2) that do not require libc
+    3) are small as scripts
+    4) are fast as kernel
+    5) need only few KBytes of RAM
+
+Several utilities are fully GNU compliant, examine NOTES for details.
+
+All utilities are quite dirty hacks sometimes, but they work well,
+at least on 2.0 and 2.2 kernels.
+
+So, it's better to say in such a way: if you need this, you know it.
+
+Another goal of this package is to provide source code and some kind of
+library, and encourage assembly programmers to write for Linux. Usually
+Linux is associated with C, and no one wants to deal with assembly..
+Browse the source, look -- it is simple. Read the docs, start
+to write, and you will like it :)
+
+
+
+How to install
+~~~~~~~~~~~~~~
+
+ REQUIREMENTS:
+
+	1) i386 (however some programs may require higher CPU)
+	2) Linux kernel 2.0/2.2 (may work on 2.1 & 2.3 too)
+	3) ELF support in the kernel (usually it is there)
+	3) some programs may require FPU (or kernel emulation)
+
+ WARNING: Before using any command first look at its syntax!
+	  Some utils can work not as you may expect!
+
+ Syntax of command can be obtained from appropriate source
+ from [src] directory, do not expect any answer from program
+ on --help or --version switches. Lazy people can just launch
+ "syntax" script in [bin] directory.
+ 
+ 
+ Asmutils include two sets of precompiled binaries, both for
+ Linux 2.0 and Linux 2.2.
+
+ Rule is simple:
+
+  - use binaries for Linux 2.0 on Linux 2.0
+  - use binaries for Linux 2.2 on Linux 2.2
+
+ Installation itself is simple too: take precompiled binaries from
+ [bin] directory for your kernel and copy them where you need.
+
+
+ If you want to compile source you will need:
+
+  - nasm 0.98 or higher (older may work too, I used 0.98)
+    (nasm can be obtained from http://www.cryogen.com/nasm)
+  - binutils 2.9 or higher (older may work too, I used 2.9.0.15 and higher)
+  
+  cd [src], issue make and hopefully all will be done. However some binaries
+  can be a bit bigger because precompiled were additionally hacked :)
+  You may also read Asmutils Source Guide (doc/asmutils-source-guide.html)
+  if you want to learn some details on compilation (size/speed optimization,
+  different kernel versions, etc).
+  
+
+
+Other stuff
+~~~~~~~~~~~
+
+ Current and future release notes are available at
+ http://linuxassemmbly.org/asmutils.html
+
+ Contributions are welcome!
+ If you wish to contribute please read doc/HOWTO-CONTRIBUTE file.
+
+ Send feedback & bugreports to konst@voshod.com
+
+ $Id: README,v 1.1 2000/01/26 21:18:54 konst Exp $

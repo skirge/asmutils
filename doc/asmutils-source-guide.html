@@ -1,0 +1,212 @@
+<html><head><title>asmutils source guide</title></head><body>
+<h2 align=center>Asmutils Source Guide</h2>
+<font size=-1><center>by Konstantin Boldyshev, asmutils 0.06</center></font>
+<hr><h2>Contents</h2>
+<h3><ul>
+<a href=#in>1. Introduction</a><br>
+<a href=#ps>2. Program structure<br>
+<a href=#if>3. Include files description<br>
+<ul><small>
+<a href=#if1>3.1 system.inc</a><br>
+<a href=#if2>3.2 defines.inc</a><br>
+<a href=#if3>3.3 syscall.inc</a><br>
+<a href=#if4>3.4 kernel.inc</a><br>
+<a href=#if5>3.5 elf.inc</a><br>
+</small></ul>
+<a href=#ss>4. Size/speed optimization</a><br>
+<a href=#tt>5. Tips and tricks</a><br>
+</ul></h3><hr>
+
+<a name=in></a><h2><u>1. Introduction</u></h2>
+
+<p><i>First of all please note that this is not nasm guide. I assume that you know nasm syntax; I will not explain any nasm-related things here.</p>
+<p>Second, I expect that you will examine source code of asmutils. This document is not intended to replace the source, its goal is only to accompany asmutils source and explain some unclear moments. Again, examine ALL source code. Look how command line parsing is done, how conditional assembly for different kernel versions is done and so on -- I am not going to explain everything here.</i></p></p>
+<p>Mostly this guide describes a set of macros I've developed to write fast and readable; they are hiding from you unneeded details, and also take care of optimization.</p>
+<p>You may also want to read <a href=startup.html>Startup state of Linux/i386 ELF binary</a> and <a href=syscall.html>Linux/i386 system calls</a> documents to get better general (not asmutils specific) understanding of asmutils source code.</p>
+
+<a name=ps></a><h2><u>2. Program structure</u></h2>
+
+<p>There are three macros that make section definition as simple as possible: CODESEG, DATASEG and UDATASEG (similar to TASM ideal mode syntax). END macro marks end of file.
+<p>Program must have at least CODESEG (.text) section, other sections are optional. CODESEG is read-only, DATASEG and UDATASEG are read-write; i.e. you can place data in CODESEG as long as you will not change it. You can also define your own sections if you want, but there's very rare need of doing so. Each section (even if it is empty) will enlarge your file.</p>
+<p>START macro tells linker entry point, and MUST be present.</p>
+<p>So, typical code will look like:</p>
+<pre>
+%include "system.inc"
+
+CODESEG
+
+START:			;entry point
+
+    your_code_here
+
+DATASEG
+
+    your_data_here
+
+UDATASEG
+
+    your_bss_here
+
+END
+</pre>
+
+<a name=if></a><h2><u>3. Include files description</u></h2>
+
+<a name=if1></a><h3 align=center>3.1 system.inc</h3>
+
+<p>
+This file is vital and MUST be included into program code to do anything else;
+without this file you'll have to write in usual boring way.
+<p>
+CODESEG, DATASEG, UDATASEG, END, I_STRUC, I_END macros are here, some other will be added.
+<p>
+Also it contains optimizing macros <tt>_mov</tt> (former <tt>__setreg32</tt>), <tt>_add</tt>, <tt>_sub</tt>
+that perform register assignment, addition and substraction.
+You can use these macros instead of <tt>mov, add, sub</tt>;
+if you take care of size, this will produce quite good results
+(do not try to understand how they work :).
+<p>
+This file also holds configuration parameters.
+Here you can set target kernel version (KERNEL) and optimization (__OPTIMIZE).
+Further other configuration parameters can be added.
+<p>
+<b>This file includes two others:
+<a href=#if2>defines.inc</a> and
+<a href=#if3>syscall.inc</a>
+you do need to include them manually</b>.
+</p>
+
+<a name=if2></a><h3 align=center>3.2 defines.inc</h3>
+
+<p>
+This file stores constant definitions from kernel and libc includes.
+If you add some defined constant,
+please do not forget to mention kernel/libc header file it was taken from.
+</p>
+
+<a name=if3></a><h3 align=center>3.3 syscall.inc</h3>
+
+<p>File holds system call macros. A lot of people asked me for some description of them, so here are general things to know about sys_xxx macros:
+<ul>
+<li>there can be up to 5 parameters (depends on syscall)
+<li>parameters to sys_xxx are always optional
+<li>registers corresponding to parameters are: ebx [1], ecx [2], edx [3], esi [4], edi [5]
+<li>eax is used as syscall (function) number and is always destroyed; after call it contains return value
+<li>ecx and edx also can be destroyed by several system calls
+<li>if there are no parameters, macro thinks that all registers (except eax) are already set before syscall
+<li>number of registers used is equal to parameters passed + 1 (eax)
+<li>parameter can be register, memory address, reference, constant or reserved word
+<li>reserved words are (currently only one):
+<ul>EMPTY (indicates that register is already set before macro and must be skipped) It is useful when you need to pass only  say third parameter and not touch others; f.e. sys_write EMPTY,EMPTY,1 will expand to:
+<pre>
+_mov edx,1
+__syscall __NR_write
+</pre></ul>
+<li>registers are set in this order: edi, esi, edx, ecx, ebx, eax;  i.e. it is possible to write <tt>sys_write eax, ebx, ecx</tt>; it will expand to:
+<pre>
+	mov	edx,ecx
+	mov	ecx,ebx
+	mov	ebx,eax
+	__syscall __NR_write
+</pre>
+<li>all macros can generate code optimized for size (default) or speed
+</ul>
+<p>Note: there are two additional forms <i>sys_exit</i> call: <i>sys_exit0</i> is 'true' exit, and <i>sys_exit1</i> is 'false' exit.
+<p>If some system call is missing, you can add it to this file; it's simple, just look how others are done there; use sys_syscallname as macro name.</p>
+
+<a name=if4></a><h3 align=center>3.4 kernel.inc</h3>
+
+<p>
+Kernel structures reside and should be added into kernel.inc file.
+This file also contains common types definitions (INT, LONG, etc.).
+So, if you work with kernel structures, this file must be included.
+Again, if you add something here, please do not forget to mention corresponding kernel source.
+</p>
+
+<a name=if5></a><h3 align=center>3.5 elf.inc</h3>
+
+<p>
+ELF macros are defined here. These macros can be (and are, by default) used to reduce final size of executable.
+Brian Raiter wrote README.elf and comments in elf.inc that contain all you need to know about what they do and how they work. But here are another good news: almost all of them (except ELF_BSTRUC and ELF_AT) are integrated into existing program structure.
+To enable them you just need to have <tt>__ELF_MACROS = y</tt> line in Makefile (enabled by default),
+this turns on automatic usage of these macros (and you do not have to include elf.inc).
+And if you will follow simple rules when writing a program,
+then you will not have to carry out two different definitions for sections and structures;
+so, you can compile the same source with and without usage of these macros,
+getting correct code in both cases.
+This is experimental thing, however it seems to work well.
+Rules are simple: use following section order: CODESEG, DATASEG, UDATASEG, END,
+and use I_STRUC and I_END to define structures in UDATASEG
+instead of <tt>istruc</tt> and <tt>iend</tt> (take any asmutils source as an example).
+Alternatively, you can use macros from elf.inc directly if you want,
+but then you can't compile your source using usual nasm/ld procedure.
+If you want to go this way, take the time and read REAME.elf carefully
+(also do read it if you want to understand how they work).
+Personally I think that first way is simpler.
+</p>
+
+<a name=ss></a><h2><u>4. Size/speed optimization</u></h2>
+
+<p>In fact this must be done by assembler.. but.. optimizing assembler is a dream. So, I've took care of it. By default code is optimized for size, and you can get up to 20% smaller executable; speed optimization in fact is a fake, it is just absence of size optimization :), though theoretically you can gain something on pentium processors.. To enable speed optimization set __OPTIMIZE to __O_SPEED in config.inc. Optimization touches register assignment, addition and substraction (<tt>_mov, _add, _sub</tt> macros), and section alignment (CODESEG, DATASEG macros). Optimization is a work in progress, so results may be better in future versions.</p>
+
+<a name=tt></a><h2><u>5. Tips and tricks</u></h2>
+
+<p>If you've got crazy on binary size (like me:) you may want to use some of things described below.
+<p>First of all, try to keep your program in one CODESEG (.text) section. Remember, every new section, even it is empty, increases size of executable file. Unless you have any <i>read-write</i> data, do not make DATASEG (.data) section, keep your data in CODESEG. Even if you've got one/two variables with assigned initial values, first think of keeping them dynamically on the stack instead of creating DATASEG. And if your initial value is zero, place such variable in UDATASEG (.bss) section, it will be zeroed out by kernel (secret: then you can delete all data of .bss section from ELF binary, and nothing happens :).
+<p>Use _mov macro instead of <tt>mov</tt> instruction (if you do not assign one register to another), this will track special cases and produce smaller code.
+<p>Avoid using 16bit registers (ax,bx,cx,etc) unless you know exactly what you're doing. Every 16bit instruction will take one more byte (0x66 prefix). For instance, <tt>inc ax</tt> will produce greater code than <tt>inc eax</tt>.
+<p>Here are some assembly examples you can use instead of <tt>cmp</tt> instruction to produce smaller code:
+<pre>
+;if eax < 0 (signed compare)
+
+	test	eax,eax
+	js	is_less
+
+;if eax == 0
+
+	test	eax,eax
+	jz	is_zero
+
+;if eax == 0
+
+	or	eax,eax
+	jz	is_zero
+
+;if eax == 1		(and you no more care of its value)
+
+	dec	eax
+	jz	is_one
+
+;if eax == 2		(and you no more care of its value)
+
+	dec	eax
+	dec	eax
+	jz	is_one
+
+
+;if eax == -1		(and you no more care of its value)
+
+	inc	eax
+	jz	is_minus_one
+
+;if eax == -2		(and you no more care of its value)
+
+	inc	eax
+	inc	eax
+	jz	is_minus_one
+
+
+;if -255 < value < 255, you can use
+
+	cmp	eax,byte value ;or -value
+
+;instead of
+	cmp	eax,value
+</pre>
+<p>Seek, and you may find more :)
+
+<center><hr><font size=-1 face="Tahoma, Helvetica">
+$Id: asmutils-source-guide.html,v 1.1 2000/01/26 21:18:59 konst Exp $
+</font></center>
+
+</body></html>

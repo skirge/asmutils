@@ -1,0 +1,79 @@
+
+28-Jan-2000:	asmutils 0.06
+
+	- ls, strings, wc, id, ps (DB)
+	- lzss, rmdsum, rc6crypt, nc (CS)
+	- chmod, chroot, grep (KB)
+	- added "-e" & "-E" switches to echo (full GNU compliance) (KB)
+	- added "-m" (mode) switch to mkdir (KB)
+	- added lib/rmd.asm (RIPEMD-160 algo) (CS)
+	- working alpha of libc (KB & CS)
+	- _mov (former __setreg32), _add, _sub macros in system.inc (KB)
+	- types.inc merged kernel.inc, config.inc merged system.inc (KB)
+	- sstrip, lib/util removed (KB)
+	- fixed bug in ln (DW)
+	- special bonus: fbcon intro "leaves" and text window implementation
+	  [src/leaves.asm & src/window.asm] (KB)
+
+
+20-Sep-1999:	asmutils 0.05
+
+	- md5sum (CS)
+	- factor (BR), old factor removed
+	- size improvements due to elf.inc
+	- added lib/crypto/md5.asm (MD5 algo) (CS)
+	- added lib/crypto/rc6.asm (RC6 algo) (CS)
+	- added elf.inc (ELF macros) (BR)
+	- added doc/README.elf (BR)
+	- updated sstrip (BR)
+	- documentation, include files and other various updates (KB)
+
+
+01-Aug-1999:	asmutils 0.04
+
+	- eject (BH)
+	- factor (JW)
+	- chvt/deallocvt (IM)
+	- df, really huge util :) (AG)
+	- ln, more (KB)
+	- minor size improvements (KB)
+	- package structure slightly rearranged (KB)
+	- added lib/util/hackbin.pl (IM)
+	- added lib/sstrip (BR)
+	- added defines.inc for defined constants (IM & KB)
+	- added syscall.inc for system calls (KB)
+	- added doc/syscall.html (KB)
+	- "tips and tricks" added to doc/asmutils-source-guide.html (KB)
+	- other documentation updates (KB)
+
+
+05-Jul-1999:	asmutils 0.03
+
+	- mount/umount, softdog, swapon/swapoff,
+	  reboot/halt/poweroff, tee, arch (KB)
+	- pwd for 2.0 kernel (YI)
+	- kill (BH)
+	- removed bdflush (obsolete) (KB)
+	- all found bugs with 2.0 kernel are fixed (KB)
+	- a lot of documentation updates (KB)
+	- added types.inc (KB)
+	- version.inc became config.inc (KB)
+	- added size/speed optimization (KB)
+
+
+17-Jun-1999:	asmutils 0.02
+
+	- basename, dmesg, httpd, lsmod, true/false, rmmod, yes (IM)
+	- echo, uname, sleep (KB)
+	- fixed bug with 2.0 kernel in cat (KB)
+	- current pwd will work only on 2.2 kernel :(
+	  (should be fixed) (KB)
+	- added period parameter to update (KB)
+	- lot of size improvements (KB)
+	- system.inc completely rewritten, new macros added (KB)
+	- basename, sleep, uname and yes are GNU compliant
+
+
+05-Jun-1999:	asmutils 0.01 (initial release)
+
+	- bdflush, cat, hostname, mkdir/rmdir, pwd, sync, update (KB)
