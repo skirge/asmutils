@@ -17,7 +17,7 @@
 ;; instead you see a lot of non-ASCII characters) you may need to use
 ;; a console font with the VT100 character set in order to play.
 ;;
-;; $Id: snake.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
+;; $Id: snake.asm,v 1.3 2002/02/20 15:33:00 konst Exp $
 
 %include "system.inc"
 
@@ -192,7 +192,7 @@ tick:		ret
 
 ;; The program begins here.
 
-_start:
+START:
 
 ;; ebp is set to point to an address near the top of the .bss
 ;; section. It will retain this value throughout the program.

@@ -4,7 +4,7 @@
 ;			 Joshua Hudson <joshudson@hotmail.com>
 ;			 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;
-;$Id: sh.asm,v 1.11 2002/02/19 12:25:36 konst Exp $
+;$Id: sh.asm,v 1.12 2002/02/20 15:33:00 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -1757,13 +1757,6 @@ environ_count resd 1
 termattrs B_STRUC termios,.c_lflag
 getchar_buff: resb 3
 getchar resb 3
-file_buff resb file_buff_size
-write_after_slash resd 1 
-first_chance resb 1
-file_name resb 255
-file_equal resb 255
-first_time  resb 1 ;stupid
-stat_buf B_STRUC Stat,.st_mode
 %endif
 %ifdef HISTORY
 history_cur   resd 1
@@ -1772,6 +1765,15 @@ history_start resd 1
 pid resd 1
 rtn resd 1		; Return code
 script_id resd 1	; Script handle
+
+file_buff resb file_buff_size
+write_after_slash resd 1 
+first_chance resb 1
+file_name resb 255
+file_equal resb 255
+first_time  resb 1 ;stupid
+stat_buf B_STRUC Stat,.st_mode
+
 END
 ;****************************************************************** AG + KS *
 
