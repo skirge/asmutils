@@ -1,11 +1,11 @@
 ; Copyright (C) 2001-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_bsd.inc,v 1.10 2002/02/20 15:29:30 konst Exp $
+; $Id: os_bsd.inc,v 1.11 2002/03/14 17:40:13 konst Exp $
 ;
 ; file          : os_bsd.inc
 ; created       : 12-Nov-2001
-; modified      : 20-Feb-2002
-; version       : 0.16
+; modified      : 14-Mar-2002
+; version       : 0.17
 ; assembler     : nasm 0.98
 ; description   : common BSD defines
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -350,5 +350,28 @@ endstruc
 %macro sys_sysctl 0-6
 	__syscall sysctl, 6, %0, %1, %2, %3, %4, %5, %6
 %endmacro
+
+;
+;lseek(int fd, int pad, off_t offset (64-bit), int whence)
+;
+
+%if __SYSCALL__=__S_KERNEL__
+%define __OS_SYSCALL_LSEEK__
+%macro sys_lseek 0-3
+%if %0>0
+	_mov	ebx,%1
+%if %0>1
+	_mov	ecx,%2
+%if %0>2
+	_mov	edx,%3
+%endif
+%endif
+%endif
+	pusha
+	__syscall lseek, 5, 5, ebx, 0, 0, ecx, edx
+	mov	[esp + 7*4],eax
+	popa
+%endmacro
+%endif
 
 %endif	;__BSD_INC

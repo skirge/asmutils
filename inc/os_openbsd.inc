@@ -1,12 +1,12 @@
 ; Copyright (C) 2000-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ; Copyright (C) 2000 Tani Hosokawa <unknown@riverstyx.net>
 ;
-; $Id: os_openbsd.inc,v 1.7 2002/02/02 12:33:39 konst Exp $
+; $Id: os_openbsd.inc,v 1.8 2002/03/14 17:40:13 konst Exp $
 ;
 ; file          : os_openbsd.inc
 ; created       : 18-Aug-2000
-; modified      : 02-Feb-2002
-; version       : 0.16
+; modified      : 14-Mar-2002
+; version       : 0.17
 ; assembler     : nasm 0.98
 ; description   : OpenBSD kernel (2.7+) constants and structures
 ; author        : Tani Hosokawa <unknown@riverstyx.net>
@@ -266,6 +266,7 @@
 ;
 
 %assign	SYS_brk		SYS_break
+%assign	SYS_umount	SYS_unmount
 %assign	SYS_sysctl	SYS___sysctl
 ;%assign	SYS_setdomainname SYS_compat_09_osetdomainname
 ;%assign	SYS_getdomainname SYS_compat_09_ogetdomainname

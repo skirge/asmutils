@@ -1,11 +1,11 @@
 ; Copyright (C) 2000-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_freebsd.inc,v 1.8 2002/02/02 12:33:38 konst Exp $
+; $Id: os_freebsd.inc,v 1.9 2002/03/14 17:40:13 konst Exp $
 ;
 ; file          : os_freebsd.inc
 ; created       : 08-Feb-2000
-; modified      : 02-Feb-2002
-; version       : 0.16
+; modified      : 14-Mar-2002
+; version       : 0.17
 ; assembler     : nasm 0.98
 ; description   : FreeBSD kernel (3.2+) defined constants and structures
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>

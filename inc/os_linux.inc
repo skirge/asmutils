@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.23 2002/02/25 07:45:56 konst Exp $
+; $Id: os_linux.inc,v 1.24 2002/03/14 17:40:13 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 25-Feb-2002
-; version       : 0.16
+; modified      : 14-Mar-2002
+; version       : 0.17
 ; assembler     : nasm 0.98
 ; description   : Linux kernel (2.0+) constants and structures
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -1470,6 +1470,10 @@ endstruc
 
 %macro sys_umount2 0-2
 	__syscall umount2, 2, %0, %1, %2
+%endmacro
+
+%macro sys_sbrk 0-1
+	__syscall brk, 1, %0, %1
 %endmacro
 
 %endif	;__LINUX_INC

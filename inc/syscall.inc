@@ -1,11 +1,11 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: syscall.inc,v 1.19 2002/02/25 07:44:49 konst Exp $
+; $Id: syscall.inc,v 1.20 2002/03/14 17:40:13 konst Exp $
 ;
 ; file		: syscall.inc
 ; created	: 01-Aug-1999
-; modified	: 25-Feb-2002
-; version	: 0.16
+; modified	: 14-Mar-2002
+; version	: 0.17
 ; assembler	: nasm 0.98
 ; description	: system call macros
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -193,9 +193,11 @@ extern %{1}
 	__syscall write, 3, %0, %1, %2, %3
 %endmacro
 
+%ifndef __OS_SYSCALL_LSEEK__
 %macro sys_lseek 0-3
 	__syscall lseek, 3, %0, %1, %2, %3
 %endmacro
+%endif
 
 %macro sys_pread 0-4
 	__syscall pread, 4, %0, %1, %2, %3, %4
