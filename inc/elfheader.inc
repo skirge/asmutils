@@ -1,7 +1,7 @@
 ;
 ; The ELF header structure - (c) 2k by veedee
 ;
-; $Id: elfheader.inc,v 1.1 2001/08/13 05:53:31 konst Exp $
+; $Id: elfheader.inc,v 1.2 2002/02/16 17:54:37 konst Exp $
 
 ; ---[ 32-Bit ELF base types ]---
 %define Elf32_Addr	resb 4	;Unsigned program address
@@ -9,6 +9,8 @@
 %define Elf32_Off	resb 4	;Unsigned file offset
 %define Elf32_Sword	resb 4	;Signed large integer
 %define Elf32_Word	resb 4	;Unsigned large integer
+%define Elf32_Section	resb 2	;Type for section indices
+%define Elf32_Versym	Elf32_Half	;Type for section indices
 
 ; ---[ e_ident[] constants ]---
 ;-> EI_MAG
@@ -207,4 +209,19 @@ struc ELF32_Phdr
 .p_flags	Elf32_Word	;resd 1
 	;the value to which the segments are aligned in memory and in the file
 .p_align	Elf32_Word	;resd 1
+endstruc
+
+struc ELF32_Sym
+	;Symbol name (string tbl index)
+.st_name	Elf32_Word
+	;Symbol value
+.st_value	Elf32_Addr
+	;Symbol size
+.st_size	Elf32_Word
+	;Symbol type and binding
+.st_info	UCHAR	1
+	;Symbol visibility
+.st_other	UCHAR	1
+	;Section index
+.st_shndx	Elf32_Section
 endstruc
