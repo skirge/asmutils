@@ -1,6 +1,6 @@
 ; Copyright (C) 2000-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_freebsd.inc,v 1.6 2001/12/04 15:29:21 konst Exp $
+; $Id: os_freebsd.inc,v 1.7 2001/12/08 16:25:50 konst Exp $
 ;
 ; file          : os_freebsd.inc
 ; created       : 08-Feb-2000
@@ -481,43 +481,43 @@ endstruc
 %assign MODINFOMD_DYNAMIC	0x0005		;_DYNAMIC pointer
 %assign MODINFOMD_NOCOPY	0x8000		;don't copy this metadata to the kernel
 
-%assign MODINFOMD_DEPLIST	(0x4001 | MODINFOMD_NOCOPY)	;depends on */
+%assign	MAXPATHLEN	1024
 
-struc	kld_file_stat
+struc kld_file_stat
 .version	INT	1		;set to sizeof(linker_file_stat)
 .name		CHAR	MAXPATHLEN
 .refs		INT	1
 .id		INT	1
 .address	PCHAR	1		;load address
 .size		SIZE_T	1		;size in bytes
-%endstruc
+endstruc
 
 %macro	sys_kldload 0-1
-	__syscall kldload 1, %0, %1
+	__syscall kldload, 1, %0, %1
 %endmacro
 
 %macro	sys_kldunload 0-1
-	__syscall kldunload 1, %0, %1
+	__syscall kldunload, 1, %0, %1
 %endmacro
 
 %macro	sys_kldfind 0-1
-	__syscall kldfind 1, %0, %1
+	__syscall kldfind, 1, %0, %1
 %endmacro
 
 %macro	sys_kldnext 0-1
-	__syscall kldnext 1, %0, %1
+	__syscall kldnext, 1, %0, %1
 %endmacro
 
 %macro	sys_kldstat 0-2
-	__syscall kldstat 2, %0, %1, %2
+	__syscall kldstat, 2, %0, %1, %2
 %endmacro
 
 %macro	sys_kldfirstmod 0-1
-	__syscall kldfirstmod 1, %0, %1
+	__syscall kldfirstmod, 1, %0, %1
 %endmacro
 
 %macro	sys_kldsym 0-3
-	__syscall kldload 1, %0, %1, %2, %3
+	__syscall kldload, 3, %0, %1, %2, %3
 %endmacro
 
 ;

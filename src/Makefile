@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.29 2001/12/03 19:19:45 konst Exp $
+# $Id: Makefile,v 1.30 2001/12/08 16:26:52 konst Exp $
 
 #DEBUG = y
 
@@ -31,6 +31,11 @@ BONUS += window leaves fire256 snake game
 LINKS += ccd deallocvt halt poweroff swapoff umount rmmod route
 endif
 
+ifdef FREEBSD
+FILES += kldload
+LINKS += kldunload kldstat
+endif
+
 all:	check $(FILES) $(BONUS) links
 
 links:	$(FILES)
@@ -52,6 +57,8 @@ links:	$(FILES)
 	mkln reboot poweroff;\
 	mkln lsmod rmmod;\
 	mkln execve regs;\
+	mkln kldload kldunload;\
+	mkln kldload kldstat;\
 	)
 
 install:$(FILES)
