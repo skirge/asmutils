@@ -5,7 +5,7 @@
 ;       		 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;       		 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: sh.asm,v 1.20 2002/03/13 14:47:24 konst Exp $
+;$Id: sh.asm,v 1.21 2002/10/01 15:54:16 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -67,6 +67,7 @@
 ;0.08  01-Mar-2002	'#' comments, improved scripting, misc fixes,
 ;			cleanup, WRITE_* macros (KB)
 ;0.09  08-Mar-2002	added clear internal (KB)
+;0.10  26-Sep-2002	Fixed tab-filling (RM)
 
 %include "system.inc"
 
@@ -682,6 +683,22 @@ cmdline_get:
 	mov 	[write_after_slash],edx
 	dec 	edx
 .lets_rock:
+;	int 3
+;	nop
+
+%ifdef TTYINIT			;linux dep part
+        sys_stat EMPTY,stat_buf 
+	test    eax,eax 
+	js      .is_not_complete_file
+	movzx   eax,word [stat_buf.st_mode] 
+	and     eax,40000q 
+	jnz     .is_not_complete_file
+	WRITE_CHARS beep,1		;beeeeeeeeeep	
+	pop 	edi
+	jmp	.do_nothing_loop
+%endif
+
+.is_not_complete_file:
 	xor 	al,al
 	xchg 	byte [edx],al
 	xchg 	ebp,eax
@@ -689,7 +706,6 @@ cmdline_get:
 .try_again:
 	;have_a_look if posible to open another directory
 	;in write_after_slash is right piece of filename
-	;int 3
 	cmp 	ebx,edx ;we have a cd /bi 
 	jnz	.havent
 	mov 	ebx,cur_dir
@@ -730,16 +746,24 @@ cmdline_get:
 	xchg 	edx,edi
 	jz	.same		;yes we have
 	pop	edx		;throw this filename away 
+;	jmps .not_same
 .same:
+;	int 3
+;.not_same:
 	movzx 	edx,word [ecx+8] ;get the size of this entry
 	jmps	.compare_next
+	
 .print_what_found:	
+
 	pop 	esi		;look at the last and second last
 	or 	esi,esi		;if 1st 0 -nothing found
 	jz 	.find_next	;if 2nd 0 only one found in buffer
-	pop 	edx
-	or 	edx,edx
+	
+	push 	esi
+	cmp dword [esp+4],0
 	jnz	near .have_more
+	
+	
 	;here we can have only one but dont know about the rest
 	;not yet processed
 	;copy this filename to some_buffer
@@ -753,10 +777,11 @@ cmdline_get:
 	or 	al,al
 	jnz	.copy_loop3 
 	xchg 	ebx,edi
+	pop eax ;throw 0 away
+	pop eax
 	jmp	.find_next
 
 .we_have_really_one:
-	mov	esi,file_name
 .we_have_really_one2:		;we have one suitable candidate in buffer ESI
 
 	WRITE_CHARS erase_line,5
@@ -799,12 +824,27 @@ cmdline_get:
 	dec 	edi
 	push 	edi
 	jmps	.skip
+.we_have_not_printed_last:
+	push 0
+	push esi
+	jmps .have_more
+    
 .finish_lookup:		;restore promt
+	mov	esi,file_name
+	cmp 	byte [esi],0
+	jz 	.finish_loopup_stage2
+
 	cmp 	byte [first_time],0
 	jz	near .we_have_really_one
+.finish_loopup_stage2:
+	cmp 	byte [esi],0
+	jnz 	.we_have_not_printed_last	
+	
 	mov 	esi,file_equal
 	cmp 	byte [esi],0
-	jnz	near .we_have_really_one2	
+	jnz	near .we_have_really_one  ;which is loaded in file_name
+;	int 3
+	
 .skip:			;we have something same for all files...
 	WRITE_CHARS erase_line,5
 	WRITE_STRING [cmdline.prompt]
@@ -812,23 +852,30 @@ cmdline_get:
 	sys_close ebp
 	pop 	edi
 	jmp	.do_nothing_loop
+;.have_more2:
+;	mov byte [file_name],0x1  ;This servers to situation when more possibolities
+				  ;were printed but in another batch (getdents) is only
+				  ;one file left. 
+.find_next_and_delete_file_name:
+	mov byte [file_name],0
+	jmp .find_next
+
 .have_more:
     	cmp 	byte [first_time],0
 	jnz	.dont_need_cr
-	mov 	ecx,esi
+;	int 3
+;	mov 	ecx,esi
 	mov 	eax,file_name
+
 	cmp 	byte [eax],0
-	jz	.ok_file_name_not_used
-	or 	edx,edx
-	jnz	.is_not_zero
-	mov 	edx,eax
-	xor 	eax,eax
-.is_not_zero:
-	push 	eax
-	mov 	esi,edx		;fill [file_name] to [equal_file]
+	jz	.ok_file_name_not_used	
+;	int 3
+	push    eax  ;save file_name on the stack and print it
 .ok_file_name_not_used:
 	;** ;write equal filename... to this will will compare
+	mov esi,[esp]
 	xchg 	ebx,edi
+	mov 	ecx,esi
 	mov 	edi,file_equal
 
 .copy_next:
@@ -841,16 +888,17 @@ cmdline_get:
 			
 	;quick & dirty hack to begin on new line
 	dec 	esi
+	mov [esp],esi
 	mov 	byte [esi],__n
-		
+	
 .dont_need_cr:
 	inc 	byte [first_time]
-	push 	edx
-	push 	esi
+;	push 	edx
+;	push 	esi
 .pop_next:			;we print a list of candidates here
 	pop 	edx
 	or 	edx,edx
-	jz	near .find_next
+	jz   .find_next_and_delete_file_name
 			
 	mov 	esi,file_equal	;**ESI can be used
 	mov 	ebx,edx
@@ -863,11 +911,13 @@ cmdline_get:
 	cmp 	al,[ebx]
 	jz	.compare_next2
 	dec 	esi
-	mov 	byte [esi],0
+	mov 	byte [esi],0 ;truncate the file name to the same begining
 
 	xchg 	edi,esi
+	
 	mov 	edi,edx
 	call	string_length
+	
 	dec 	edi
 	dec 	ecx
 	mov 	byte [edi],__n	;append a newline
