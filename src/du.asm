@@ -1,17 +1,18 @@
 ;Copyright (C) 2002 by Joshua Hudson
 ;
-;$Id: du.asm,v 1.1 2002/08/15 16:09:29 konst Exp $
+;$Id: du.asm,v 1.2 2004/01/20 05:25:31 konst Exp $
 ;
 ; hackers du - JH
 ;
 ; This guy can just about use that 8k stack
 ;
-; Usage: du [-task] directory
+; Usage: du [-taskd] directory
 ;       -t      total all and display only total
 ;       -a      all files
 ;       -s      summary: no depth display
 ;       -k      display in kb blocks
 ;	-ss	turns off recursion all together
+;	-d	Use 512 block size & fill holes (transfer est.)
 
 %include 'system.inc'
 
@@ -40,19 +41,23 @@ opt:	pop     esi
 	je      .tot
 	cmp     al, 'k'
 	je      .kb
+	cmp	al, 'd'
+	je	.kd
 	cmp     al, '-'
 	je      nextarg
 	cmp     al, 0
 	je      opt
 	jmps    .nopt           ; Skip unknown options
 
-.all    inc     byte	[optall]
+.all	inc     byte	[optall]
 	jmps    .nopt
-.sum    inc     byte	[optsummary]
+.sum	inc     byte	[optsummary]
 	jmps    .nopt
-.tot    inc     byte	[opttotal]
+.tot	inc     byte	[opttotal]
 	jmps    .nopt
-.kb     inc     byte	[optkb]
+.kb	inc     byte	[optkb]
+	jmps    .nopt
+.kd	inc     byte	[optd]
 	jmps    .nopt
 
 ;******************* Display total and exit **************
@@ -100,22 +105,34 @@ du:
 	sys_lstat	pathbuf, sts
 	or	eax, eax
 	js	near	.duret		; cant stat this guy
-	mov	eax, [sts.st_blocks]
+	test	[optd], byte 1
+	jz	.dev
+	mov	eax, [sts.st_size]
+	add	eax, 511
+	xor	edx, edx
+	mov	ebx, 512
+	div	ebx
+	jz	.gotbk
+.dev	mov	eax, [sts.st_blocks]
 	mov	ebx, 512		; Want # of device blocks used
 	mul	ebx			; not 512 byte blocks
 	mov	ebx, [sts.st_blksize]
 	shr	ebx, 2			; Why?
 	div	ebx
-	cmp	[optkb], byte 0
+.gotbk	cmp	[optkb], byte 0
 	je	.no2k
 	or	eax, eax		; If used no blocks, will use none
 	jz	.no2k
-	mul	dword	[sts.st_blksize]
+	mov	ebx, 512 * 4
+	test	[optd], byte 1
+	jnz	.nodv2
+	mov	ebx, [sts.st_blksize]
+.nodv2	mul	ebx
 	mov	ebx, 1024 * 4		; Why not 1024?
 	div	ebx
-	or	eax, eax
-	jnz	.no2k
-	inc	eax			; If used one block, will use one block
+	or	edx, edx
+	jz	.no2k
+	inc	eax			; Round up!
 .no2k	cmp	[optsummary], byte 2
 	jnb	near	.dubye		; No recursion at all!
 	mov	ebx, [sts.st_mode]
@@ -291,12 +308,13 @@ opttotal	resb    1
 optall		resb    1
 optsummary      resb    1
 optkb		resb    1
-
+optd		resb	1
+		resb	3
 sts:
 %ifdef __BSD__
-B_STRUC	Stat,.st_mode,.st_blocks,.st_blksize
+B_STRUC	Stat,.st_mode,.st_size,.st_blocks,.st_blksize
 %else
-B_STRUC Stat,.st_mode,.st_blksize,.st_blocks
+B_STRUC Stat,.st_mode,.st_size,.st_blksize,.st_blocks
 %endif
 
 gtotal		resd	1
