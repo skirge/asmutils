@@ -5,7 +5,7 @@
 ;       		 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;       		 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: sh.asm,v 1.15 2002/02/25 15:15:47 konst Exp $
+;$Id: sh.asm,v 1.16 2002/02/27 17:55:40 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -64,7 +64,8 @@
 ;                     	and some control-characters (TO)
 ;0.07  23-Feb-2002	added ctrl+z handling, fg, bg, jobs 
 ;			internal commands, some bugfixes (RM)
-;0.08  25-Feb-2002	cleanup, various improvements, WRITE_* macros (KB)
+;0.08  27-Feb-2002	'#' comments, improved scripting, misc fixes,
+;			cleanup, WRITE_* macros (KB)
 
 %include "system.inc"
 
@@ -921,6 +922,8 @@ cmdline_parse_restart:
 	jz	near .end	;we are done
 	test	ebx,cmdline_parse_flags.seperator ;are we in argument or between?
 	jnz	.check_seperator
+        cmp	al,'#'
+	je	near .end
         cmp	al,'$'
 	je  	near .get_env			
 	cmp	al,__t			;between
@@ -1748,7 +1751,6 @@ cmd_or:
 ;* cmd_colon ****************************************************************
 ;****************************************************************************
 
-cmd_comment:
 cmd_colon:
 	xor	eax,eax
 	mov	[rtn],eax
@@ -1963,7 +1965,6 @@ builtin_cmds:
 		dd	.and, cmd_and
 		dd	.or, cmd_or
 		dd	.colon, cmd_colon
-		dd	.comment, cmd_comment
 		dd	.fg, cmd_fg
 		dd	.bg, cmd_bg
 		dd	.jobs, cmd_jobs
@@ -1972,7 +1973,6 @@ builtin_cmds:
 .and		db	"&&", 0
 .or		db	"||", 0
 .colon		db	":", 0
-.comment	db	"#", 0
 .exit		db	"exit", 0
 .logout		db	"logout", 0
 .cd		db	"cd", 0
