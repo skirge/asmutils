@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 by Joshua Hudson
 ;
-; $Id: tr.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
+; $Id: tr.asm,v 1.3 2002/06/24 16:51:19 konst Exp $
 ;
 ; May be used under GPL
 ;
@@ -12,7 +12,7 @@
 ;
 ;	Strings are in the form of { char | '[' {low '-' high} ']' }*
 ;
-; For relibility always quote string1 and string2
+; For reliability always quote string1 and string2
 ; This program can be classified as being almost GNU compliant
 ; (string1 is not required if -s is given, but needed in this version).
 
@@ -151,12 +151,6 @@ done:
 do_exit:
 	sys_exit
 
-;DEBUG	pusha
-;	sys_write	STDOUT, DEBUGM, 6
-;	popa
-;	ret
-;DEBUGM	db "DEBUG", __n
-
 ;********** Two-pass string converter **********
 ; string in ebp, final dest in esi, bufsize=256, return size in eax
 ; not required to preserve ANY registers
@@ -270,7 +264,8 @@ noexpand:
 expanded:
 	loop	phase2a
 overflow:
-	ret
+	dec	eax		; eax = count
+	ret			; always one to high at this time
 
 ; Readdig: used by procstr in octal mode
 ; Set carry flag if not a digit, Otherwise, inc ebp
