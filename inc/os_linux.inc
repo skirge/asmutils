@@ -1,10 +1,10 @@
 ; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.22 2002/02/20 15:29:30 konst Exp $
+; $Id: os_linux.inc,v 1.23 2002/02/25 07:45:56 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 20-Feb-2002
+; modified      : 25-Feb-2002
 ; version       : 0.16
 ; assembler     : nasm 0.98
 ; description   : Linux kernel (2.0+) constants and structures
@@ -311,12 +311,53 @@ struc termios
 endstruc
 
 ;
-;asm/ioctls
+;asm/ioctls.h
 ;
 
-%assign	TCGETS	0x5401
-%assign	TCSETS	0x5402
-%assign	TCSETSW	0x5403
+;0x54 is just a magic number to make these relatively unique ('T')
+
+%assign TCGETS		0x5401
+%assign TCSETS		0x5402
+%assign TCSETSW		0x5403
+%assign TCSETSF		0x5404
+%assign TCGETA		0x5405
+%assign TCSETA		0x5406
+%assign TCSETAW		0x5407
+%assign TCSETAF		0x5408
+%assign TCSBRK		0x5409
+%assign TCXONC		0x540A
+%assign TCFLSH		0x540B
+%assign TIOCEXCL	0x540C
+%assign TIOCNXCL	0x540D
+%assign TIOCSCTTY	0x540E
+%assign TIOCGPGRP	0x540F
+%assign TIOCSPGRP	0x5410
+%assign TIOCOUTQ	0x5411
+%assign TIOCSTI		0x5412
+%assign TIOCGWINSZ	0x5413
+%assign TIOCSWINSZ	0x5414
+%assign TIOCMGET	0x5415
+%assign TIOCMBIS	0x5416
+%assign TIOCMBIC	0x5417
+%assign TIOCMSET	0x5418
+%assign TIOCGSOFTCAR	0x5419
+%assign TIOCSSOFTCAR	0x541A
+%assign FIONREAD	0x541B
+%assign TIOCINQ		FIONREAD
+%assign TIOCLINUX	0x541C
+%assign TIOCCONS	0x541D
+%assign TIOCGSERIAL	0x541E
+%assign TIOCSSERIAL	0x541F
+%assign TIOCPKT		0x5420
+%assign FIONBIO		0x5421
+%assign TIOCNOTTY	0x5422
+%assign TIOCSETD	0x5423
+%assign TIOCGETD	0x5424
+%assign TCSBRKP		0x5425	;Needed for POSIX tcsendbreak()
+%assign TIOCTTYGSTRUCT	0x5426  ;For debugging only
+%assign TIOCSBRK	0x5427  ;BSD compatibility
+%assign TIOCCBRK	0x5428  ;BSD compatibility
+%assign TIOCGSID	0x5429  ;Return the session ID of FD
 
 ;
 ;asm/stat.h
