@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.61 2003/05/26 18:13:08 nickols_k Exp $
+# $Id: Makefile,v 1.62 2004/07/17 17:44:02 konst Exp $
 
 #DEBUG = y
 
@@ -28,7 +28,7 @@ LINKS = arch cpuspeed domainname false inflate mkfifo more rmdir size sln\
 BONUS =	execve report asmutils
 
 ifdef LINUX
-FILES += cda2raw chvt dmesg df eject fdisk finger free ifconfig killall lsmod\
+FILES += cda2raw chvt dmesg df eject fdisk finger free gi ifconfig killall lsmod\
 	 mesg mkfs.minix ps softdog swapon sysctl truss tty update uptime 
 LINKS += ccd deallocvt fingerd killall5 pidof rmmod route swapoff mkswap
 BONUS += window leaves fire256 mandelbrot hdragon snake game
