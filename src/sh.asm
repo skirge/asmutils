@@ -5,7 +5,7 @@
 ;       		 Thomas Ogrisegg <tom@rhadamanthys.org>
 ;       		 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: sh.asm,v 1.18 2002/03/08 18:58:00 konst Exp $
+;$Id: sh.asm,v 1.19 2002/03/13 14:08:14 konst Exp $
 ;
 ;hackers' shell
 ;
@@ -1281,6 +1281,14 @@ cmdline_parse_restart:
 	call 	.match_rest
 ;	or	eax,eax
 	jnz	.next_entry		;ZF=0 bad ZF=1 ok
+	cmp	byte [edx],'.'
+	jnz	.not_dot
+	cmp	byte [edx+1],0
+	jz	.next_entry
+	cmp	word [edx+1],2eh
+	jz	.next_entry
+.not_dot:
+
 	;ok put candidate as arg
 ;	dword [cmdline.arguments + 4 * ebp],edi
 	mov 	edi,[ebp+(1*4)]		;OLD EDI
