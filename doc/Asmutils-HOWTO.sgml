@@ -1,6 +1,6 @@
 <!doctype linuxdoc system>
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.2 2000/09/03 16:13:53 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.3 2000/09/03 16:25:07 konst Exp $ -->
 
 <article>
 
@@ -78,7 +78,7 @@ Except <tt/nasm/ you will need
 <tt/make/, <tt/ld/, <tt/sh/, <tt/ln/, <tt/rm/,
 possibly <tt/strip/ and something else, depending on your OS.
 
-Prefered program versions are:
+Preferred program versions are:
 
 <itemize>
 <item>nasm 0.98
@@ -244,7 +244,7 @@ If you want to go this way, take the time and read REAME.elf carefully
 (also do read it if you want to understand how they work).
 Personally I think that first way is simpler.
 
-Brian Raiter wrote the decription below and comments in elf.inc 
+Brian Raiter wrote the description below and comments in elf.inc 
 containing all you need to know about what they do and how they work.
 
 <tscreen><code>
@@ -289,13 +289,13 @@ Note that if instructions do appear after the END_ELF macro, they will
 still be added to the executable file. However, nothing after END_ELF
 will be loaded into memory when the program is executed.
 
-If the program requires no writeable data storage outside of the
+If the program requires no writable data storage outside of the
 stack, then nothing else from elf.inc will be needed.
 
 
 ELF_DATA
 
-This macro is used to reserve writeable memory. ELF_DATA should appear
+This macro is used to reserve writable memory. ELF_DATA should appear
 after the program proper, and before END_ELF. Between these two
 macros, the programmer can define "uninitialized" data using the
 RESB family of pseudo-instructions.
@@ -381,7 +381,7 @@ Personally, I use gdb for debugging asmutils. Try this:
 3) In gdb:
    (gdb) disassemble _start
    Place a breakpoint at <_start+1> (If placed at _start the breakpoint
-   wouldnt work, dunno why)
+   wouldn't work, dunno why)
    (gdb) b *0x8048075
 
    To step thru the code I use the following macro:
@@ -605,6 +605,6 @@ Here are some assembly examples you can use instead of
 
 Seek, and you may find more..
 
-$Id: Asmutils-HOWTO.sgml,v 1.2 2000/09/03 16:13:53 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.3 2000/09/03 16:25:07 konst Exp $
 
 </article>
