@@ -1,13 +1,17 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@fel.cvut.cz>, <ruik@atlas.cz>
 ;
-;$Id: tar.asm,v 1.6 2002/12/17 15:40:06 konst Exp $
+;$Id: tar.asm,v 1.7 2003/05/13 16:01:42 konst Exp $
 ;
 ;hackers' tar
 ;
 ;Syntax tar [OPT] FILENAME
-;OPT: -t list archive
-;     -x extracet archive
-;Note: no owner change yet, no time/date update yet
+;OPT:	-t list archive
+;	-x extracet archive
+;	-c create archive
+;Note: no time/date update yet
+;
+;If TAR_SECURE is defined, make tar suid-root to enable protection
+;against malitious tarballs (works by chroot ".").
 
 ;All comments/feedback welcome.
 
@@ -20,17 +24,19 @@
 ;0.4			???
 ;0.5	04-Oct-2002	Fixed pipe bug in 2.0, TAR_SUID (JH)
 ;0.6	05-Dec-2002	Fixed a bug involving symlinks to SUID files
+;0.7	26-Apr-2003	Code cleanup, Created archives can be read by GNUTAR
+;			Also, some security fixes (JH)
 
 
 %include "system.inc"
 
 ;------ Build configuration
 ;%define TAR_CONTIG
-;%define TAR_PREFIX
-%define TAR_CHOWN
+%define TAR_PREFIX
 %define TAR_MATCH
 %define TAR_CREATE
-%define TAR_SUID
+%define TAR_CHOWN
+%define TAR_SECURE
 
 ;A tar archive consists of 512-byte blocks.
 ;  Each file in the archive has a header block followed by 0+ data blocks.
@@ -132,6 +138,13 @@ direntbufsize	equ	1024		; Reduce to use less RAM
 CODESEG
 
 START:
+%ifdef TAR_SECURE
+	sys_getuid		; Abandon ROOT privliges
+	xchg	eax, ecx
+	xor	ebx, ebx	; ruid = ROOT, euid = normal_UID
+	mov	[normal_uid], ebx
+	sys_setreuid
+%endif
 	pop     ebx
 	pop	ebx
 	pop 	ebx
@@ -159,6 +172,11 @@ START:
 .extract_archive:
 	pop 	ebx
 	call tar_archive_open
+%ifdef TAR_SECURE		; Chroot to . so that /etc/passwd is not
+	sys_setuid	0	; dangerous.
+	sys_chroot	path_dot
+	sys_setuid	[normal_uid]
+%endif
 %ifdef TAR_MATCH
 	mov	[tar_match], esp
 %endif
@@ -203,7 +221,7 @@ octal_to_int:             ;stolen from chmod.asm
 	pop 	esi
 	ret	
 
-convert_size:
+convert_size:		; Convert octal numbers in header to dwords
 	mov 	esi, tar.size
 	lea	edi, [esi + 12]
 	call 	octal_to_int
@@ -222,7 +240,9 @@ convert_numbers:
 	mov 	esi, tar.mode
 	lea	edi, [esi + 8]
 	call 	octal_to_int
-	;and	eax, 07777q
+%ifndef TAR_CHOWN
+	and	eax, 0777q	; If not chowning, clear suid bits to prevent
+%endif				; a security error (unintentional suid-root)
 	mov 	dword [esi],eax
 	;lea 	esi,[tar.uid]
 	mov	esi, edi
@@ -237,7 +257,7 @@ convert_numbers:
 	ret
 
 %ifdef TAR_PREFIX
-pref_tran:
+pref_tran:	; This routine copies the prefix and the name to a buffer
 	pusha
 	mov	edi, FILENAME
 	mov	esi, tar.prefix
@@ -310,10 +330,6 @@ tar_archive_close:
 	ret
 
 tar_archive_extract:
-%ifndef TAR_SUID
-	xor	ebx, ebx
-	sys_umask
-%endif
 .read_next:
 	xor	edx, edx
 	mov	dh, 2
@@ -334,11 +350,7 @@ tar_archive_extract:
 	ret
 .ver_ok:
 	cmp 	dword [tar.magic],'usta'
-%ifdef TAR_CHOWN
 	jnz	near	.error_magic
-%else
-	jnz 	.error_magic
-%endif
 %ifdef TAR_PREFIX
 	call	pref_tran
 %else
@@ -381,17 +393,15 @@ tar_archive_extract:
 	xchg 	eax,ebx
 	js   	.error
 %ifdef TAR_CHOWN
+	sys_lchown FILENAME,[tar.uid],[tar.gid]
 	cmp	[tar.typeflag], byte '2'
 	je	.skipchmod
-	sys_chown FILENAME,[tar.uid],[tar.gid]
-%ifdef TAR_SUID
 	sys_chmod	FILENAME, [tar.mode]
-%endif
 .skipchmod:
 %endif
 	jmp	.read_next	
 .error_magic:
-	lea 	eax,[0xDEADDEAD]
+	;* UNUSED. lea 	eax,[0xDEADDEAD]
 .error:
 	neg 	ebx
 .exit:
@@ -456,7 +466,11 @@ tar_archive_extract:
 	ret
 .create_file:
 	call convert_size
-	sys_open FILENAME, O_CREAT|O_WRONLY|O_TRUNC, [tar.mode]   ;todo: other flags
+%ifdef TAR_CHOWN		; No race conditions
+	sys_open FILENAME, O_CREAT|O_WRONLY|O_TRUNC, 200q
+%else
+	sys_open FILENAME, O_CREAT|O_WRONLY|O_TRUNC, [tar.mode]
+%endif
 .crc	test 	eax,eax
 	js 	near .error_open
 	mov 	[file_handle],eax
@@ -498,25 +512,33 @@ tar_archive_extract:
 .lookup_table dd .create_file,.create_hardlink,.create_symlink,.create_char
               dd .create_block,.create_dir,.create_fifo,.create_contigous
 
+%ifdef TAR_SECURE
+path_dot	db	'.', 0
+%endif
+
 %ifdef TAR_CREATE
 ;************************************************************
-; Initial version of create tar archive!
+; Acceptable version of tar archive creation
 ; TODO: gather up hard links (any volunteers <g>)
-; TODO: anyone know what the checksum algorithm is?
+; TODO: fix checksum. It doesn't quite work yet
+; TODO: add prefix generation if names are long.
 ;************************************************************
 create_archive:
 	pop	ebx
 	or	ebx, ebx
 	jz	near	dexit
-	xor	eax, eax
-	inc	eax
-	cmp	[ebx], word '-'
+	xor	eax, eax		; Set handle to stdout
+	inc	eax			; (1)
+	cmp	[ebx], word '-'		; For filename of -
 	je	.openarchok
 	sys_open	EMPTY, O_WRONLY|O_CREAT|O_TRUNC, 0666q
 	or	eax, eax
 	js	near	dexit
 .openarchok:	
 	mov	[tar_handle], eax
+	; OK -- file open
+	; For each file on command line, add to arch.
+	; For each directory on command line, recursively add to arch.
 .nextarg:
 	pop	esi
 	or	esi, esi
@@ -533,22 +555,24 @@ create_archive:
 	call	tar_archive_close
 	jmp	dexit
 
+;************** SUBS *****************
 .itoa8:		; integer to octal
 		; EDI = buffer, EAX = NUM, ECX = SIZE, EDX = GARBAGE
 	push	dword 0
 	_mov	ebx, 8
+	dec	ecx
 .i81	xor	edx, edx
 	div	ebx
 	add	dl, '0'
 	push	edx
 	loop	.i81
 .i82	pop	eax
-	or	eax, eax
-	jz	.ret1
 	stosb
-	jmps	.i82
+	or	eax, eax	; Null terminated 0ctals
+	jnz	.i82
+	ret
 
-.null_record:
+.null_record:			; Blank out the header
 	xor	eax, eax
 	xor	ecx, ecx
 	mov	cl, 128
@@ -556,12 +580,13 @@ create_archive:
 	rep	stosd
 	ret
 
-.copy:	lodsb
+.copy:	lodsb			; Copy strings
 	stosb
 	or	al, al
 	jnz	.copy
 .ret1:	ret
 
+;********** Main file creator -- recursive
 .entry:		; Everything is created through here.
 		; Arguments: longbuf = filename
 		; May trash ALL registers
@@ -572,20 +597,20 @@ create_archive:
 	call	.null_record
 	mov	edi, tar.mode
 	xor	ecx, ecx
-	mov	cl, 8
+	mov	cl, 8		; Buffer for numbers is 7 + null byte
 	push	ecx		; +1
-	mov	eax, [sts.st_mode]
-	and	eax, 0177777q
+	mov	ax, [sts.st_mode]	; AX, not EAX. This took a long time
+	;and	eax, 0177777q		; to find.
 	call	.itoa8
-	mov	eax, [sts.st_uid]
+	mov	ax, [sts.st_uid]	; 16 bit uid
 	pop	ecx		; 0
 	push	ecx		; +1
 	call	.itoa8
-	mov	eax, [sts.st_gid]
+	mov	ax, [sts.st_gid]	; 16 bit gid
 	pop	ecx		; 0
 	call	.itoa8
 	mov	eax, [sts.st_mtime]
-	mov	cl, 012
+	mov	cl, 012		; Remember null byte
 	add	edi, ecx	; Skip over size for now
 	call	.itoa8
 	mov	[edi + tar.magic - tar.chksum], dword 'usta'	; ID
@@ -594,9 +619,8 @@ create_archive:
 	mov	edi, tar.name		; IGNORING PREFIX!!!
 	call	.copy			; dangerous
 	mov	esi, tar.typeflag
-	mov	eax, [sts.st_mode]
-	shr	eax, 12
-	and	al, 15
+	mov	ax, [sts.st_mode]
+	shr	eax, 12			; OK: detect file type
 	cmp	al, 10
 	je	.symlink
 	cmp	al, 8
@@ -608,9 +632,9 @@ create_archive:
 	cmp	al, 2
 	je	.char
 	dec	eax
-	jnz	.ret2	; ABORT - UNKNOWN TYPE
+	jnz	near	.ret2	; ABORT - UNKNOWN TYPE
 ;.fifo:	
-	call	.sizezero
+	call	.sizezero	; No size if not a file
 	mov	[esi], byte FIFOTYPE
 	jmps	.entrydone
 .symlink:
@@ -622,9 +646,9 @@ create_archive:
 	jmps	.device
 .char:	mov	[esi], byte CHRTYPE
 .device:
-	call	.sizezero
+	call	.sizezero	; Devices have no size
 	mov	eax, [sts.st_rdev]
-	xor	ebx, ebx
+	xor	ebx, ebx	; But rdev needs to be stored.
 	mov	bl, al
 	;mov	ebx, eax
 	;and	ebx, 255	; Might be fixing for other OSes...
@@ -638,25 +662,44 @@ create_archive:
 	pop	ecx	; +1
 	pop	eax	; +0	; Minor in hand
 	call	.itoa8
-.entrydone:
+.entrydone:			; Common code to complete entry
+; Calculate checksum
+; No way to tell if it works or not
+	xor	eax, eax	; Clear checksum registers
+	cdq
+	mov	al, ' '		; First wipe checksum field with spaces
+	mov	edi, tar.chksum
+	push	edi
+	_mov	ecx, 8
+	rep	stosb
+	mov	esi, tar
+	_mov	ecx, BUFF_SIZE
+.chloop	lodsb
+	add	edx, eax	; Add all bytes together
+	loop	.chloop
+	xchg	eax, edx
+	pop	edi
+	mov	cl, 7		; Checksum field is six digits, a null
+	call	.itoa8		; byte and a space (already present)
+; And write it to disk
 	sys_write	[tar_handle], tar, BUFF_SIZE
 .ret2:	ret
 
-.sizezero:
+.sizezero:			; Store size where it goes
 	xor	eax, eax
 .size:	mov	edi, tar.size
-	mov	ecx, 012
+	mov	ecx, 011
 	call	.itoa8
 	ret
 
-.file:	mov	eax, [sts.st_size]
+.file:	mov	eax, [sts.st_size]	; Write file entry and file
 	call	.size
 	mov	[esi], byte REGTYPE
 	sys_open	longbuf, O_RDONLY
 	or	eax, eax
 	js	.ret2
 	xchg	ebp, eax
-	call	.entrydone	; convenient cheat
+	call	.entrydone	; convenient cheat -- write header
 	mov	esi, [sts.st_size]
 	add	esi, 511		; To end of buffer
 	and	esi, ~511		; BUFF_SIZE must be a power of 2
@@ -677,7 +720,7 @@ create_archive:
 	add	esi, eax
 	jz	.nowrite
 .copydone:
-	call	.null_record	; Cheating
+	call	.null_record	; Write nulls to fill to a block
 	xchg	esi, edx
 	sys_write	[tar_handle], tar
 .nowrite:
@@ -686,7 +729,7 @@ create_archive:
 
 ;********* Code to descend directories, grabbing everythings ******
 .dir:	mov	[esi], byte DIRTYPE
-	call	.entrydone
+	call	.entrydone	; Write entry record
 	; Open directory
 	sys_open	longbuf, 0
 	xchg	eax, ebx
@@ -708,7 +751,7 @@ create_archive:
 	call	allocdirentry
 	pop	ebx		; 0
 	push	ecx		; +1
-.requestmore:
+.requestmore:		; Walk thru all directory entries
 	pop	ecx		; 0
 %ifdef __BSD__
 	mov	esi, esp
@@ -757,14 +800,15 @@ create_archive:
 	jna	.requestmore
 	jmps	.scanentry
 .lastentry:
-	sys_close
+	sys_close	; No more entries
 %ifdef __BSD__
 	pop	eax
 %endif
 	call	freedirentry
-	ret
+	ret		; Return from directory entry
 
-allocdirentry:
+allocdirentry:		; Get new directory entries, reusing old buffers
+			; if possible
 	mov	ecx, [lastdirentry]
 	or	ecx, ecx
 	jz	.nospace
@@ -780,17 +824,17 @@ allocdirentry:
 	xchg	eax, ecx
 	jmps	.af
 
-freedirentry:
+freedirentry:		; Make unused buffers available.
 	sub	ecx, 4
 	mov	eax, [lastdirentry]
 	mov	[ecx], eax
 	mov	[lastdirentry], ecx
 	ret
 
-allocator:
-	mov	ebx, [.highwater]
-	add	ebx, ecx
-	sys_brk
+allocator:		; Generic allocator w/o free enabled
+	mov	ebx, [.highwater]	; If implementing hard linker,
+	add	ebx, ecx		; Be sure to call this to get
+	sys_brk				; RAM!
 	or	eax, eax
 	jna	.nomemory
 	mov	eax, [.highwater]
@@ -825,11 +869,14 @@ arrow db " |-> "
 
 UDATASEG
 
-tar_handle resd 1
-file_handle resd 1
+tar_handle	resd 1
+file_handle	resd 1
+%ifdef TAR_SECURE
+normal_uid	resd 1
+%endif
 
 %ifdef TAR_CREATE
-longbuf	resb	256		; If we overrun this, we are dead anyway
+longbuf		resb 256	; If we overrun this, we are dead anyway
 sts:
 %ifdef __BSD__
 B_STRUC Stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_mtime,.st_size,.st_blocks
@@ -838,10 +885,10 @@ B_STRUC Stat,.st_ino,.st_mode,.st_nlink,.st_uid,.st_gid,.st_rdev,.st_size,.st_bl
 %endif
 %endif
 %ifdef TAR_PREFIX
- FILENAME	resb	256
+ FILENAME	resb 256
 %endif
 %ifdef TAR_MATCH
- tar_match	resd	1
+ tar_match	resd 1
 %endif
 
 tar:
@@ -865,9 +912,9 @@ tar:
 buffer resb BUFF_SIZE
 
 %ifdef TAR_CREATE
-.slop	resd 1
-lastdirentry	resd	1
-udata_end	resd	0
+.slop		resd 1
+lastdirentry	resd 1
+udata_end	resd 0
 %endif
 
 END
