@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
+;Copyright (C) 1999 Indrek Mandre <indrek@mare.ee>
 ;
-;$Id: dmesg.asm,v 1.5 2000/09/03 16:13:54 konst Exp $
+;$Id: dmesg.asm,v 1.6 2002/03/07 06:16:39 konst Exp $
 ;
 ;hackers' dmesg
 ;

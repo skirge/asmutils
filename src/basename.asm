@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
+;Copyright (C) 1999 Indrek Mandre <indrek@mare.ee>
 ;
-;$Id: basename.asm,v 1.3 2000/09/03 16:13:54 konst Exp $
+;$Id: basename.asm,v 1.4 2002/03/07 06:16:39 konst Exp $
 ;
 ;hackers' basename	[GNU replacement]
 ;

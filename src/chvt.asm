@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
+;Copyright (C) 1999 Indrek Mandre <indrek@mare.ee>
 ;
-;$Id: chvt.asm,v 1.3 2002/02/02 08:49:25 konst Exp $
+;$Id: chvt.asm,v 1.4 2002/03/07 06:16:39 konst Exp $
 ;
 ;hackers' chvt/deallocvt
 ;

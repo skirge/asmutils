@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
+;Copyright (C) 1999 Indrek Mandre <indrek@mare.ee>
 ;
-;$Id: yes.asm,v 1.3 2000/03/02 08:52:01 konst Exp $
+;$Id: yes.asm,v 1.4 2002/03/07 06:16:39 konst Exp $
 ;
 ;hackers' yes		[GNU replacement]
 ;

@@ -1,6 +1,6 @@
-;Copyright (C) 1999 Indrek Mandre <indrek.mandre@tallinn.ee>
+;Copyright (C) 1999 Indrek Mandre <indrek@mare.ee>
 ;
-;$Id: httpd.asm,v 1.15 2002/03/05 16:35:29 konst Exp $
+;$Id: httpd.asm,v 1.16 2002/03/07 06:16:39 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;

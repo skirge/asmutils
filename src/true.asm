@@ -1,6 +1,6 @@
-;Copyright (C) Indrek Mandre <indrek.mandre@tallinn.ee>
+;Copyright (C) Indrek Mandre <indrek@mare.ee>
 ;
-;$Id: true.asm,v 1.5 2001/09/04 17:52:54 konst Exp $
+;$Id: true.asm,v 1.6 2002/03/07 06:16:39 konst Exp $
 ;
 ;hackers' true/false
 ;
