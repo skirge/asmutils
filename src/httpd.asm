@@ -2,7 +2,7 @@
 ;			 Konstantin Boldyshev <konst@linuxassembly.org>
 ;			 Rudolf Marek <marekr2@fel.cvut.cz>
 ;
-;$Id: httpd.asm,v 1.22 2002/10/01 17:19:04 konst Exp $
+;$Id: httpd.asm,v 1.23 2006/02/06 06:03:39 konst Exp $
 ;
 ;hackers' sub-1K httpd
 ;
@@ -282,6 +282,13 @@ acceptloop:
 	jz	near endrequest	;security error, can't have '..' in request
 .endrequestnot:
 	mov	dl,[ecx]
+;
+;"With PROC_HANDLE defined, paths with %20's in will cause erroneous 404 messages"
+	cmp	dl,' '
+	jz	.loopout		; (rhs) Check if end of f'req.
+; We HAVE to check for a space HERE, because if we do so in the old place,
+; paths with %20's in'em will cause a bad 404 with PROC_HANDLE on.
+
 %ifdef	PROC_HANDLE
 	cmp	dl,'%'
 	jnz	.not_proc

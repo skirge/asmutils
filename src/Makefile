@@ -2,7 +2,7 @@
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.62 2004/07/17 17:44:02 konst Exp $
+# $Id: Makefile,v 1.63 2006/02/06 06:03:39 konst Exp $
 
 #DEBUG = y
 
@@ -39,7 +39,7 @@ FILES += kldload
 LINKS += kldunload kldstat
 endif
 
-all:	check $(FILES) $(BONUS) links
+all:	$(FILES) $(BONUS) links
 
 links:	$(FILES)
 	-@( mkln() { [ ! -e $$2 ] && [ -x $$1 ] && $(LN) $$1 $$2; };\
