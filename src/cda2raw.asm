@@ -15,9 +15,11 @@
 ;
 ;  NOTE: by default whole /dev/cdrom is dumped to "track00.raw" file.
 ;
-; $Id: cda2raw.asm,v 1.1 2002/12/17 15:42:14 konst Exp $
+; $Id: cda2raw.asm,v 1.2 2006/02/09 08:05:12 konst Exp $
 
 %include "system.inc"
+
+CPU 486
 
 %assign CDROMREADTOCHDR		0x5305
 %assign CDROMREADTOCENTRY	0x5306
