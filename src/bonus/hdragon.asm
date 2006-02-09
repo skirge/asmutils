@@ -1,6 +1,6 @@
 ; hdragon.asm
 ;
-; $Id: hdragon.asm,v 1.1 2002/09/09 15:53:33 konst Exp $
+; $Id: hdragon.asm,v 1.1 2006/02/09 07:48:15 konst Exp $
 ;
 ; 640x480x8 harter's dragon impl
 ;

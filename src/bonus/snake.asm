@@ -17,9 +17,11 @@
 ;; instead you see a lot of non-ASCII characters) you may need to use
 ;; a console font with the VT100 character set in order to play.
 ;;
-;; $Id: snake.asm,v 1.3 2002/02/20 15:33:00 konst Exp $
+;; $Id: snake.asm,v 1.3 2006/02/09 07:49:34 konst Exp $
 
 %include "system.inc"
+
+CPU 486
 
 ;; Macros for accessing addresses in .bss via ebp.
 

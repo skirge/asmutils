@@ -1,6 +1,6 @@
 ;Copyright (C) 1996-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: leaves.asm,v 1.10 2002/02/28 05:31:40 konst Exp $
+;$Id: leaves.asm,v 1.10 2006/02/09 07:48:39 konst Exp $
 ;
 ;leaves		-	Linux fbcon intro in 394 bytes
 ;

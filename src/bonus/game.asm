@@ -1,6 +1,6 @@
 ;Copyright (C) 2001 Rudolf Marek <marekr2@fel.cvut.cz>
 ;
-;$Id: game.asm,v 1.3 2002/02/02 12:33:38 konst Exp $
+;$Id: game.asm,v 1.3 2006/02/09 07:47:34 konst Exp $
 ;
 ;0.01: 26-Jul-2001	initial release  (RM)
 ;

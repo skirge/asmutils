@@ -1,7 +1,7 @@
 ;-====================================================================;
 ;- Copyright (C) 2000 H-Peter Recktenwald, Berlin <phpr@snafu.de>
 ;-
-;- $Id: report.asm,v 1.2 2002/02/02 08:49:25 konst Exp $
+;- $Id: report.asm,v 1.2 2006/02/09 07:49:11 konst Exp $
 ;-
 ;-  file  	: report.asm
 ;-  created	: 06-jun-2000

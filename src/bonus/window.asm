@@ -1,8 +1,19 @@
 ;Copyright (C) 1995-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: window.asm,v 1.12 2002/02/02 08:49:25 konst Exp $
+;$Id: window.asm,v 1.13 2006/02/09 07:50:07 konst Exp $
 ;
 ;text window example
+;
+;This is my another old program ported to Linux,
+;demonstration of fancy text interface common for DOS programs.
+;Actually this is a prototype of a screen/window library.
+;
+;The program does not use terminal escape sequense to control output.
+;Instead, it uses DOS-like approach of working with text video memory -
+;/dev/vcsa, so make sure you have rw permissions on this device.
+;
+;Functions and data structures are not documented, but I hope
+;you can guess what is what by examining the source.
 
 %include "system.inc"
 
@@ -81,7 +92,7 @@ sStatus:
 ;	s_attr	0x9F
 ;	db	':)'
 	s_end
-lStatus	equ	$ - .text
+lStatus	equ	$ - .text
 
 ;
 ;
@@ -240,12 +251,31 @@ window:
 ;
 ;
 ;
-
+cOpenError	db	"Can't open "
 cScreenDevice	db	"/dev/vcsa",EOL
+cNL		db	0xa
+cOpenErrorLen	equ	$-cOpenError
 
 open_screen:
 	pusha
 
+;
+; open /dev/vcsa
+;
+	sys_open cScreenDevice, O_RDWR
+	mov	[sHandle],eax
+	test	eax,eax
+	js	open_screen_error
+	
+;
+; get console size and cursor position
+;
+	sys_read eax,sMaxY,4
+	
+	movzx	eax,word [ecx]
+	mul	ah
+	mov	[sLen],eax
+	
 ;
 ;set non-blocking mode and one-char-at-a-time mode for STDIN
 ;
@@ -259,25 +289,12 @@ open_screen:
 	mov	byte [tattr+termios.c_cc+VMIN],1			;min no. of chars for a single read opr
 	sys_ioctl STDIN,TCSETS,tattr
 
-;
-; open /dev/vcsa
-;
-	sys_open cScreenDevice, O_RDWR
-	mov	[sHandle],eax
-	test	eax,eax
-	js	near do_exit
-;
-; get console size and cursor position
-;
-	sys_read eax,sMaxY,4
-	
-	movzx	eax,word [ecx]
-	mul	ah
-	mov	[sLen],eax
-	
 	popa
 	ret
 
+open_screen_error:
+	sys_write STDIN,cOpenError,cOpenErrorLen
+	jmp	do_exit
 
 close_screen:
 	pusha

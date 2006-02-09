@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2001 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: execve.asm,v 1.5 2001/11/24 09:46:18 konst Exp $
+;$Id: execve.asm,v 1.5 2006/02/09 07:43:45 konst Exp $
 ;
 ;execve/regs
 ;

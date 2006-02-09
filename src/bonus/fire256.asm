@@ -1,6 +1,6 @@
 ;Copyright (C) 2002 Paul Furber <paulf@gam.co.za>
 ;
-;$Id: fire256.asm,v 1.8 2003/02/10 16:22:36 konst Exp $
+;$Id: fire256.asm,v 1.8 2006/02/09 07:47:05 konst Exp $
 
 ;;  This program is free software; you can redistribute it and/or modify
 ;;  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 ;;       Convert my 50 fps mandel zoomer in time for the next asmutils
 	
 %include "system.inc"
+
+CPU 586
 
 %assign SIZE_X 640
 %assign SIZE_Y 480
