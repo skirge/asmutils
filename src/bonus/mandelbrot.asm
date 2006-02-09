@@ -1,6 +1,6 @@
 ; MANDELBROT GENERATOR 
 ;
-; $Id: mandelbrot.asm,v 1.1 2002/06/16 13:41:40 konst Exp $
+; $Id: mandelbrot.asm,v 1.1 2006/02/09 07:36:07 konst Exp $
 ;
 ; Original code by Tenie Remmel & John Eckerdal
 ; ported to Linux/framebuffer by Stephan Walter <stephan.walter@gmx.ch>
