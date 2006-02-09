@@ -1,11 +1,11 @@
-; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 1999-2006 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: system.inc,v 1.18 2002/03/02 20:23:14 konst Exp $
+; $Id: system.inc,v 1.19 2006/02/09 07:54:29 konst Exp $
 ;
 ; file		: system.inc
 ; created	: 08-Apr-1999
-; modified	: 02-Mar-2002
-; version	: 0.16
+; modified	: 07-Feb-2006
+; version	: 0.18
 ; assembler	: nasm 0.98
 ; description	: framework and generic stuff (macros, sections, etc)
 ; author	: Konstantin Boldyshev <konst@linuxassembly.org>
@@ -36,9 +36,15 @@
 ;0.16: 15-Feb-2002	added SOLARIS, UNIXWARE, improved BeOS stub,
 ;			rewritten libc port, _push with 2 args,
 ;			added _end label to END macro (KB)
+;0.18: 09-Feb-2006	added CPU directive,
+;			force .bss section for Linux 2.6 (KB)
 
 %ifndef __SYSTEM_INC
 %define __SYSTEM_INC
+
+;default CPU (may be overriden later by a program)
+
+CPU 386
 
 ;--------------------------------------------------------------------------
 ; default configuration parameters (if not specified at compile time)
@@ -172,15 +178,18 @@ BEGIN_ELF
 
 %else
 
-%ifdef __AOUT__
     section	.text
-%else
-    %if __OPTIMIZE__=__O_SPEED__
-	section	.text align=16
-    %elif __OPTIMIZE__=__O_SIZE__
-	section	.text align=1
-    %endif
-%endif	;__AOUT__
+
+
+;%ifdef __AOUT__
+;    section	.text
+;%else
+;    %if __OPTIMIZE__=__O_SPEED__
+;	section	.text align=16
+;    %elif __OPTIMIZE__=__O_SIZE__
+;	section	.text align=1
+;    %endif
+;%endif	;__AOUT__
 
 	global	START
 
@@ -326,11 +335,12 @@ _start:
 %ifdef __ELF_MACROS__
 ELF_DATA
 %else
-%if __OPTIMIZE__=__O_SPEED__
+%define __DATASEG_IS_PRESENT__
+ %if __OPTIMIZE__=__O_SPEED__
     section	.bss	align=32
-%elif __OPTIMIZE__=__O_SIZE__
+ %elif __OPTIMIZE__=__O_SIZE__
     section	.bss
-%endif
+ %endif
 %endif
 %endmacro
 
@@ -343,6 +353,7 @@ ELF_DATA
 
 %else
 
+%define __DATASEG_IS_PRESENT__
 %if __OPTIMIZE__=__O_SPEED__
     section	.data	align=16
 %elif __OPTIMIZE__=__O_SIZE__
@@ -356,6 +367,14 @@ ELF_DATA
 %macro END 0
 %ifdef __ELF_MACROS__
 END_ELF
+%else
+ %ifdef __LINUX__
+  %if __KERNEL__=26
+   %ifndef __DATASEG_IS_PRESENT__
+	section	.bss align=1
+   %endif
+  %endif
+ %endif
 %endif
 _end:		;ld may put this label too
 %endmacro
@@ -416,11 +435,8 @@ resb %{$strucname}_size - ($ - %%top_%$strucname)
 
 %define	jmps jmp short
 
-;
-;auto short/long jump (I hate nasm)
-;currently works only backwards :(
-;do not use
-;
+;auto short/long jump (old nasm legacy), works only backwards
+;DO NOT USE IT!
 
 %macro _jmp 1
 %%__offset_%1 equ $-%1
@@ -719,7 +735,7 @@ resb %{$strucname}_size - ($ - %%top_%$strucname)
     neg dword %{1}
 %else
 ;  2 clocks w. reg,reg
-;	(lea variant wasn't faster, may be cpu dependent?)
+;	(lea variant was not faster, may be cpu dependent?)
 ; 33 clocks w. reg,mem or mem,reg - either case
     xchg %{1},%{3}
 %endif
@@ -800,5 +816,6 @@ GLOBAL %{1}
 	pop	ebp
 	ret
 %endmacro
+
 
 %endif	;__SYSTEM_INC
