@@ -1,6 +1,6 @@
 ;Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-;$Id: asmutils.asm,v 1.1 2006/02/09 07:34:00 konst Exp $
+;$Id: asmutils.asm,v 1.6 2006/02/09 07:42:11 konst Exp $
 ;
 ;asmutils multicall binary
 ;
