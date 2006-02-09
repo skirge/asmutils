@@ -11,7 +11,7 @@
 ; Version           :       1.0
 ; Created           :       06/06/02
 ;
-; $Id: getty.asm,v 1.1 2002/06/11 08:41:06 konst Exp $
+; $Id: getty.asm,v 1.2 2006/02/09 08:02:57 konst Exp $
 ;
 ; This getty (as most others) expects a /bin/login program to 
 ; do the actual authentication.
@@ -157,8 +157,10 @@ START:
 	sys_write STDOUT, __clear, 6
 %endif
 	call issue
-	lea ecx, [edi-iobuf]
-	sys_write STDOUT, iobuf, ecx
+;	lea edx, [edi-iobuf]
+	mov edx,edi
+	sub edx,iobuf
+	sys_write STDOUT, iobuf
 	sys_setsid
 	sys_read STDIN, iobuf, 0x200
 	or eax, eax

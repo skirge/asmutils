@@ -24,7 +24,7 @@
 ; BUGS: 
 ;      probably many
 ;
-; $Id: finger.asm,v 1.6 2002/06/11 08:41:06 konst Exp $
+; $Id: finger.asm,v 1.7 2006/02/09 08:02:57 konst Exp $
 
 %include "system.inc"
 
@@ -320,8 +320,10 @@ lookup_user:
 	skip1 3, ':'
 	call strfcpy
 	mov byte [edi], __n
-	lea ecx, [edi-buf+1]
-	sys_write STDOUT, buf, ecx
+;	lea ecx, [edi-buf+1]
+	lea edx, [edi+1]
+	sub edx, buf
+	sys_write STDOUT, buf
 .Lsrch_utmp:
 	sys_read [utmpfd], utmpbuf, UTMP_RECSIZE
 	or eax, eax
