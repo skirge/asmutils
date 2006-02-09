@@ -1,6 +1,6 @@
 ; Copyright (C) Julius C. Duque, 2002 <jcduque (at) lycos (dot) com>
 ;
-; $Id: sha1sum.asm,v 1.1 2002/08/14 16:56:29 konst Exp $
+; $Id: sha1sum.asm,v 1.2 2006/02/09 07:57:48 konst Exp $
 ;
 ; Syntax: sha1sum file1 [file2 file3 ...]
 ;
@@ -12,6 +12,8 @@
 ; Cecchinel Stephan <interzone (at) pacwan (dot) fr>
 
 %include "system.inc"
+
+CPU 486
 
 CODESEG
 

@@ -1,6 +1,6 @@
 ;Copyright (C) 1999 Cecchinel Stephan <interzone@pacwan.fr>
 ;
-;$Id: lzss.asm,v 1.5 2001/03/18 07:08:25 konst Exp $
+;$Id: lzss.asm,v 1.6 2006/02/09 07:59:23 konst Exp $
 ;
 ;hackers' lzss
 ;
@@ -18,6 +18,8 @@
 ;0.03: 11-Jan-2001	outfile fix (KB)
 
 %include "system.inc"
+
+CPU 486
 
 %assign	N_BITS	15
 %assign	F_BITS	4

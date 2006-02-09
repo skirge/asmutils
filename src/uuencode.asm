@@ -17,7 +17,7 @@
 ; or perror.
 ; This program is very similar to the C version from GNU Sharutils.
 ;
-; $Id: uuencode.asm,v 1.2 2002/07/24 16:27:38 konst Exp $
+; $Id: uuencode.asm,v 1.3 2006/02/09 07:56:03 konst Exp $
 
 ; 0.01 initial release
 ; 0.02. strcat replaced by my own version.  Many extraneous instructions
@@ -40,6 +40,8 @@
 %assign TRAILERTEXT 0x0a646e65 ; in little endian format
 
 %include "system.inc"
+
+CPU 486
 
 CODESEG
 
