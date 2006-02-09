@@ -1,8 +1,8 @@
-# Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
+# Copyright (C) 1999-2006 Konstantin Boldyshev <konst@linuxassembly.org>
 #
 # MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.19 2002/03/14 17:42:46 konst Exp $
+# $Id: MCONFIG,v 1.20 2006/02/09 07:53:17 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -16,6 +16,14 @@
 OS = LINUX
 
 # Kernel version of target OS (1.2 = 12, 2.4 = 24, 3.6 = 36, etc)
+
+# Note for Linux 2.6.11 (and above) users: if you experience segfault when
+# running several utilities (e.g. chmod), set KERNEL to 26.  This will force
+# .bss section to be present in executable even if program doesn't need it.
+# All this is needed only when ELF_MACROS are disabled.
+# Up-to-date ld versions (at least 2.13.90.0.4) also force .bss section
+# in executable even if it is not present in object file.
+# So, if your ld always adds .bss - you can just forget about it.
 
 KERNEL = 24
 
@@ -57,7 +65,7 @@ ELF_MACROS = y
 
 #---------------------------------------------------------------#
 
-VERSION = 0.17
+VERSION = 0.18
 
 ${OS} = y
 
@@ -91,9 +99,9 @@ LD := ld
 CC := gcc
 MAKE := gmake
 
-ASVER := $(shell $(AS) -r | cut -d ' ' -f 3)
+ASVER := $(shell $(AS) -v | cut -d ' ' -f 3)
 #LDVER := $(shell $(LD) -v | cut -d ' ' -f 4)
-CORRECT_ASVER = 0.98
+CORRECT_ASVER = 0.98.39
 
 #
 # avoid using asmutils during the build process if PATH has '.'
@@ -116,6 +124,10 @@ LDFLAGS :=
 ASFLAGS := -w+orphan-labels -w+macro-params -i../inc/
 DEFINES := -D__$(OS)__ -D__KERNEL__=$(KERNEL) -D__SYSCALL__=__S_$(SYSCALL)__\
 	   -D__OPTIMIZE__=__O_$(OPTIMIZE)__ -D__$(EXECUTABLE)__
+
+ifeq ($(OPTIMIZE),SIZE)
+ASFLAGS += -O5
+endif
 
 ifeq ($(SYSCALL),LIBC)
 LD = gcc
@@ -185,3 +197,23 @@ ifndef DEBUG
 endif
 
 endif	# ELF_MACROS
+
+#
+#
+#
+
+.PHONY:	default all clean install
+
+default: check_asver all
+
+#
+# check assembler version
+#
+
+check_asver:
+ifneq ("$(ASVER)", "$(CORRECT_ASVER)")
+	@echo "------------------------------------------------------------------------------------"
+	@echo "WARNING: your $(AS) version $(ASVER) may miscompile asmutils, please use $(AS) $(CORRECT_ASVER)!"
+	@echo "------------------------------------------------------------------------------------"
+#	@false
+endif
