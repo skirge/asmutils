@@ -1,8 +1,8 @@
-# Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
+# Copyright (C) 1999-2006 Konstantin Boldyshev <konst@linuxassembly.org>
 #
 # Makefile for asmutils (GNU make is required)
 #
-# $Id: Makefile,v 1.63 2006/02/06 06:03:39 konst Exp $
+# $Id: Makefile,v 1.64 2006/02/09 07:51:31 konst Exp $
 
 #DEBUG = y
 
@@ -12,7 +12,7 @@ include ../MCONFIG
 
 FILES = basename cal cat chmod chroot chown cmp cpuinfo cut date dc dd deflate dirname\
 	echo env extname factor fromdos grep head hexdump hostname\
-	id init kill ksyms ln lzss mkdir mknod nice nm nohup od rot13 paste\
+	id init kill ln lzss mkdir mknod nice nm nohup od rot13 paste\
 	readelf readlink reboot renice scons sleep strings sync\
 	tail tar tee tr true uname uuencode wc whoami yes\
 	md5sum rmdsum rc6crypt sha1sum idea md5\
@@ -20,18 +20,22 @@ FILES = basename cal cat chmod chroot chown cmp cpuinfo cut date dc dd deflate d
 FILES += readkey less getty \
 	 ftpd host httpd m_inetd nc netstat ping pop3d proxy scan\
 	 telnet telnetd wget\
-	 cp du ls lsusb mount mv pwd rm sh test touch watch which write\
+	 cp du ls mount mv pwd rm sh test touch watch which write\
 
 LINKS = arch cpuspeed domainname false inflate mkfifo more rmdir size sln\
 	todos umount usleep halt poweroff\
 
-BONUS =	execve report asmutils
+BDIR = bonus/
+
+BONUS =	$(BDIR)execve $(BDIR)report $(BDIR)asmutils
 
 ifdef LINUX
-FILES += cda2raw chvt dmesg df eject fdisk finger free gi ifconfig killall lsmod\
-	 mesg mkfs.minix ps softdog swapon sysctl truss tty update uptime 
+FILES += cda2raw chvt dmesg df eject fdisk finger free gi ifconfig\
+	 killall ksyms lsmod lsusb mesg mkfs.minix ps\
+	 softdog swapon sysctl truss tty update uptime users
 LINKS += ccd deallocvt fingerd killall5 pidof rmmod route swapoff mkswap
-BONUS += window leaves fire256 mandelbrot hdragon snake game
+BONUS += $(BDIR)leaves $(BDIR)fire256 $(BDIR)mandelbrot $(BDIR)hdragon\
+	 $(BDIR)window  $(BDIR)snake $(BDIR)game
 endif
 
 ifdef FREEBSD
@@ -60,7 +64,6 @@ links:	$(FILES)
 	mkln reboot halt;\
 	mkln reboot poweroff;\
 	mkln lsmod rmmod;\
-	mkln execve regs;\
 	mkln kldload kldunload;\
 	mkln kldload kldstat;\
 	mkln killall killall5;\
@@ -70,6 +73,7 @@ links:	$(FILES)
 	mkln nm size;\
 	mkln finger fingerd;\
 	mkln deflate inflate;\
+	cd $(BDIR); mkln execve regs;\
 	)
 
 install:$(FILES)
@@ -77,12 +81,4 @@ install:$(FILES)
 	$(CP) $(FILES) $(LINKS) $(INSTALLDIR)
 
 clean:
-	$(RM) *.o $(FILES) $(LINKS) $(BONUS) regs
-
-check:
-ifneq ("$(ASVER)", "$(CORRECT_ASVER)")
-	@echo
-	@echo "$(AS) $(ASVER) may miscompile asmutils, please use only clean $(AS) $(CORRECT_ASVER)!"
-	@echo
-	@false
-endif
+	$(RM) *.o $(FILES) $(LINKS) $(BONUS) $(BDIR)regs
