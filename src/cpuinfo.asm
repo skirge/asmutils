@@ -1,7 +1,7 @@
 ;-====================================================================;
 ;- Copyright (C) 2000 H-Peter Recktenwald, Berlin <phpr@snafu.de>
 ;-
-;- $Id: cpuinfo.asm,v 1.3 2001/11/24 09:46:18 konst Exp $
+;- $Id: cpuinfo.asm,v 1.4 2006/02/09 08:04:32 konst Exp $
 ;-
 ;-  file  	: cpuinfo.asm
 ;-  created	: 18-jan-2000
@@ -69,6 +69,9 @@
 ;-
 
 %include "system.inc"
+
+CPU 586
+
 ;-
 ;- "__LONG"
 ;- uncomment to force compiling w. help & version

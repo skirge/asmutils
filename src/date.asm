@@ -19,10 +19,11 @@
 ;; given as the number of seconds since the start of 1970 UTC, to
 ;; display instead of the current time.
 ;;
-;; $Id: date.asm,v 1.4 2002/03/08 18:54:53 konst Exp $
+;; $Id: date.asm,v 1.5 2006/02/09 08:03:58 konst Exp $
 
 %include "system.inc"
 
+CPU 586
 
 ;; The collection of values associated with the calendric
 ;; representation of a time.
