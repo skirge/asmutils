@@ -2,7 +2,7 @@
 #
 # MCONFIG -- asmutils configuration stuff
 #
-# $Id: MCONFIG,v 1.20 2006/02/09 07:53:17 konst Exp $
+# $Id: MCONFIG,v 1.21 2006/02/18 10:12:17 konst Exp $
 
 #---------------------------------------------------------------------------#
 
@@ -126,7 +126,7 @@ DEFINES := -D__$(OS)__ -D__KERNEL__=$(KERNEL) -D__SYSCALL__=__S_$(SYSCALL)__\
 	   -D__OPTIMIZE__=__O_$(OPTIMIZE)__ -D__$(EXECUTABLE)__
 
 ifeq ($(OPTIMIZE),SIZE)
-ASFLAGS += -O5
+ASFLAGS += -O99v
 endif
 
 ifeq ($(SYSCALL),LIBC)
