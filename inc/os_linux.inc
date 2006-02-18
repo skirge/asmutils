@@ -1,11 +1,11 @@
-; Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
+; Copyright (C) 1999-2006 Konstantin Boldyshev <konst@linuxassembly.org>
 ;
-; $Id: os_linux.inc,v 1.26 2002/08/14 16:53:29 konst Exp $
+; $Id: os_linux.inc,v 1.27 2006/02/18 10:09:17 konst Exp $
 ;
 ; file          : os_linux.inc
 ; created       : 08-Feb-2000
-; modified      : 14-Aug-2002
-; version       : 0.17
+; modified      : 09-Feb-2006
+; version       : 0.18
 ; assembler     : nasm 0.98
 ; description   : Linux kernel (2.0+) constants and structures
 ; author        : Konstantin Boldyshev <konst@linuxassembly.org>
@@ -575,6 +575,26 @@ struc fb_var
 .reserved	U32	6																							
 	
 endstruc
+
+; struct fb_vblank
+struc fb_vblank
+  .flags           resd 1    ; FB_VBLANK flags
+  .count           resd 1    ; counter of retraces since boot
+  .vcount          resd 1    ; current scanline position
+  .hcount          resd 1    ; current scandot position
+  .reserved        resd 4    ; reserved for future compatibility
+endstruc    ; 32 bytes
+
+%assign FB_VBLANK_VBLANKING 0x001   ; currently in a vertical blank
+%assign FB_VBLANK_HBLANKING 0x002   ; currently in a horizontal blank
+%assign FB_VBLANK_HAVE_VBLANK 0x004 ; vertical blanks can be detected
+%assign FB_VBLANK_HAVE_HBLANK 0x008 ; horizontal blanks can be detected
+%assign FB_VBLANK_HAVE_COUNT 0x010  ; global retrace counter is available
+%assign FB_VBLANK_HAVE_VCOUNT 0x020 ; the vcount field is valid
+%assign FB_VBLANK_HAVE_HCOUNT 0x040 ; the hcount field is valid
+%assign FB_VBLANK_VSYNCING 0x080    ; currently in a vsync
+%assign FB_VBLANK_HAVE_VSYNC 0x100  ; vertical syncs can be detected
+
 
 ;
 ;linux/time.h
