@@ -8,7 +8,7 @@ beautification by scripts.  The fields are: name (N), email (E),
 web-address (W), PGP key ID and fingerprint (P), description (D),
 and snail-mail address (S).
 
-$Id: CREDITS,v 1.19 2002/08/17 08:15:41 konst Exp $
+$Id: CREDITS,v 1.20 2006/02/18 10:14:11 konst Exp $
 
 ----------
 
@@ -28,8 +28,12 @@ N: Julius C. Duque (JD)
 E: jcduque@lycos.com
 D: sha1sum.asm
 
+N: Jorge Contreras A. (JC)
+E: aioros2000@hotmail.com
+D: users.asm
+
 N: Paul Furber (PF) 
-E: m@verick.co.za
+E: paulf@gam.co.za
 D: fire256.asm, framebuffer stuff in os_linux.inc
 
 N: Tiago Gasiba (TG)
@@ -48,6 +52,10 @@ N: Tani Hosokawa (TH)
 E: unknown@riverstyx.net
 D: initial OpenBSD port
 
+N: Maciej Hrebien (MH)
+E: m_hrebien@wp.pl
+D: idea.asm cda2raw.asm md5.asm
+
 N: Joshua Hudson (JH)
 E: joshudson@hotmail.com
 D: cut.asm dc.asm du.asm m_inetd.asm mkfs.minix.asm mknod.asm
@@ -59,7 +67,7 @@ D: pwd.asm (stat based part)
 
 N: Nick Kurshev (NK)
 E: nickols_k@mail.ru
-D: libm.c testm.c
+D: ksyms.asm lsusb.asm libm.c testm.c
 
 N: Scott Lanning (SL)
 E: slanning@theworld.com
@@ -132,4 +140,4 @@ D: several libc functions
 
 N: Stephan Walter (SW)
 E: stephan.walter@gmx.ch
-D: mandelbrot.asm
+D: deflate.asm mandelbrot.asm

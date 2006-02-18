@@ -2,7 +2,7 @@
 			       asmutils
 			       ********
 
-			    (version 0.17)
+			    (version 0.18)
 
 			http://linuxassembly.org
 
@@ -55,6 +55,7 @@ Description
  there were several reports that they have rescued when libc
  crashed and it was not possible to use usual system utilities.
 
+ Hey, we are a light in the darkness of bloatware. Do you see?
 
 How to install
 ==============
@@ -70,13 +71,6 @@ How to install
 	   you just need to write startup stack preparation
 	   for your executable format on your own)
 
- WARNING:
- 
- Before using any utility first DO LOOK AT ITS SYNTAX; some utils may
- work not as you have expected. Syntax can be found in the appropriate
- source file (.asm) from the src directory (do not expect any answer
- from program on --help switch).
- 
  For details on compilation process examine doc/Asmutils-HOWTO,
  then edit MCONFIG, run '[g]make' and hopefully all will be done.
 
@@ -88,6 +82,14 @@ How to install
  consisting of Linux kernel and asmutils; it is available for download
  from the asmutils homepage as well.
 
+ WARNING:
+ 
+ Before using any utility first DO LOOK AT ITS SYNTAX; some utils may
+ work not as you have expected. Syntax can be found in the appropriate
+ source file (.asm) from the src directory (do not expect any answer
+ from program on --help switch or without switches).
+
+
 Feedback
 ========
 
@@ -95,4 +97,4 @@ Feedback
  please read the Asmutils-HOWTO in the doc directory.
  At least send a bugreport or a success story :)
 
- $Id: README,v 1.16 2002/08/17 08:14:35 konst Exp $
+ $Id: README,v 1.17 2006/02/18 10:13:42 konst Exp $

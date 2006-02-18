@@ -1,3 +1,32 @@
+18-Feb-2006:	asmutils 0.18
+
+	- cda2raw, idea, md5 (MH)
+	- ksyms, lsusb (NK)
+	- deflate/inflate (SW)
+	- telnetd (RM)
+	- users (JC)
+	- gi (JH)
+	- tar: bugfixes, archive creation support (JH)
+	- dd: fixed pipe bug, added conv=sync conv=swab,
+	  count blocks, recover lseek (JH)
+	- httpd: no longer runs as root if UID defined (JH),
+	  sendfile support (RM),
+	  fixed 404 error messages for paths with %20's when PROC_HANDLE is defined (RHS)
+	- sh: tab completion fixes (RM),
+	  improved jobs, added umask (JH),
+	  added help, enable, pushd, popd, dirs internals (NK)
+	- cat: added short form of all GNU options (JH)
+	- du: added "-d" option (JH)
+	- host: added "-t" option (WT)
+	- chmod: fixed "chmod 4755" bug (KB)
+	- getty, finger: fixed "lea" compile error (KB)
+	- special bonus: fbcon intro hdragon.asm (MH)
+	- fire256: misc improvements (PF)
+	- system.inc: "last writable section" fix for Linux 2.6.11,
+	  added CPU 386 directive
+	  (also added higher CPU directives to few utilities) (KB)
+	- moved bonus stuff to src/bonus (KB)
+
 17-Aug-2002:	asmutils 0.17
 
 	- free, getty, scons, truss, uptime, wget (TO)
@@ -6,11 +35,11 @@
 	- ftpd (AM, RM)
 	- proxy (IM)
 	- uuencode (CB)
-	- sha1sum (JB)
-	- nm: size extension (TO, KB)
-	- finger: fingerd extenstion (TO)
-	- swapon: added mkswap extension (TO)
-	- sleep: added usleep extension (IM)
+	- sha1sum (JD)
+	- nm: added 'size' extension (TO, KB)
+	- finger: added 'fingerd' extenstion (TO)
+	- swapon: added 'mkswap' extension (TO)
+	- sleep: added 'usleep' extension (IM)
 	- sh: added clear internal (KB)
 	- httpd: added initial cgi support (SL),
 	  '%' support in filenames (RM),
