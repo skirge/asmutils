@@ -2,7 +2,7 @@
 #
 # Makefile for libc (GNU make is required)
 #
-# $Id: Makefile,v 1.11 2001/12/10 17:11:07 konst Exp $
+# $Id: Makefile,v 1.12 2006/02/18 09:39:33 konst Exp $
 
 # Target CPU (386,486,586,686)
 
@@ -16,7 +16,7 @@ BUILD_LIB = y
 
 include ../MCONFIG
 
-#BUILD_STATIC = y
+BUILD_STATIC = y
 BUILD_SHARED = y
 
 LIBCRYPTO_OBJS = md5.o rc6.o rmd.o
@@ -35,8 +35,7 @@ LIBM_SO = ./libm.so.0
 
 CTESTS = test1 test2
 
-CLEAN_CFLAGS := -D__CPU__=$(CPU) -Wall -O1 -m386
-#CLEAN_CFLAGS := -Wall -O1 -Os -march=i386 #will produce the smallest code on gcc 2.95+
+CLEAN_CFLAGS := -D__CPU__=$(CPU) -Wall -O1 -Os -march=i386
 
 ifdef DEBUG
 CLEAN_CFLAGS += -g
@@ -56,7 +55,8 @@ CFLAGS += -D__NO_STRING_INLINES -fno-builtin
 
 # the same with all other glibc crap
 
-CFLAGS += -nostartfiles -nostdlib #-Wl,-e,main
+CFLAGS += -nostartfiles -nostdlib
+#-Wl,-e,main?
 
 %:	%.c
 ifdef	BUILD_SHARED
@@ -70,7 +70,7 @@ ifdef	BUILD_STATIC
 		-o $@-static-fastcall $< $(STUB_OBJS) $(LIBC_A)
 endif
 
-all:	check libc testc crypto libm testm
+all:	libc libm crypto testc testm
 
 libc:	$(LIBC_OBJS) $(STUB_OBJS)
 ifdef BUILD_STATIC
@@ -118,7 +118,7 @@ ifdef	BUILD_SHARED
 	$(CC) $(CLEAN_CFLAGS) -o $@-shared $< $(LIBM_SO)
 endif
 ifdef	BUILD_STATIC
-	$(CC) $(CLEAN_CFLAGS) -static -o $@-static $< $(LIBM_A)
+	$(CC) $(CLEAN_CFLAGS) -o $@-static $< $(LIBM_A)
 endif
 
 endif
@@ -127,11 +127,3 @@ install:
 
 clean:
 	rm -f *.o *.a *.so* $(TESTS) *-shared* *-static*
-
-check:
-ifneq ("$(ASVER)", "$(CORRECT_ASVER)")
-	@echo
-	@echo "$(AS) $(ASVER) may miscompile asmutils, please use only clean $(AS) $(CORRECT_ASVER)!"
-	@echo
-	@false
-endif

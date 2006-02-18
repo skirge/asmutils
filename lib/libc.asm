@@ -1,7 +1,7 @@
 ;Copyright (C) 1999-2002 Konstantin Boldyshev <konst@linuxassembly.org>
 ;Copyright (C) 1999 Cecchinel Stephan <inter.zone@free.fr>
 ;
-;$Id: libc.asm,v 1.15 2002/06/11 08:38:39 konst Exp $
+;$Id: libc.asm,v 1.16 2006/02/18 09:39:33 konst Exp $
 ;
 ;hackers' libc
 ;
@@ -35,6 +35,7 @@
 ;0.07: 25-Feb-2001	added __VERBOSE__, memcmp(), getenv() (KB)
 ;0.08: 20-Jan-2002	strlen() bugfix, various fixes (KB)
 ;0.09: 03-Mar-2002	__start_main fastcall fix (KB)
+;0.10: 18-Feb-2006	static build fix (KB)
 
 %undef __ELF_MACROS__
 
@@ -155,13 +156,6 @@
 CODESEG
 
 %ifdef __PIC__
-__get_GOT:
-	mov	ebx,[esp]
-	ret
-%endif
-
-START:
-%ifdef __PIC__
 	__GET_GOT
 	lea	ecx,[__INT_VAR(__libc_banner)]
 %else
@@ -172,6 +166,13 @@ START:
 
 __libc_banner		db	"a r e   y o u   s i c k ?", __n
 __LIBC_BANNER_LEN	equ	$ - __libc_banner
+
+%ifdef __PIC__
+__get_GOT:
+	mov	ebx,[esp]
+	ret
+%endif
+
 
 extern _GLOBAL_OFFSET_TABLE_
 
