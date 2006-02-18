@@ -1,6 +1,6 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN">
 
-<!-- $Id: Asmutils-HOWTO.sgml,v 1.19 2002/08/17 08:15:41 konst Exp $ -->
+<!-- $Id: Asmutils-HOWTO.sgml,v 1.20 2006/02/18 10:08:03 konst Exp $ -->
 
 <article id="Asmutils-HOWTO">
 <?html-filename Asmutils-HOWTO.html>
@@ -22,11 +22,11 @@
     </affiliation>
 </author>
 
-<releaseinfo>Version 0.8</releaseinfo>
-<pubdate role="cvs">$Date: 2002/08/17 08:15:41 $</pubdate>
+<releaseinfo>Version 0.9</releaseinfo>
+<pubdate role="cvs">$Date: 2006/02/18 10:08:03 $</pubdate>
 
 <copyright>
-<year>1999-2002</year><holder>Konstantin Boldyshev</holder>
+<year>1999-2006</year><holder>Konstantin Boldyshev</holder>
 </copyright>
 
 <legalnotice><para>
@@ -128,10 +128,10 @@ Preferred program versions are:
 
 <itemizedlist>
 <listitem><para>
-nasm 0.98
+nasm 0.98.39
 </para></listitem>
 <listitem><para>
-ld from GNU binutils 2.9
+ld from GNU binutils 2.13
 </para></listitem>
 <listitem><para>
 GNU make 3.79
@@ -596,8 +596,7 @@ Then rebuild your code, and try one of the available debuggers:
 <section><title>ald</title>
 
 <para>
-There's an early version of the
-<ulink url="http://ellipse.mcs.drexel.edu/ald.html">Assembly Language Debugger</ulink>,
+There's the <ulink url="http://ald.sourceforge.net">Assembly Language Debugger</ulink>,
 which is designed to work with assembly code,
 and is portable enough to run on Linux and *BSD.
 It is already functional and should be the right choice, check it out!
@@ -697,10 +696,9 @@ may not be accepted if you ignore suggestions below.
 </para>
 
 <para>
-Although I think most of what is said in this section is evident
-to experienced developers of distributed free software, there might be
-brand new developers from the proprietary software world, unaware of common
-contribution practice; if you are the one, read with double attention.
+I think most of what is said in this section is evident
+to experienced developers of distributed free software,
+but if you are not the one, please read this carefully.
 </para>
 
 <section><title>First step</title>
@@ -714,15 +712,15 @@ contributions based on old versions are (usually) rejected.
 
 <para>
 Usually, a good idea is to get current code from the CVS repository
-(<filename>cvs.linuxassembly.org:/cvsroot/asm</filename>,
+(<filename>cvs.sourceforge.net:/cvsroot/asm</filename>,
 module name is "asmutils"):
 <screen>
 $ export CVS_RSH=ssh
-$ cvs -d:pserver:anonymous@cvs.linuxassembly.org:/cvsroot/asm login
+$ cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/asm login
 
 (when prompted for password, just press [Enter].
 
-$ cvs -z9 -d:pserver:anonymous@cvs.linuxassembly.org:/cvsroot/asm co asmutils
+$ cvs -z9 -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/asm co asmutils
 </screen>
 
 Thus you get <emphasis>the latest</emphasis> code for sure,
@@ -816,7 +814,7 @@ but you can also contribute your very own program.
 Keep in mind that <application>asmutils</application> are not just fun.
 They are used in (and targeted on) small distributions and embedded systems.
 Thus, they should be as small as possible, use very few memory,
-and be as fast as kernel. Neither more, nor less :)
+and be as fast as kernel. Neither more, nor less.
 </para>
 
 </section>
@@ -844,14 +842,17 @@ also try another <function>OS</function> parameter. As a rule, compiling
 with <function>OS=LINUX</function> and <function>OS=FREEBSD</function>
 cleans out most (but not necessary all) issues.
 Also, be aware of code size difference when <function>OPTIMIZE=SPEED</function>
-and/or <function>SYSCALL=LIBC</function> are set -- short jumps can became
-out of range (don't you like nasm?).
+and/or <function>SYSCALL=LIBC</function> are set -- explicit 
+short jumps can became out of range.
+Nowdays a good idea is to use just <function>jmp</function> instruction,
+and let nasm take care of jump offset.
 </para>
 
 <para>
 Try to include some documentation in the source.
 If your code uses 486+ instructions, please specify CPU requirements
-(especially if MMX, 3DNOW, SSE, etc are used).
+(especially if MMX, 3DNOW, SSE, etc are used) and use
+nasm <function>CPU</function> directive accordingly.
 Include comments along your code, especially around somewhat
 cryptic parts that are hard (as you feel) to understand initially.
 (but do not document every step, like
@@ -949,7 +950,7 @@ it will be zeroed out by kernel.
 Use <function>_mov</function> macro instead of
 <literal>mov</literal> instruction
 (if you do not just assign one register to another),
-this will track several special cases and produce smaller code.
+this will track several special cases and probably produce smaller code.
 </para>
 
 <para>
@@ -1030,6 +1031,11 @@ Seek, and you may find more..
 <para><revhistory>
 
 <revision>
+<revnumber>0.9</revnumber><date>18 Feb 2006</date><authorinitials>konst</authorinitials>
+<revremark>small updates and cleanups</revremark>
+</revision>
+
+<revision>
 <revnumber>0.8</revnumber><date>18 Feb 2002</date><authorinitials>konst</authorinitials>
 <revremark>more notes on contributions, updates and cleanups</revremark>
 </revision>
@@ -1103,7 +1109,7 @@ according to the <link linkend="s-legal">license agreement</link>.
 </para>
 
 <para><literal>
-$Id: Asmutils-HOWTO.sgml,v 1.19 2002/08/17 08:15:41 konst Exp $
+$Id: Asmutils-HOWTO.sgml,v 1.20 2006/02/18 10:08:03 konst Exp $
 </literal></para>
 </appendix>
 
