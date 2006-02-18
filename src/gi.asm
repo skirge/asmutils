@@ -1,5 +1,10 @@
+; Copyright (C) 2004 by Joshua Hudson
+;
+; $Id: gi.asm,v 1.2 2006/02/18 10:04:00 konst Exp $
 ;
 ; asmutils gi
+;
+; gi displays IP address of a given network interface
 ;
 ; Usage: gi eth0
 ;
