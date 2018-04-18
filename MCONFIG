@@ -95,9 +95,9 @@ endif
 ${EXECUTABLE} = y
 
 AS := nasm
-LD := ld
-CC := gcc
-MAKE := gmake
+LD := ld -melf_i386
+CC := gcc -m32
+MAKE := make
 
 ASVER := $(shell $(AS) -v | cut -d ' ' -f 3)
 #LDVER := $(shell $(LD) -v | cut -d ' ' -f 4)

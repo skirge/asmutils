@@ -35,7 +35,7 @@ LIBM_SO = ./libm.so.0
 
 CTESTS = test1 test2
 
-CLEAN_CFLAGS := -D__CPU__=$(CPU) -Wall -O1 -Os -march=i386
+CLEAN_CFLAGS := -D__CPU__=$(CPU) -Wall -march=i386
 
 ifdef DEBUG
 CLEAN_CFLAGS += -g
