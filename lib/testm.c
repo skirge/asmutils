@@ -327,9 +327,9 @@ int main ( void )
   MATH_ASSERT("pow",pow(1., INF) , 1.);
   MATH_ASSERT("pow",pow(0., INF) , 0.);
   printf("\n");
-  MATH_ASSERT("pow10",pow10(0.) , 1.);
-  MATH_ASSERT("pow10",pow10(1.) , 10.);
-  MATH_ASSERT("pow10",pow10(3.) , 1000.);
+  MATH_ASSERT("pow10",exp10(0.) , 1.);
+  MATH_ASSERT("pow10",exp10(1.) , 10.);
+  MATH_ASSERT("pow10",exp10(3.) , 1000.);
   printf("\n");
   MATH_ASSERT("remainder",remainder(1.625, 1.0) , -0.375);
   MATH_ASSERT("remainder",remainder(-1.625, 1.0) , 0.375);
